@@ -3,64 +3,77 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // O contrato sugere Supabase, que usa Postgres [cite: 36]
+  provider = "postgresql" // Conexão com Supabase ou Postgres local
   url      = env("DATABASE_URL")
 }
 
-// Enum para definir os níveis de acesso conforme contrato 
+// 1. Hierarquia de Usuários (Controle de Acesso)
 enum Role {
-  ADMIN       // Acesso total, aprova imóveis
-  FUNCIONARIO // Cadastra imóveis, mas entram como pendentes
+  ADMIN       // Pode criar usuários, aprovar imóveis e promover outros admins
+  FUNCIONARIO // Pode apenas cadastrar imóveis (ficam pendentes) e visualizar
 }
 
-// Enum para o status do imóvel [cite: 33, 35]
+// 2. Status do Imóvel (Fluxo de Aprovação)
 enum PropertyStatus {
-  PENDENTE   // Aguardando aprovação do Admin
-  DISPONIVEL // Visível no site público
-  VENDIDO
-  RESERVADO
+  PENDENTE   // Status inicial ao ser criado por funcionário
+  DISPONIVEL // Aprovado pelo Admin (visível no site)
+  VENDIDO    // Contabilizado no Dashboard
+  RESERVADO  // Não aparece na busca, mas não está vendido
 }
 
+// Modelo de Usuário (Corretores e Admins)
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
-  password  String   // Será armazenada com hash (segurança)
   name      String
+  email     String   @unique
+  password  String   // Senha criptografada (hash)
+  
+  // Define o nível de acesso. Padrão é FUNCIONARIO para segurança.
   role      Role     @default(FUNCIONARIO)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relacionamento: Um usuário (corretor) pode ter vários imóveis cadastrados
+  // Relacionamento: Imóveis que este usuário cadastrou/é responsável
   properties Property[]
+
+  @@map("users") // Boas práticas: nome da tabela em minúsculo no banco
 }
 
+// Modelo de Imóvel (MVP)
 model Property {
   id          String         @id @default(cuid())
+  
+  // Informações Básicas
   titulo      String
   descricao   String
-  preco       Decimal        @db.Decimal(10, 2) // Valor financeiro 
+  tipo        String         // Ex: Casa, Apartamento, Terreno (Para filtros)
+  preco       Decimal        @db.Decimal(10, 2)
   
-  // Endereço e Localização 
+  // Localização (Para filtros de Bairro e Cidade)
   cidade      String
   bairro      String
-  endereco    String?
+  endereco    String?        // Pode ser oculto no site público
   
-  quarto      Int
-  banheiro    Int
-  garagem     Int
-  area        Float
+  // Características
+  quarto      Int            @default(0)
+  banheiro    Int            @default(0)
+  garagem     Int            @default(0)
+  area        Float          // Em metros quadrados
   
-  // Fotos serão URLs armazenadas (Supabase Storage) [cite: 36]
-  fotos       String[] 
+  // Mídia
+  fotos       String[]       // Lista de URLs das imagens
   
-  // Controle de fluxo de publicação 
+  // Controle
   status      PropertyStatus @default(PENDENTE)
-  destaque    Boolean        @default(false) // Para a Home Page [cite: 12]
+  destaque    Boolean        @default(false) // Se true, aparece no carrossel da Home
 
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  // Relacionamento com o corretor responsável 
+  // Relacionamento com o Corretor (Quem cadastrou)
   corretorId  String
   corretor    User           @relation(fields: [corretorId], references: [id])
+
+  @@map("properties")
 }
