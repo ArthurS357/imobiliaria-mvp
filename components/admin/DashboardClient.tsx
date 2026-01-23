@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { UserPlus, LogOut, Save, ShieldCheck, Building, PlusCircle, List } from "lucide-react";
+import { UserPlus, LogOut, Save, ShieldCheck, Building, PlusCircle, List, Mail } from "lucide-react";
 
 export function DashboardClient({ user }: { user: { name?: string | null; email?: string | null; role?: string } }) {
     const [newUserEmail, setNewUserEmail] = useState("");
@@ -57,7 +57,7 @@ export function DashboardClient({ user }: { user: { name?: string | null; email?
                 </button>
             </div>
 
-            {/* --- ÁREA DE GESTÃO DE IMÓVEIS (Atualizada) --- */}
+            {/* --- ÁREA DE GESTÃO DE IMÓVEIS --- */}
             <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-lg shadow-md p-6 text-white flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
                     <h2 className="text-xl font-bold flex items-center gap-2">
@@ -84,6 +84,25 @@ export function DashboardClient({ user }: { user: { name?: string | null; email?
                         <PlusCircle size={20} /> Cadastrar Novo
                     </Link>
                 </div>
+            </div>
+
+            {/* --- NOVO: CARD DE MENSAGENS (CRM) --- */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-purple-100 text-purple-700 rounded-full">
+                        <Mail size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-800">Caixa de Entrada (CRM)</h3>
+                        <p className="text-sm text-gray-500">Gerencie os leads e mensagens enviadas pelo site.</p>
+                    </div>
+                </div>
+                <Link
+                    href="/admin/mensagens"
+                    className="w-full md:w-auto text-center bg-purple-600 text-white px-5 py-2 rounded-md font-medium hover:bg-purple-700 transition shadow-sm flex items-center justify-center gap-2"
+                >
+                    Ver Mensagens
+                </Link>
             </div>
 
             {/* Seção de Gestão de Equipe (Apenas Admin vê) */}

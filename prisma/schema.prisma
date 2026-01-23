@@ -64,3 +64,17 @@ model Property {
 
   @@map("properties")
 }
+
+model Lead {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  createdAt DateTime @default(now())
+  
+  // Status do atendimento (Novo, Em Andamento, Finalizado)
+  status    String   @default("NOVO") 
+
+  @@map("leads")
+}

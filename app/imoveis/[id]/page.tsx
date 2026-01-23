@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer"; // Importar
-import { MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar } from "lucide-react";
+import { Footer } from "@/components/Footer";
+import { PropertyCard } from "@/components/PropertyCard";
+import { MortgageCalculator } from "@/components/MortgageCalculator"; // <--- Import da Calculadora
+import { MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
-// (Interface Property mantida igual)
 interface Property {
     id: string;
     titulo: string;
@@ -21,39 +23,50 @@ interface Property {
     area: number;
     fotos: string;
     tipo: string;
+    status: string;
     corretor: { name: string; email: string };
     createdAt: string;
 }
 
 export default function PropertyDetailsPage() {
-    const params = useParams(); // params agora é Promise no Next 15, mas useParams hook trata isso no cliente
+    const params = useParams();
     const router = useRouter();
+
     const [property, setProperty] = useState<Property | null>(null);
+    const [relatedProperties, setRelatedProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState<string>("");
 
     useEffect(() => {
-        async function fetchProperty() {
+        async function fetchData() {
             try {
-                // Observação: params.id pode vir undefined inicialmente, verificar
                 if (!params?.id) return;
+                const id = params.id as string;
 
-                const res = await fetch(`/api/properties/${params.id}`);
+                // 1. Busca o Imóvel Principal
+                const res = await fetch(`/api/properties/${id}`);
                 if (!res.ok) throw new Error("Falha ao buscar");
                 const data = await res.json();
 
                 setProperty(data);
                 if (data.fotos) {
-                    const fotosArray = data.fotos.split(";");
-                    setSelectedImage(fotosArray[0]);
+                    setSelectedImage(data.fotos.split(";")[0]);
                 }
+
+                // 2. Busca os Imóveis Relacionados
+                const resRelated = await fetch(`/api/properties/${id}/related`);
+                if (resRelated.ok) {
+                    const dataRelated = await resRelated.json();
+                    setRelatedProperties(dataRelated);
+                }
+
             } catch (error) {
                 console.error(error);
             } finally {
                 setLoading(false);
             }
         }
-        fetchProperty();
+        fetchData();
     }, [params.id]);
 
     if (loading) {
@@ -85,9 +98,11 @@ export default function PropertyDetailsPage() {
                     <ArrowLeft size={20} /> Voltar para busca
                 </button>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Fotos e Descrição */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+
+                    {/* COLUNA ESQUERDA: Fotos e Descrição */}
                     <div className="lg:col-span-2 space-y-8">
+                        {/* Galeria */}
                         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
                             <div className="h-96 w-full bg-gray-200 relative">
                                 {selectedImage ? (
@@ -110,9 +125,12 @@ export default function PropertyDetailsPage() {
                             )}
                         </div>
 
+                        {/* Detalhes */}
                         <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8 border border-gray-100">
                             <h2 className="text-2xl font-bold text-gray-800 mb-4">Sobre o imóvel</h2>
-                            <div className="prose text-gray-600 max-w-none whitespace-pre-line">{property.descricao}</div>
+                            <div className="prose text-gray-600 max-w-none whitespace-pre-line leading-relaxed">
+                                {property.descricao}
+                            </div>
 
                             <div className="mt-8 border-t pt-8">
                                 <h3 className="text-lg font-bold text-gray-800 mb-4">Características</h3>
@@ -138,9 +156,11 @@ export default function PropertyDetailsPage() {
                         </div>
                     </div>
 
-                    {/* Card Lateral */}
+                    {/* COLUNA DIREITA: Valores, Contato e CALCULADORA */}
                     <div className="lg:col-span-1">
-                        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sticky top-24">
+
+                        {/* Card Sticky (Informações e WhatsApp) */}
+                        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sticky top-24 z-10">
                             <div className="mb-6">
                                 <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{property.titulo}</h1>
                                 <div className="flex items-center gap-2 text-gray-500 text-sm">
@@ -178,8 +198,32 @@ export default function PropertyDetailsPage() {
                                 <Calendar size={14} /> Publicado em {new Date(property.createdAt).toLocaleDateString('pt-BR')}
                             </div>
                         </div>
+
+                        {/* --- NOVA: CALCULADORA DE FINANCIAMENTO --- */}
+                        <div className="mt-6">
+                            <MortgageCalculator propertyPrice={property.preco} />
+                        </div>
                     </div>
                 </div>
+
+                {/* IMÓVEIS RELACIONADOS */}
+                {relatedProperties.length > 0 && (
+                    <div className="border-t border-gray-200 pt-12 mt-12">
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-2xl font-bold text-gray-900">Você também pode gostar</h2>
+                            <Link href="/imoveis" className="text-blue-900 font-bold text-sm hover:underline flex items-center gap-1">
+                                Ver todos <ArrowRight size={16} />
+                            </Link>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {relatedProperties.map((p) => (
+                                <PropertyCard key={p.id} property={p} />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
             </main>
 
             <Footer />

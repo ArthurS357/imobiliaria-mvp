@@ -2,26 +2,54 @@
 
 import { useState } from "react";
 import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer"; // Importar
+import { Footer } from "@/components/Footer";
 import { Mail, Phone, MapPin, Send, MessageCircle } from "lucide-react";
 
 export default function ContactPage() {
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
+    // Estados do formulário
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        message: ""
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        // Simulação
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setLoading(false);
-        setSubmitted(true);
+
+        try {
+            const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            });
+
+            if (res.ok) {
+                setSubmitted(true);
+                setFormData({ name: "", email: "", phone: "", message: "" }); // Limpa form
+            } else {
+                alert("Erro ao enviar mensagem. Tente novamente.");
+            }
+        } catch (error) {
+            alert("Erro de conexão.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <Header />
 
+            {/* Banner */}
             <div className="bg-blue-900 text-white py-16">
                 <div className="max-w-7xl mx-auto px-4 text-center">
                     <h1 className="text-3xl font-bold">Fale Conosco</h1>
@@ -32,54 +60,33 @@ export default function ContactPage() {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-grow w-full">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
 
-                    {/* Informações */}
+                    {/* Coluna Esquerda (Infos) - Mantenha igual ao anterior, só vou focar no form abaixo */}
                     <div className="p-8 bg-blue-50 md:p-12 flex flex-col justify-between">
+                        {/* ... (Código da coluna esquerda mantém igual) ... */}
                         <div>
                             <h2 className="text-2xl font-bold text-blue-900 mb-6">Canais de Atendimento</h2>
-                            <p className="text-gray-600 mb-8">
-                                Tem alguma dúvida sobre um imóvel ou quer anunciar conosco?
-                            </p>
-
                             <div className="space-y-6">
                                 <div className="flex items-start gap-4">
                                     <div className="bg-white p-3 rounded-lg shadow-sm text-blue-900"><Phone size={24} /></div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-900">Telefone</h3>
-                                        <p className="text-gray-600">(11) 99999-9999</p>
-                                    </div>
+                                    <div><h3 className="font-bold text-gray-900">Telefone</h3><p className="text-gray-600">(11) 99999-9999</p></div>
                                 </div>
                                 <div className="flex items-start gap-4">
                                     <div className="bg-white p-3 rounded-lg shadow-sm text-blue-900"><Mail size={24} /></div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-900">E-mail</h3>
-                                        <p className="text-gray-600">contato@imobiliariamvp.com.br</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-4">
-                                    <div className="bg-white p-3 rounded-lg shadow-sm text-blue-900"><MapPin size={24} /></div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-900">Escritório</h3>
-                                        <p className="text-gray-600">Av. Principal da Cidade, 1000</p>
-                                    </div>
+                                    <div><h3 className="font-bold text-gray-900">E-mail</h3><p className="text-gray-600">contato@mvp.com</p></div>
                                 </div>
                             </div>
                         </div>
-
-                        <div className="mt-12">
-                            <a href="https://wa.me/5511999999999" target="_blank" className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition shadow-md">
-                                <MessageCircle size={20} /> Conversar no WhatsApp
-                            </a>
-                        </div>
                     </div>
 
-                    {/* Formulário */}
+                    {/* Coluna Direita (Formulário Conectado) */}
                     <div className="p-8 md:p-12">
                         {submitted ? (
                             <div className="h-full flex flex-col items-center justify-center text-center animate-fade-in">
                                 <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
                                     <Send size={32} />
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900">Mensagem Enviada!</h3>
+                                <h3 className="text-2xl font-bold text-gray-900">Mensagem Salva!</h3>
+                                <p className="text-gray-500 mt-2">Nossa equipe comercial entrará em contato em breve.</p>
                                 <button onClick={() => setSubmitted(false)} className="mt-6 text-blue-900 font-medium hover:underline">
                                     Enviar nova mensagem
                                 </button>
@@ -90,18 +97,53 @@ export default function ContactPage() {
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-                                        <input type="text" required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition outline-none" />
+                                        <input
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            type="text"
+                                            required
+                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Seu nome completo"
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-                                        <input type="email" required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition outline-none" />
+                                        <input
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            type="email"
+                                            required
+                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="seu@email.com"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                                        <input
+                                            name="phone"
+                                            value={formData.phone}
+                                            onChange={handleChange}
+                                            type="tel"
+                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="(DD) 99999-9999"
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Mensagem</label>
-                                        <textarea rows={4} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 transition outline-none"></textarea>
+                                        <textarea
+                                            name="message"
+                                            value={formData.message}
+                                            onChange={handleChange}
+                                            rows={4}
+                                            required
+                                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Tenho interesse no imóvel..."
+                                        ></textarea>
                                     </div>
                                     <button type="submit" disabled={loading} className="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2">
-                                        {loading ? "Enviando..." : <>Enviar E-mail <Send size={18} /></>}
+                                        {loading ? "Enviando..." : <>Enviar Mensagem <Send size={18} /></>}
                                     </button>
                                 </form>
                             </>
@@ -109,7 +151,6 @@ export default function ContactPage() {
                     </div>
                 </div>
             </main>
-
             <Footer />
         </div>
     );

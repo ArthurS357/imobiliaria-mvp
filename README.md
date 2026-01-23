@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+```markdown
+# 🏡 Imobiliária MVP
 
-## Getting Started
+Sistema moderno para gestão e vitrine de imóveis, desenvolvido com as tecnologias mais recentes do ecossistema React. Focado em performance, SEO e experiência do usuário (UX).
 
-First, run the development server:
+![Project Status](https://img.shields.io/badge/status-concluído-green)
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![Tailwind](https://img.shields.io/badge/Tailwind-v4-blue)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-purple)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## ✨ Funcionalidades
+
+### 🔐 Painel Administrativo
+- **Autenticação Segura:** Login via e-mail e senha com NextAuth.
+- **Gestão de Imóveis:** CRUD completo (Criar, Ler, Atualizar, Deletar).
+- **Controle de Status:** Fluxo de aprovação (Pendente -> Disponível -> Vendido).
+- **Dashboard:** Métricas rápidas de total de imóveis e vendas.
+
+### 🌍 Área Pública (Cliente)
+- **Busca Inteligente:** Filtros por cidade, bairro e tipo de imóvel.
+- **Design Responsivo:** Interface adaptada para Celulares, Tablets e Desktop.
+- **Conversão:** Botão de WhatsApp integrado com mensagem personalizada.
+- **Performance:** Carregamento otimizado com Server Components.
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Frontend:** Next.js 15 (App Router), React, Tailwind CSS.
+- **Backend:** Next.js API Routes.
+- **Banco de Dados:** SQLite (Ambiente Dev) com Prisma ORM.
+- **Autenticação:** NextAuth.js v4.
+- **Ícones:** Lucide React.
+
+## 🚀 Como Rodar o Projeto
+
+### Pré-requisitos
+- Node.js 18+ instalado.
+
+### Passo a Passo
+
+1. **Clone o repositório**
+   ```bash
+   git clone [https://github.com/seu-usuario/imobiliaria-mvp.git](https://github.com/seu-usuario/imobiliaria-mvp.git)
+   cd imobiliaria-mvp
+
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Instale as dependências**
+```bash
+npm install
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+3. **Configure o Banco de Dados**
+```bash
+# Gera o arquivo dev.db localmente
+npx prisma db push
 
-To learn more about Next.js, take a look at the following resources:
+# Popula o banco com o usuário Admin inicial
+npx prisma db seed
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+> **Admin Padrão:**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> * Email: `admin@imobiliaria.com`
+> * Senha: `admin123`
+> 
+> 
+
+
+4. **Inicie o Servidor**
+```bash
+npm run dev
+
+```
+
+
+Acesse `http://localhost:3000` no seu navegador.
+
+## 📂 Estrutura do Projeto
+
+* `/app`: Rotas e páginas (App Router).
+* `/components`: Componentes reutilizáveis (Header, Cards, Footer).
+* `/lib`: Configurações de serviços (Prisma, Auth).
+* `/prisma`: Schema do banco de dados e scripts de seed.
+
+---
+
+Desenvolvido por **Arthur S.** 🚀
+
+```

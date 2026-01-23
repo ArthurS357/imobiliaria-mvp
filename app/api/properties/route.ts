@@ -3,31 +3,71 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// GET: Listar imóveis (Para o Dashboard e Site)
+// GET: Listar imóveis com Filtros Avançados
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const status = searchParams.get("status"); // ex: ?status=PENDENTE
 
-        const where = status ? { status } : {};
+        // Captura os parâmetros da URL
+        const status = searchParams.get("status");
+        const tipo = searchParams.get("tipo");
+        const minPrice = searchParams.get("minPrice");
+        const maxPrice = searchParams.get("maxPrice");
+        const quartos = searchParams.get("quartos");
+        const garagem = searchParams.get("garagem");
+
+        // Monta o objeto de filtro dinamicamente
+        const where: any = {};
+
+        // 1. Filtro de Status (Ex: ?status=PENDENTE ou ?status=DISPONIVEL)
+        if (status) {
+            where.status = status;
+        }
+
+        // 2. Filtro de Tipo (Ex: Casa, Apartamento...)
+        if (tipo && tipo !== "Todos") {
+            where.tipo = tipo;
+        }
+
+        // 3. Filtro de Faixa de Preço
+        if (minPrice || maxPrice) {
+            where.preco = {};
+            if (minPrice) where.preco.gte = Number(minPrice); // Maior ou igual
+            if (maxPrice) where.preco.lte = Number(maxPrice); // Menor ou igual
+        }
+
+        // 4. Filtro de Quartos (Pelo menos X quartos)
+        if (quartos && Number(quartos) > 0) {
+            where.quarto = {
+                gte: Number(quartos)
+            };
+        }
+
+        // 5. Filtro de Vagas de Garagem (Pelo menos X vagas)
+        if (garagem && Number(garagem) > 0) {
+            where.garagem = {
+                gte: Number(garagem)
+            };
+        }
 
         const properties = await prisma.property.findMany({
             where,
             orderBy: { createdAt: "desc" },
             include: {
                 corretor: {
-                    select: { name: true, email: true }, // Traz o nome do corretor
+                    select: { name: true, email: true }, // Mantém o nome do corretor para o card
                 },
             },
         });
 
         return NextResponse.json(properties);
     } catch (error) {
+        console.error("Erro na API GET properties:", error);
         return NextResponse.json({ error: "Erro ao buscar imóveis" }, { status: 500 });
     }
 }
 
-// POST: Cadastrar novo imóvel
+// POST: Cadastrar novo imóvel (Mantido conforme sua referência)
 export async function POST(request: Request) {
     try {
         // 1. Segurança: Quem está cadastrando?
