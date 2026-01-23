@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { ImageUpload } from "@/components/ImageUpload"; // <--- Importe aqui
+import { ImageUpload } from "@/components/ImageUpload"; // <--- Import do componente de upload
 
 export default function NewPropertyPage() {
     const router = useRouter();
@@ -23,7 +23,10 @@ export default function NewPropertyPage() {
         banheiro: "",
         garagem: "",
         area: "",
-        // fotos: string[] -> Agora é um array de URLs
+        // Novos campos para o MAPA
+        latitude: "",
+        longitude: "",
+        // fotos: string[] -> Array de URLs
         fotos: [] as string[],
     });
 
@@ -46,7 +49,7 @@ export default function NewPropertyPage() {
             const res = await fetch("/api/properties", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData), // A API já sabe lidar com o array 'fotos'
+                body: JSON.stringify(formData), // A API atualizada vai ler latitude/longitude
             });
 
             if (res.ok) {
@@ -100,7 +103,7 @@ export default function NewPropertyPage() {
                         </div>
                     </div>
 
-                    {/* Área de Upload de Fotos (NOVO) */}
+                    {/* Área de Upload de Fotos */}
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Galeria de Fotos</h3>
                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -130,6 +133,40 @@ export default function NewPropertyPage() {
                                 <input name="endereco" value={formData.endereco} onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
                             </div>
                         </div>
+                    </div>
+
+                    {/* --- NOVO: COORDENADAS DO MAPA --- */}
+                    <div className="border-t pt-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Coordenadas do Mapa (Opcional)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Latitude</label>
+                                <input
+                                    name="latitude"
+                                    type="number"
+                                    step="any"
+                                    value={formData.latitude}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none"
+                                    placeholder="-23.5505"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Longitude</label>
+                                <input
+                                    name="longitude"
+                                    type="number"
+                                    step="any"
+                                    value={formData.longitude}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none"
+                                    placeholder="-46.6333"
+                                />
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded inline-block">
+                            💡 Dica: No Google Maps, clique com o botão direito no local e copie os números.
+                        </p>
                     </div>
 
                     {/* Detalhes */}

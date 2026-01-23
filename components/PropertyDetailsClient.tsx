@@ -5,25 +5,30 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
 import { MortgageCalculator } from "@/components/MortgageCalculator";
+// 1. IMPORTAMOS O NOVO COMPONENTE
+import { VisitScheduler } from "@/components/VisitScheduler";
 import { MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// Interface simplificada recebida do servidor
+// Interface dos dados que vêm do banco
 interface PropertyClientProps {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     property: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     relatedProperties: any[];
 }
 
 export function PropertyDetailsClient({ property, relatedProperties }: PropertyClientProps) {
     const router = useRouter();
 
-    // O estado agora é simples, pois os dados já chegam prontos via props!
+    // Define a imagem inicial
     const [selectedImage, setSelectedImage] = useState<string>(
         property.fotos ? property.fotos.split(";")[0] : ""
     );
 
     const fotos = property.fotos ? property.fotos.split(";") : [];
+
     const mensagemZap = encodeURIComponent(`Olá! Vi o imóvel "${property.titulo}" no site e gostaria de mais informações.`);
 
     return (
@@ -96,6 +101,8 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                     {/* COLUNA DIREITA */}
                     <div className="lg:col-span-1">
                         <div className="sticky top-24 space-y-6">
+
+                            {/* Card de Preço e Contato */}
                             <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
                                 <div className="mb-6">
                                     <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{property.titulo}</h1>
@@ -135,6 +142,12 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                 </div>
                             </div>
 
+                            {/* 2. AQUI ESTÁ: AGENDAMENTO DE VISITA */}
+                            <div>
+                                <VisitScheduler propertyId={property.id} />
+                            </div>
+
+                            {/* 3. CALCULADORA */}
                             <div>
                                 <MortgageCalculator propertyPrice={property.preco} />
                             </div>
@@ -142,6 +155,7 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                     </div>
                 </div>
 
+                {/* Relacionados */}
                 {relatedProperties.length > 0 && (
                     <div className="border-t border-gray-200 pt-12 mt-12">
                         <div className="flex items-center justify-between mb-8">

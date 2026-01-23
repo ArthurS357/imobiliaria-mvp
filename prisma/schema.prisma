@@ -36,8 +36,8 @@ model Property {
   descricao   String
   tipo        String
   
-  // SQLite suporta Decimal, mas sem a configuração de precisão (@db.Decimal)
-  preco       Decimal 
+  // Alterado para Float para facilitar compatibilidade com JS e evitar erro de Decimal
+  preco       Float    
   
   cidade      String
   bairro      String
@@ -48,13 +48,16 @@ model Property {
   garagem     Int      @default(0)
   area        Float
   
-  // SQLite não aceita listas (String[]). 
-  // Vamos salvar como String única (Ex: "url1;url2;url3")
-  fotos       String   @default("") 
+  // Salva lista de URLs separadas por ponto e vírgula
+  fotos       String?  @default("") 
   
   // Valores esperados: "PENDENTE", "DISPONIVEL", "VENDIDO", "RESERVADO"
   status      String   @default("PENDENTE")
   destaque    Boolean  @default(false)
+
+  // NOVOS CAMPOS PARA O MAPA
+  latitude    Float?
+  longitude   Float?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -62,9 +65,13 @@ model Property {
   corretorId  String
   corretor    User     @relation(fields: [corretorId], references: [id])
 
+  // Relação inversa para as visitas (Imóvel tem várias visitas)
+  visits      Visit[]
+
   @@map("properties")
 }
 
+// Modelo de Leads (Contatos gerais do Site via formulário Fale Conosco)
 model Lead {
   id        String   @id @default(cuid())
   name      String
@@ -77,4 +84,23 @@ model Lead {
   status    String   @default("NOVO") 
 
   @@map("leads")
+}
+
+// Modelo de Agendamento de Visitas
+model Visit {
+  id          String   @id @default(cuid())
+  date        DateTime // Data da visita
+  timeOfDay   String   // "MANHA" ou "TARDE"
+  name        String
+  email       String
+  phone       String?
+  
+  status      String   @default("PENDENTE") // PENDENTE, CONFIRMADA, CANCELADA
+
+  createdAt   DateTime @default(now())
+  
+  property    Property @relation(fields: [propertyId], references: [id])
+  propertyId  String
+
+  @@map("visits")
 }

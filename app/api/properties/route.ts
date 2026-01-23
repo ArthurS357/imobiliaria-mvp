@@ -17,6 +17,7 @@ export async function GET(request: Request) {
         const garagem = searchParams.get("garagem");
 
         // Monta o objeto de filtro dinamicamente
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
 
         // 1. Filtro de Status (Ex: ?status=PENDENTE ou ?status=DISPONIVEL)
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
     }
 }
 
-// POST: Cadastrar novo imóvel (Mantido conforme sua referência)
+// POST: Cadastrar novo imóvel (ATUALIZADO COM LATITUDE/LONGITUDE)
 export async function POST(request: Request) {
     try {
         // 1. Segurança: Quem está cadastrando?
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
 
         const data = await request.json();
 
-        // 2. Regra de Negócio (Contrato 2.2):
+        // 2. Regra de Negócio:
         // Se for ADMIN, já pode criar como DISPONIVEL. Se for FUNCIONARIO, entra como PENDENTE.
         const initialStatus = session.user.role === "ADMIN" ? "DISPONIVEL" : "PENDENTE";
 
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
                 titulo: data.titulo,
                 descricao: data.descricao,
                 tipo: data.tipo,
-                preco: parseFloat(data.preco), // Garante que é número
+                preco: parseFloat(data.preco),
                 cidade: data.cidade,
                 bairro: data.bairro,
                 endereco: data.endereco,
@@ -101,7 +102,12 @@ export async function POST(request: Request) {
                 area: parseFloat(data.area),
                 fotos: fotosString,
                 status: initialStatus,
-                corretorId: session.user.id, // Vincula ao usuário logado
+                corretorId: session.user.id,
+
+                // --- NOVOS CAMPOS DO MAPA ---
+                // Verifica se veio dado, senão salva null
+                latitude: data.latitude ? parseFloat(data.latitude) : null,
+                longitude: data.longitude ? parseFloat(data.longitude) : null,
             },
         });
 
