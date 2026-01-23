@@ -1,78 +1,139 @@
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth"; // <--- Importação Corrigida aqui
-import { DashboardClient } from "@/components/admin/DashboardClient";
-import { Home, TrendingUp, Clock } from "lucide-react";
-import { prisma } from "@/lib/prisma"; // <--- Usando o prisma singleton correto
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import {
+    Building2,
+    Users,
+    MessageSquare,
+    Calendar,
+    Plus,
+    LogOut,
+    ShieldCheck,
+    LayoutDashboard
+} from "lucide-react";
 
-export default async function AdminDashboardPage() {
-    // 1. SEGURANÇA: Verifica sessão no lado do servidor
+export default async function AdminDashboard() {
     const session = await getServerSession(authOptions);
 
     if (!session) {
         redirect("/admin/login");
     }
 
-    // Bloqueio extra opcional
-    if (session.user.role !== "ADMIN") {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-red-600 bg-gray-50">
-                <h1 className="text-2xl font-bold">Acesso restrito</h1>
-                <p>Esta área é exclusiva para administradores.</p>
-                <a href="/" className="px-4 py-2 bg-gray-200 rounded text-gray-800 hover:bg-gray-300 transition">Voltar para o Site</a>
-            </div>
-        )
-    }
+    const userRole = session.user.role; // "ADMIN" ou "FUNCIONARIO"
+    const userName = session.user.name;
 
-    // 2. DADOS: Busca contadores reais do banco
+    // Busca dados estatísticos
     const totalImoveis = await prisma.property.count();
-    const imoveisPendentes = await prisma.property.count({ where: { status: "PENDENTE" } });
-    const imoveisVendidos = await prisma.property.count({ where: { status: "VENDIDO" } });
+    const totalMensagens = await prisma.lead.count();
+    const totalVisitas = await prisma.visit.count({ where: { status: "PENDENTE" } });
+
+    // Se for corretor, poderíamos filtrar estatísticas apenas dele aqui se quiséssemos
+    // const meusImoveis = await prisma.property.count({ where: { corretorId: session.user.id } });
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-10">
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-h-screen bg-gray-50 flex flex-col">
 
-                {/* Componente Cliente (Logout, Criar Usuário e Ações Rápidas) */}
-                <DashboardClient user={session.user} />
+            {/* Navbar do Admin */}
+            <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+                <div className="flex items-center gap-2 text-blue-900">
+                    <LayoutDashboard size={24} />
+                    <span className="font-bold text-xl tracking-tight">Painel {userRole === 'ADMIN' ? 'Administrativo' : 'do Corretor'}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="text-right hidden sm:block">
+                        <p className="text-sm font-bold text-gray-800">{userName}</p>
+                        <p className="text-xs text-gray-500">{userRole}</p>
+                    </div>
+                    <Link href="/api/auth/signout" className="p-2 text-gray-400 hover:text-red-600 transition" title="Sair">
+                        <LogOut size={20} />
+                    </Link>
+                </div>
+            </header>
 
-                {/* Estatísticas Rápidas (Cards) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <main className="flex-grow p-6 max-w-7xl mx-auto w-full">
 
-                    {/* Card Total */}
-                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center gap-4">
-                        <div className="p-3 bg-blue-100 text-blue-900 rounded-full">
-                            <Home size={24} />
-                        </div>
+                {/* Métricas (Cards) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500 font-medium">Total de Imóveis</p>
-                            <h3 className="text-2xl font-bold text-gray-900">{totalImoveis}</h3>
+                            <p className="text-sm text-gray-500 font-medium">Imóveis Cadastrados</p>
+                            <p className="text-3xl font-bold text-gray-800">{totalImoveis}</p>
                         </div>
+                        <div className="bg-blue-50 p-3 rounded-full text-blue-600"><Building2 size={24} /></div>
                     </div>
 
-                    {/* Card Pendentes */}
-                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center gap-4">
-                        <div className="p-3 bg-yellow-100 text-yellow-700 rounded-full">
-                            <Clock size={24} />
-                        </div>
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500 font-medium">Aguardando Aprovação</p>
-                            <h3 className="text-2xl font-bold text-gray-900">{imoveisPendentes}</h3>
+                            <p className="text-sm text-gray-500 font-medium">Visitas Pendentes</p>
+                            <p className="text-3xl font-bold text-gray-800">{totalVisitas}</p>
                         </div>
+                        <div className="bg-yellow-50 p-3 rounded-full text-yellow-600"><Calendar size={24} /></div>
                     </div>
 
-                    {/* Card Vendidos */}
-                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center gap-4">
-                        <div className="p-3 bg-green-100 text-green-700 rounded-full">
-                            <TrendingUp size={24} />
-                        </div>
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500 font-medium">Imóveis Vendidos</p>
-                            <h3 className="text-2xl font-bold text-gray-900">{imoveisVendidos}</h3>
+                            <p className="text-sm text-gray-500 font-medium">Novos Leads</p>
+                            <p className="text-3xl font-bold text-gray-800">{totalMensagens}</p>
                         </div>
+                        <div className="bg-green-50 p-3 rounded-full text-green-600"><MessageSquare size={24} /></div>
                     </div>
+                </div>
+
+                {/* Menu de Ações Rápidas */}
+                <h2 className="text-lg font-bold text-gray-800 mb-4">Gerenciamento</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                    {/* Card: Meus Imóveis (Para todos) */}
+                    <Link href="/admin/imoveis" className="group bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition flex flex-col items-center text-center gap-3">
+                        <div className="bg-blue-50 p-4 rounded-full text-blue-600 group-hover:scale-110 transition-transform">
+                            <Building2 size={28} />
+                        </div>
+                        <h3 className="font-bold text-gray-800">Gerenciar Imóveis</h3>
+                        <p className="text-xs text-gray-500">Adicionar, editar ou remover imóveis do site.</p>
+                    </Link>
+
+                    {/* Card: Visitas (Para todos) */}
+                    <Link href="/admin/visitas" className="group bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition flex flex-col items-center text-center gap-3">
+                        <div className="bg-yellow-50 p-4 rounded-full text-yellow-600 group-hover:scale-110 transition-transform">
+                            <Calendar size={28} />
+                        </div>
+                        <h3 className="font-bold text-gray-800">Agenda de Visitas</h3>
+                        <p className="text-xs text-gray-500">Confirmar ou cancelar visitas agendadas.</p>
+                    </Link>
+
+                    {/* Card: Leads (Para todos) */}
+                    <Link href="/admin/mensagens" className="group bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-md transition flex flex-col items-center text-center gap-3">
+                        <div className="bg-green-50 p-4 rounded-full text-green-600 group-hover:scale-110 transition-transform">
+                            <MessageSquare size={28} />
+                        </div>
+                        <h3 className="font-bold text-gray-800">Mensagens (Leads)</h3>
+                        <p className="text-xs text-gray-500">Ver contatos recebidos pelo site.</p>
+                    </Link>
+
+                    {/* --- ÁREA RESTRITA AO ADMIN --- */}
+                    {userRole === "ADMIN" && (
+                        <Link href="/admin/usuarios" className="group bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:border-purple-500 hover:shadow-md transition flex flex-col items-center text-center gap-3 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-bl font-bold">ADMIN</div>
+                            <div className="bg-purple-50 p-4 rounded-full text-purple-600 group-hover:scale-110 transition-transform">
+                                <Users size={28} />
+                            </div>
+                            <h3 className="font-bold text-gray-800">Gestão de Equipe</h3>
+                            <p className="text-xs text-gray-500">Criar contas, alterar senhas e cargos.</p>
+                        </Link>
+                    )}
 
                 </div>
+
+                {userRole === "ADMIN" && (
+                    <div className="mt-8 flex justify-end">
+                        <Link href="/api/admin/create-user" className="hidden text-xs text-gray-400 hover:underline">
+                            Rota rápida de criação (Debug)
+                        </Link>
+                    </div>
+                )}
+
             </main>
         </div>
     );

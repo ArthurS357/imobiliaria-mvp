@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // Ajuste o caminho se necessário (ex: ../../../lib/auth)
-import { prisma } from "@/lib/prisma";    // Ajuste o caminho se necessário
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 // GET: Buscar um único imóvel (Para página de detalhes ou edição)
 export async function GET(
     request: Request,
-    { params }: { params: Promise<{ id: string }> } // Correção para Next.js 15+ (params é Promise)
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { id } = await params;
@@ -32,30 +32,30 @@ export async function PUT(
 ) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+        if (!session) {
+            return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+        }
 
         const { id } = await params;
         const data = await request.json();
 
-        // Verificação de Segurança
-        const existingProperty = await prisma.property.findUnique({ where: { id } });
-        if (!existingProperty) return NextResponse.json({ error: "Imóvel não existe" }, { status: 404 });
-
-        // Regra: Apenas ADMIN pode mudar o status para DISPONIVEL (Aprovação)
-        // Se um funcionário tentar mudar status, ignoramos ou damos erro.
-        let newStatus = data.status;
-        if (data.status === "DISPONIVEL" && session.user.role !== "ADMIN") {
-            newStatus = "PENDENTE"; // Força manter pendente se não for admin
-        }
-
-        // Tratamento de fotos (Array -> String) se vier no update
-        let fotosString = existingProperty.fotos;
+        // 1. Tratamento de fotos (Array -> String única com separador ;)
+        let fotosString = undefined;
         if (data.fotos && Array.isArray(data.fotos)) {
             fotosString = data.fotos.join(";");
         } else if (data.fotos && typeof data.fotos === 'string') {
             fotosString = data.fotos;
         }
 
+        // 2. SEGURANÇA CRÍTICA: Proteção de Campos Administrativos
+        // Se o usuário NÃO for ADMIN, removemos status e destaque do objeto de atualização.
+        // Isso impede que um corretor force a aprovação enviando um JSON modificado.
+        if (session.user.role !== "ADMIN") {
+            delete data.status;
+            delete data.destaque;
+        }
+
+        // 3. Atualização no Banco de Dados
         const updatedProperty = await prisma.property.update({
             where: { id },
             data: {
@@ -70,15 +70,23 @@ export async function PUT(
                 banheiro: data.banheiro ? parseInt(data.banheiro) : undefined,
                 garagem: data.garagem ? parseInt(data.garagem) : undefined,
                 area: data.area ? parseFloat(data.area) : undefined,
-                fotos: fotosString,
-                status: newStatus, // Status tratado
-                destaque: data.destaque,
+
+                // Atualiza fotos apenas se fotosString foi definido
+                ...(fotosString !== undefined && { fotos: fotosString }),
+
+                // Status e Destaque só atualizam se não tiverem sido deletados pela regra de segurança acima
+                ...(data.status && { status: data.status }),
+                ...(data.destaque !== undefined && { destaque: data.destaque }),
+
+                // --- NOVOS CAMPOS DO MAPA ---
+                latitude: data.latitude ? parseFloat(data.latitude) : null,
+                longitude: data.longitude ? parseFloat(data.longitude) : null,
             },
         });
 
         return NextResponse.json(updatedProperty);
     } catch (error) {
-        console.error(error);
+        console.error("Erro ao atualizar imóvel:", error);
         return NextResponse.json({ error: "Erro ao atualizar" }, { status: 500 });
     }
 }
@@ -94,11 +102,13 @@ export async function DELETE(
 
         const { id } = await params;
 
-        // Opcional: Verificar se o usuário é dono do imóvel ou ADMIN
+        // Verifica se o imóvel existe
         const property = await prisma.property.findUnique({ where: { id } });
 
         if (!property) return NextResponse.json({ error: "Imóvel não encontrado" }, { status: 404 });
 
+        // Regra de Propriedade:
+        // Apenas o dono do imóvel (corretorId) ou um ADMIN podem excluir.
         if (session.user.role !== "ADMIN" && property.corretorId !== session.user.id) {
             return NextResponse.json({ error: "Você não tem permissão para excluir este imóvel." }, { status: 403 });
         }

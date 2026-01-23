@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,7 +21,14 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  properties Property[]
+  // Relação: Imóveis cadastrados por este usuário
+  properties    Property[]
+
+  // Relação: Leads (Mensagens) atribuídos a este usuário
+  assignedLeads Lead[]     @relation("AssignedLeads")
+
+  // Relação: Visitas atribuídas a este usuário (NOVO)
+  assignedVisits Visit[]   @relation("AssignedVisits")
 
   @@map("users")
 }
@@ -36,7 +41,7 @@ model Property {
   descricao   String
   tipo        String
   
-  // Alterado para Float para facilitar compatibilidade com JS e evitar erro de Decimal
+  // Alterado para Float para facilitar compatibilidade com JS
   preco       Float    
   
   cidade      String
@@ -83,6 +88,10 @@ model Lead {
   // Status do atendimento (Novo, Em Andamento, Finalizado)
   status    String   @default("NOVO") 
 
+  // Campo para dizer quem é o corretor dono desse lead
+  assignedToId  String?
+  assignedTo    User?   @relation("AssignedLeads", fields: [assignedToId], references: [id])
+
   @@map("leads")
 }
 
@@ -101,6 +110,10 @@ model Visit {
   
   property    Property @relation(fields: [propertyId], references: [id])
   propertyId  String
+
+  // NOVO: Quem é o corretor responsável por essa visita?
+  assignedToId  String?
+  assignedTo    User?   @relation("AssignedVisits", fields: [assignedToId], references: [id])
 
   @@map("visits")
 }
