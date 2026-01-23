@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Save, ArrowLeft, Trash2 } from "lucide-react";
+import { Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { ImageUpload } from "@/components/ImageUpload"; // <--- Import do componente de upload
 
 export default function EditPropertyPage() {
     const params = useParams(); // Pega o ID da URL
@@ -24,8 +25,8 @@ export default function EditPropertyPage() {
         banheiro: "0",
         garagem: "0",
         area: "",
-        fotoUrl: "",
-        status: "PENDENTE", // Campo extra para edição
+        fotos: [] as string[], // Agora suporta múltiplas fotos (Array)
+        status: "PENDENTE",
         destaque: false
     });
 
@@ -33,6 +34,9 @@ export default function EditPropertyPage() {
     useEffect(() => {
         const fetchProperty = async () => {
             try {
+                // Verifica se params.id existe antes de fazer a chamada
+                if (!params?.id) return;
+
                 const res = await fetch(`/api/properties/${params.id}`);
                 const data = await res.json();
 
@@ -51,7 +55,8 @@ export default function EditPropertyPage() {
                     banheiro: data.banheiro,
                     garagem: data.garagem,
                     area: data.area,
-                    fotoUrl: data.fotos ? data.fotos.split(";")[0] : "", // Pega a primeira foto
+                    // Converte a string do banco ("url1;url2") para array ["url1", "url2"]
+                    fotos: data.fotos ? data.fotos.split(";") : [],
                     status: data.status,
                     destaque: data.destaque
                 });
@@ -63,7 +68,7 @@ export default function EditPropertyPage() {
             }
         };
 
-        if (params.id) fetchProperty();
+        fetchProperty();
     }, [params.id, router]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -85,10 +90,7 @@ export default function EditPropertyPage() {
             const res = await fetch(`/api/properties/${params.id}`, {
                 method: "PUT", // Método de Atualização
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...formData,
-                    fotos: [formData.fotoUrl], // Envia como lista novamente
-                }),
+                body: JSON.stringify(formData), // Envia o formData com o array de fotos
             });
 
             if (res.ok) {
@@ -114,7 +116,7 @@ export default function EditPropertyPage() {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">Editar Imóvel</h1>
-                        <p className="text-gray-500">Atualize as informações ou mude o status.</p>
+                        <p className="text-gray-500">Atualize as informações, fotos ou mude o status.</p>
                     </div>
                     <Link href="/admin/imoveis" className="text-gray-600 hover:text-blue-900 flex items-center gap-2">
                         <ArrowLeft size={20} /> Cancelar e Voltar
@@ -177,6 +179,19 @@ export default function EditPropertyPage() {
                         </div>
                     </div>
 
+                    {/* Área de Upload de Fotos (NOVO) */}
+                    <div className="border-t pt-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Galeria de Fotos</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <ImageUpload
+                                value={formData.fotos}
+                                onChange={(urls) => setFormData({ ...formData, fotos: urls })}
+                                onRemove={(url) => setFormData({ ...formData, fotos: formData.fotos.filter((current) => current !== url) })}
+                            />
+                            <p className="text-xs text-gray-500 mt-2">A primeira foto será usada como capa.</p>
+                        </div>
+                    </div>
+
                     {/* Localização */}
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Localização</h3>
@@ -219,18 +234,10 @@ export default function EditPropertyPage() {
                         </div>
                     </div>
 
-                    {/* Mídia */}
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Fotos e Descrição</h3>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">URL da Foto Principal</label>
-                            <input name="fotoUrl" value={formData.fotoUrl} type="text" required onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
-                        </div>
-
-                        <div className="mt-4">
-                            <label className="block text-sm font-medium text-gray-700">Descrição Detalhada</label>
-                            <textarea name="descricao" value={formData.descricao} rows={5} required onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
-                        </div>
+                    {/* Descrição */}
+                    <div className="mt-4 border-t pt-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Descrição Detalhada</label>
+                        <textarea name="descricao" value={formData.descricao} rows={5} required onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
                     </div>
 
                     {/* Botões de Ação */}

@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, User, Home, Building2, Phone, Info } from 'lucide-react';
+// Adicionei 'Heart' aqui
+import { Menu, X, User, Home, Building2, Phone, Info, Heart } from 'lucide-react';
 
 export function Header() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -11,21 +12,20 @@ export function Header() {
 
     const isActive = (path: string) => pathname === path;
 
-    // Estilo base para links Desktop
+    // Link Desktop
     const navLinkClass = (path: string) => `
     text-sm font-medium transition-colors flex items-center gap-2
     ${isActive(path) ? 'text-blue-900 font-bold' : 'text-gray-600 hover:text-blue-600'}
   `;
 
-    // Estilo base para links Mobile (Área de toque maior)
+    // Link Mobile
     const mobileLinkClass = (path: string) => `
-    block px-4 py-4 rounded-lg text-base font-medium transition-colors
+    flex items-center gap-4 px-4 py-4 rounded-xl text-base font-medium transition-colors
     ${isActive(path) ? 'bg-blue-50 text-blue-900' : 'text-gray-600 hover:bg-gray-50'}
   `;
 
     return (
         <>
-            {/* Header Principal */}
             <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
@@ -38,16 +38,28 @@ export function Header() {
                             </Link>
                         </div>
 
-                        {/* MENU DESKTOP */}
+                        {/* NAV DESKTOP */}
                         <nav className="hidden md:flex space-x-8">
-                            <Link href="/" className={navLinkClass("/")}>Home</Link>
+                            <Link href="/" className={navLinkClass("/")}>Início</Link>
                             <Link href="/imoveis" className={navLinkClass("/imoveis")}>Imóveis</Link>
                             <Link href="/sobre" className={navLinkClass("/sobre")}>Quem Somos</Link>
                             <Link href="/contato" className={navLinkClass("/contato")}>Contato</Link>
                         </nav>
 
-                        {/* BOTÃO LOGIN DESKTOP */}
-                        <div className="hidden md:flex items-center">
+                        {/* AÇÕES DIREITA (Favoritos + Login) */}
+                        <div className="hidden md:flex items-center gap-4">
+
+                            {/* NOVO: Botão de Favoritos */}
+                            <Link
+                                href="/favoritos"
+                                className={`p-2 rounded-full transition hover:bg-red-50 group ${isActive("/favoritos") ? 'text-red-600 bg-red-50' : 'text-gray-400 hover:text-red-600'}`}
+                                title="Meus Favoritos"
+                            >
+                                <Heart size={24} className={isActive("/favoritos") ? "fill-current" : ""} />
+                            </Link>
+
+                            <div className="h-6 w-px bg-gray-200"></div>
+
                             <Link
                                 href="/admin/login"
                                 className="flex items-center gap-2 px-5 py-2.5 border border-blue-900/20 text-blue-900 rounded-full hover:bg-blue-900 hover:text-white transition-all duration-300 font-medium text-sm group"
@@ -57,12 +69,11 @@ export function Header() {
                             </Link>
                         </div>
 
-                        {/* BOTÃO HAMBURGUER (Mobile) */}
+                        {/* BOTÃO MOBILE */}
                         <div className="md:hidden flex items-center z-50">
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="text-gray-700 hover:text-blue-900 p-2 focus:outline-none bg-gray-50 rounded-md"
-                                aria-label="Menu Principal"
+                                className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg focus:outline-none"
                             >
                                 {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
                             </button>
@@ -71,37 +82,35 @@ export function Header() {
                 </div>
             </header>
 
-            {/* MENU MOBILE (Full Screen Overlay) */}
+            {/* MENU MOBILE */}
             {isMobileMenuOpen && (
-                <div className="fixed inset-0 top-20 z-40 bg-white/95 backdrop-blur-sm md:hidden overflow-y-auto animate-fade-in border-t border-gray-100 pb-20">
-                    <div className="px-4 py-6 space-y-2">
+                <div className="fixed inset-0 top-20 z-40 bg-white md:hidden overflow-y-auto animate-fade-in pb-20">
+                    <div className="p-4 space-y-2">
 
                         <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/")}>
-                            <div className="flex items-center gap-4">
-                                <div className="bg-blue-100 p-2 rounded-full text-blue-900"><Home size={20} /></div>
-                                Início
-                            </div>
+                            <div className="bg-blue-100 p-2 rounded-full text-blue-900"><Home size={20} /></div>
+                            Início
                         </Link>
 
                         <Link href="/imoveis" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/imoveis")}>
-                            <div className="flex items-center gap-4">
-                                <div className="bg-blue-100 p-2 rounded-full text-blue-900"><Building2 size={20} /></div>
-                                Buscar Imóveis
-                            </div>
+                            <div className="bg-blue-100 p-2 rounded-full text-blue-900"><Building2 size={20} /></div>
+                            Buscar Imóveis
+                        </Link>
+
+                        {/* NOVO: Favoritos no Mobile */}
+                        <Link href="/favoritos" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/favoritos")}>
+                            <div className="bg-red-100 p-2 rounded-full text-red-600"><Heart size={20} /></div>
+                            Meus Favoritos
                         </Link>
 
                         <Link href="/sobre" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/sobre")}>
-                            <div className="flex items-center gap-4">
-                                <div className="bg-blue-100 p-2 rounded-full text-blue-900"><Info size={20} /></div>
-                                Quem Somos
-                            </div>
+                            <div className="bg-blue-100 p-2 rounded-full text-blue-900"><Info size={20} /></div>
+                            Quem Somos
                         </Link>
 
                         <Link href="/contato" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/contato")}>
-                            <div className="flex items-center gap-4">
-                                <div className="bg-blue-100 p-2 rounded-full text-blue-900"><Phone size={20} /></div>
-                                Fale Conosco
-                            </div>
+                            <div className="bg-blue-100 p-2 rounded-full text-blue-900"><Phone size={20} /></div>
+                            Fale Conosco
                         </Link>
 
                         <div className="pt-6 mt-6 border-t border-gray-100">
@@ -113,7 +122,6 @@ export function Header() {
                                 <User size={20} />
                                 Acesso Corretor / Admin
                             </Link>
-                            <p className="text-center text-xs text-gray-400 mt-4">Área exclusiva para funcionários</p>
                         </div>
 
                     </div>

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
-import { MortgageCalculator } from "@/components/MortgageCalculator"; // <--- Import da Calculadora
+import { MortgageCalculator } from "@/components/MortgageCalculator";
 import { MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -156,52 +156,57 @@ export default function PropertyDetailsPage() {
                         </div>
                     </div>
 
-                    {/* COLUNA DIREITA: Valores, Contato e CALCULADORA */}
+                    {/* COLUNA DIREITA: Container Sticky Unificado */}
                     <div className="lg:col-span-1">
 
-                        {/* Card Sticky (Informações e WhatsApp) */}
-                        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sticky top-24 z-10">
-                            <div className="mb-6">
-                                <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{property.titulo}</h1>
-                                <div className="flex items-center gap-2 text-gray-500 text-sm">
-                                    <MapPin size={16} /> <span>{property.bairro}, {property.cidade}</span>
+                        {/* AQUI ESTÁ A MUDANÇA: 'sticky' fica no container pai, segurando ambos os elementos */}
+                        <div className="sticky top-24 space-y-6">
+
+                            {/* Card de Preço e Contato (Sem sticky individual) */}
+                            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                                <div className="mb-6">
+                                    <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{property.titulo}</h1>
+                                    <div className="flex items-center gap-2 text-gray-500 text-sm">
+                                        <MapPin size={16} /> <span>{property.bairro}, {property.cidade}</span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="mb-8">
-                                <p className="text-sm text-gray-500 mb-1">Valor de Venda</p>
-                                <p className="text-4xl font-extrabold text-blue-900">
-                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
-                                </p>
-                            </div>
+                                <div className="mb-8">
+                                    <p className="text-sm text-gray-500 mb-1">Valor de Venda</p>
+                                    <p className="text-4xl font-extrabold text-blue-900">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
+                                    </p>
+                                </div>
 
-                            <div className="space-y-4">
-                                <a href={`https://wa.me/5511999999999?text=${mensagemZap}`} target="_blank" className="w-full bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 transform">
-                                    <MessageCircle size={22} /> Chamar no WhatsApp
-                                </a>
+                                <div className="space-y-4">
+                                    <a href={`https://wa.me/5511999999999?text=${mensagemZap}`} target="_blank" className="w-full bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 transform">
+                                        <MessageCircle size={22} /> Chamar no WhatsApp
+                                    </a>
 
-                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-6">
-                                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-3">Responsável</p>
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">
-                                            {property.corretor?.name?.charAt(0) || "C"}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-gray-900 text-sm">{property.corretor?.name || "Corretor de Plantão"}</p>
-                                            <p className="text-xs text-gray-500">CRECI: 12345-F</p>
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-6">
+                                        <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-3">Responsável</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold">
+                                                {property.corretor?.name?.charAt(0) || "C"}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-gray-900 text-sm">{property.corretor?.name || "Corretor de Plantão"}</p>
+                                                <p className="text-xs text-gray-500">CRECI: 12345-F</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                <div className="mt-6 pt-6 border-t text-xs text-gray-400 flex items-center gap-2 justify-center">
+                                    <Calendar size={14} /> Publicado em {new Date(property.createdAt).toLocaleDateString('pt-BR')}
+                                </div>
                             </div>
 
-                            <div className="mt-6 pt-6 border-t text-xs text-gray-400 flex items-center gap-2 justify-center">
-                                <Calendar size={14} /> Publicado em {new Date(property.createdAt).toLocaleDateString('pt-BR')}
+                            {/* Calculadora (Sem sticky individual, rola junto com o card acima) */}
+                            <div>
+                                <MortgageCalculator propertyPrice={property.preco} />
                             </div>
-                        </div>
 
-                        {/* --- NOVA: CALCULADORA DE FINANCIAMENTO --- */}
-                        <div className="mt-6">
-                            <MortgageCalculator propertyPrice={property.preco} />
                         </div>
                     </div>
                 </div>
