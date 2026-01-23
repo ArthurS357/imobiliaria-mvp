@@ -1,215 +1,163 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Edit, Trash2, CheckCircle, XCircle, Search, Plus } from "lucide-react";
+import { Plus, Search, MapPin, Edit, Eye, ArrowLeft } from "lucide-react";
+import { DeletePropertyButton } from "@/components/admin/DeletePropertyButton";
 
-interface Property {
-    id: string;
-    titulo: string;
-    cidade: string;
-    preco: number;
-    status: string;
-    corretor: { name: string; email: string };
-    createdAt: string;
-}
+export default async function AdminPropertiesPage() {
+  const session = await getServerSession(authOptions);
+  
+  // Segurança básica: Se não estiver logado, manda pro login
+  if (!session) redirect("/admin/login");
 
-export default function AdminPropertiesPage() {
-    const [properties, setProperties] = useState<Property[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState("TODOS"); // TODOS, PENDENTE, DISPONIVEL
+  const isAdmin = session.user.role === "ADMIN";
+  const userId = session.user.id;
 
-    // Função para carregar imóveis
-    const fetchProperties = async () => {
-        try {
-            const res = await fetch("/api/properties"); // Busca todos
-            const data = await res.json();
-            setProperties(data);
-        } catch (error) {
-            console.error("Erro ao buscar", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  // 1. Filtro de Segurança: 
+  // Se for ADMIN, where é vazio (busca tudo).
+  // Se for Corretor, where filtra pelo ID dele.
+  const where = isAdmin ? {} : { corretorId: userId };
 
-    useEffect(() => {
-        fetchProperties();
-    }, []);
+  // 2. Busca no Banco de Dados (Server-side)
+  const properties = await prisma.property.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    include: { 
+        corretor: { select: { name: true } } 
+    }
+  });
 
-    // Ação: Excluir Imóvel
-    const handleDelete = async (id: string) => {
-        if (!confirm("Tem certeza que deseja excluir este imóvel?")) return;
-
-        try {
-            const res = await fetch(`/api/properties/${id}`, { method: "DELETE" });
-            if (res.ok) {
-                alert("Imóvel excluído!");
-                fetchProperties(); // Recarrega lista
-            } else {
-                const err = await res.json();
-                alert(`Erro: ${err.error}`);
-            }
-        } catch (error) {
-            alert("Erro de conexão");
-        }
-    };
-
-    // Ação: Aprovar Imóvel (Atalho Rápido)
-    const handleApprove = async (id: string) => {
-        try {
-            const res = await fetch(`/api/properties/${id}`, {
-                method: "PUT",
-                body: JSON.stringify({ status: "DISPONIVEL" }),
-                headers: { "Content-Type": "application/json" }
-            });
-
-            if (res.ok) {
-                fetchProperties();
-            }
-        } catch (error) {
-            alert("Erro ao aprovar");
-        }
-    };
-
-    // Filtragem local
-    const filteredProperties = properties.filter(p =>
-        filter === "TODOS" ? true : p.status === filter
-    );
-
-    return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-6xl mx-auto">
-
-                {/* Cabeçalho */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Gestão de Imóveis</h1>
-                        <p className="text-gray-500">Gerencie, aprove ou exclua anúncios do sistema.</p>
-                    </div>
-                    <Link
-                        href="/admin/imoveis/novo"
-                        className="bg-blue-900 text-white px-4 py-2 rounded-md hover:bg-blue-800 flex items-center gap-2"
-                    >
-                        <Plus size={18} /> Novo Imóvel
-                    </Link>
-                </div>
-
-                {/* Barra de Filtros */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4 overflow-x-auto">
-                    <button
-                        onClick={() => setFilter("TODOS")}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition ${filter === 'TODOS' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                    >
-                        Todos
-                    </button>
-                    <button
-                        onClick={() => setFilter("PENDENTE")}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition flex items-center gap-2 ${filter === 'PENDENTE' ? 'bg-yellow-500 text-white' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'}`}
-                    >
-                        Pendentes
-                    </button>
-                    <button
-                        onClick={() => setFilter("DISPONIVEL")}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition flex items-center gap-2 ${filter === 'DISPONIVEL' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
-                    >
-                        Disponíveis
-                    </button>
-                </div>
-
-                {/* Tabela de Imóveis */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                    {loading ? (
-                        <div className="p-8 text-center text-gray-500">Carregando imóveis...</div>
-                    ) : filteredProperties.length === 0 ? (
-                        <div className="p-12 text-center flex flex-col items-center text-gray-400">
-                            <Search size={48} className="mb-4 opacity-20" />
-                            <p>Nenhum imóvel encontrado nesta categoria.</p>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-gray-50 text-gray-600 border-b">
-                                    <tr>
-                                        <th className="px-6 py-4 font-semibold">Imóvel</th>
-                                        <th className="px-6 py-4 font-semibold">Preço</th>
-                                        <th className="px-6 py-4 font-semibold">Status</th>
-                                        <th className="px-6 py-4 font-semibold">Corretor</th>
-                                        <th className="px-6 py-4 font-semibold text-right">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {filteredProperties.map((property) => (
-                                        <tr key={property.id} className="hover:bg-gray-50 transition">
-
-                                            {/* Título e Local */}
-                                            <td className="px-6 py-4">
-                                                <div className="font-medium text-gray-900">{property.titulo}</div>
-                                                <div className="text-gray-500 text-xs">{property.cidade}</div>
-                                            </td>
-
-                                            {/* Preço */}
-                                            <td className="px-6 py-4 text-gray-700 font-medium">
-                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
-                                            </td>
-
-                                            {/* Status (Badge) */}
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
-                          ${property.status === 'PENDENTE' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : ''}
-                          ${property.status === 'DISPONIVEL' ? 'bg-green-50 text-green-700 border-green-200' : ''}
-                          ${property.status === 'VENDIDO' ? 'bg-blue-50 text-blue-700 border-blue-200' : ''}
-                        `}>
-                                                    {property.status === 'PENDENTE' && <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1.5"></span>}
-                                                    {property.status === 'DISPONIVEL' && <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>}
-                                                    {property.status}
-                                                </span>
-                                            </td>
-
-                                            {/* Corretor */}
-                                            <td className="px-6 py-4 text-gray-500">
-                                                {property.corretor?.name || "Desconhecido"}
-                                            </td>
-
-                                            {/* Botões de Ação */}
-                                            <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                                                {/* Botão Aprovar (Só aparece se Pendente) */}
-                                                {property.status === 'PENDENTE' && (
-                                                    <button
-                                                        onClick={() => handleApprove(property.id)}
-                                                        title="Aprovar Imóvel"
-                                                        className="p-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200 transition"
-                                                    >
-                                                        <CheckCircle size={18} />
-                                                    </button>
-                                                )}
-
-                                                {/* Editar */}
-                                                {/* Nota: Ainda não criamos a pagina de editar, mas o link já fica pronto */}
-                                                <Link
-                                                    href={`/admin/imoveis/editar/${property.id}`}
-                                                    className="p-1.5 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition"
-                                                    title="Editar"
-                                                >
-                                                    <Edit size={18} />
-                                                </Link>
-
-                                                {/* Excluir */}
-                                                <button
-                                                    onClick={() => handleDelete(property.id)}
-                                                    className="p-1.5 bg-red-50 text-red-700 rounded hover:bg-red-100 transition"
-                                                    title="Excluir"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* Cabeçalho */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">
+              {isAdmin ? "Todos os Imóveis" : "Meus Imóveis"}
+            </h1>
+            <p className="text-gray-500">
+              {isAdmin 
+                ? "Visão geral de todo o portfólio da imobiliária." 
+                : "Gerencie os anúncios criados por você."}
+            </p>
+          </div>
+          <div className="flex gap-3">
+             <Link href="/admin" className="px-4 py-2 border border-gray-300 bg-white rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium">
+                <ArrowLeft size={18} /> Voltar
+             </Link>
+             <Link href="/admin/imoveis/novo" className="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition flex items-center gap-2 font-bold shadow-md">
+                <Plus size={20} /> Novo Imóvel
+             </Link>
+          </div>
         </div>
-    );
+
+        {/* Lista de Imóveis */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          {properties.length === 0 ? (
+             <div className="p-16 text-center flex flex-col items-center justify-center text-gray-400">
+                <div className="bg-gray-50 p-4 rounded-full mb-4">
+                    <Search size={32} className="opacity-40" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhum imóvel encontrado</h3>
+                <p className="text-sm">Comece clicando no botão "Novo Imóvel" acima.</p>
+             </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="p-4 font-semibold text-gray-600 text-sm w-1/3">Imóvel</th>
+                    <th className="p-4 font-semibold text-gray-600 text-sm">Preço</th>
+                    <th className="p-4 font-semibold text-gray-600 text-sm">Status</th>
+                    {/* Coluna Corretor só aparece para ADMIN */}
+                    {isAdmin && <th className="p-4 font-semibold text-gray-600 text-sm">Corretor</th>}
+                    <th className="p-4 font-semibold text-gray-600 text-sm text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {properties.map((property) => (
+                    <tr key={property.id} className="hover:bg-gray-50 transition group">
+                      
+                      {/* Foto e Título */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-4">
+                          <div className="h-14 w-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                            {property.fotos ? (
+                              <img src={property.fotos.split(";")[0]} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-gray-300 text-[10px] uppercase font-bold">Sem foto</div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-800 line-clamp-1 text-sm md:text-base">{property.titulo}</p>
+                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                              <MapPin size={12} /> {property.bairro}, {property.cidade}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Preço */}
+                      <td className="p-4 text-sm font-medium text-gray-700 whitespace-nowrap">
+                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
+                      </td>
+
+                      {/* Status */}
+                      <td className="p-4">
+                        <span className={`text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide border
+                          ${property.status === 'DISPONIVEL' ? 'bg-green-50 text-green-700 border-green-200' : ''}
+                          ${property.status === 'PENDENTE' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : ''}
+                          ${property.status === 'VENDIDO' ? 'bg-blue-50 text-blue-700 border-blue-200' : ''}
+                          ${property.status === 'RESERVADO' ? 'bg-gray-50 text-gray-700 border-gray-200' : ''}
+                        `}>
+                          {property.status}
+                        </span>
+                      </td>
+
+                      {/* Corretor (Só Admin vê) */}
+                      {isAdmin && (
+                        <td className="p-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                    {property.corretor.name.charAt(0)}
+                                </div>
+                                <span className="line-clamp-1">{property.corretor.name}</span>
+                            </div>
+                        </td>
+                      )}
+
+                      {/* Ações */}
+                      <td className="p-4 text-right">
+                         <div className="flex items-center justify-end gap-1">
+                            {/* Ver no Site (Só se estiver disponível) */}
+                            {property.status === 'DISPONIVEL' && (
+                                <Link href={`/imoveis/${property.id}`} target="_blank" className="p-2 text-gray-400 hover:text-blue-600 transition hover:bg-blue-50 rounded" title="Ver Página">
+                                   <Eye size={18} />
+                                </Link>
+                            )}
+
+                            {/* Editar */}
+                            <Link href={`/admin/imoveis/editar/${property.id}`} className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" title="Editar">
+                               <Edit size={18} />
+                            </Link>
+                            
+                            {/* Deletar (Componente Client Side isolado) */}
+                            <DeletePropertyButton id={property.id} />
+                         </div>
+                      </td>
+
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -39,7 +39,29 @@ export async function PUT(
         const { id } = await params;
         const data = await request.json();
 
-        // 1. Tratamento de fotos (Array -> String única com separador ;)
+        // 1. Busca o imóvel existente para verificar quem é o dono
+        const existingProperty = await prisma.property.findUnique({ where: { id } });
+
+        if (!existingProperty) {
+            return NextResponse.json({ error: "Imóvel não existe" }, { status: 404 });
+        }
+
+        // 2. SEGURANÇA DE PROPRIEDADE (NOVO):
+        // Se o usuário NÃO for ADMIN e NÃO for o dono do imóvel -> BLOQUEIA A EDIÇÃO.
+        // Isso impede que um corretor edite o imóvel de outro via API.
+        if (session.user.role !== "ADMIN" && existingProperty.corretorId !== session.user.id) {
+            return NextResponse.json({ error: "Você não tem permissão para editar este imóvel." }, { status: 403 });
+        }
+
+        // 3. SEGURANÇA DE CAMPOS ADMINISTRATIVOS:
+        // Se o usuário NÃO for ADMIN, removemos status e destaque do objeto de atualização.
+        // Assim, o corretor pode editar o título/preço do SEU imóvel, mas não pode se auto-aprovar.
+        if (session.user.role !== "ADMIN") {
+            delete data.status;
+            delete data.destaque;
+        }
+
+        // 4. Tratamento de fotos (Array -> String única com separador ;)
         let fotosString = undefined;
         if (data.fotos && Array.isArray(data.fotos)) {
             fotosString = data.fotos.join(";");
@@ -47,15 +69,7 @@ export async function PUT(
             fotosString = data.fotos;
         }
 
-        // 2. SEGURANÇA CRÍTICA: Proteção de Campos Administrativos
-        // Se o usuário NÃO for ADMIN, removemos status e destaque do objeto de atualização.
-        // Isso impede que um corretor force a aprovação enviando um JSON modificado.
-        if (session.user.role !== "ADMIN") {
-            delete data.status;
-            delete data.destaque;
-        }
-
-        // 3. Atualização no Banco de Dados
+        // 5. Atualização no Banco de Dados
         const updatedProperty = await prisma.property.update({
             where: { id },
             data: {
@@ -74,7 +88,7 @@ export async function PUT(
                 // Atualiza fotos apenas se fotosString foi definido
                 ...(fotosString !== undefined && { fotos: fotosString }),
 
-                // Status e Destaque só atualizam se não tiverem sido deletados pela regra de segurança acima
+                // Status e Destaque só atualizam se não tiverem sido deletados pela regra de segurança (passo 3)
                 ...(data.status && { status: data.status }),
                 ...(data.destaque !== undefined && { destaque: data.destaque }),
 

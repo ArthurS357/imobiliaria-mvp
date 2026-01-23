@@ -1,68 +1,93 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { Resend } from "resend";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // Importação corrigida
-import { prisma } from "@/lib/prisma";    // Importação corrigida
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { hash } from "bcryptjs";
+import { Resend } from "resend"; // <--- Importe o Resend
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
     try {
-        // 1. SEGURANÇA: Pegar sessão do servidor
+        // 1. Segurança: Apenas ADMIN pode criar usuários
         const session = await getServerSession(authOptions);
 
-        if (!session || !session.user) {
-            return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-        }
-
-        if (session.user.role !== "ADMIN") {
-            return NextResponse.json(
-                { error: "Acesso negado. Apenas administradores." },
-                { status: 403 }
-            );
+        if (!session || session.user.role !== "ADMIN") {
+            return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
         }
 
         const data = await request.json();
-        const { email, name } = data;
+        const { name, email, password, role } = data;
 
-        // 2. Verificar duplicidade
-        const userExists = await prisma.user.findUnique({ where: { email } });
-        if (userExists) {
-            return NextResponse.json(
-                { error: "Este e-mail já está cadastrado." },
-                { status: 400 }
-            );
+        // Validação básica
+        if (!email || !password || !name) {
+            return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
         }
 
-        // 3. Criar usuário
-        const generatedPassword = Math.random().toString(36).slice(-8);
-        const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+        // Verifica se já existe
+        const userExists = await prisma.user.findUnique({ where: { email } });
+        if (userExists) {
+            return NextResponse.json({ error: "Email já cadastrado" }, { status: 400 });
+        }
+
+        // 2. Cria o usuário no banco
+        const hashedPassword = await hash(password, 10);
 
         const newUser = await prisma.user.create({
             data: {
-                email,
                 name,
+                email,
                 password: hashedPassword,
-                role: "FUNCIONARIO",
+                role: role || "FUNCIONARIO", // Padrão é funcionário se não vier nada
             },
         });
 
-        // 4. Enviar e-mail
-        await resend.emails.send({
-            from: "Imobiliaria MVP <onboarding@resend.dev>", // Altere para seu domínio verificado quando tiver
-            to: email,
-            subject: "Acesso ao Sistema Imobiliário",
-            html: `<p>Olá ${name},<br/>Login: ${email} <br /> Senha: ${generatedPassword}</p>`,
-        });
+        // 3. Envia o Email de Boas-Vindas (Resend)
+        try {
+            await resend.emails.send({
+                from: 'Imobiliária MVP <onboarding@resend.dev>', // Use seu domínio verificado se tiver, senão use o de teste do Resend
+                to: email, // O email do novo corretor
+                subject: 'Bem-vindo à Equipe! Suas credenciais de acesso',
+                html: `
+                <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                    <div style="background-color: #1e3a8a; padding: 24px; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">Bem-vindo, ${name}!</h1>
+                    </div>
+                    <div style="padding: 32px;">
+                        <p style="font-size: 16px; line-height: 1.5;">Olá,</p>
+                        <p style="font-size: 16px; line-height: 1.5;">É um prazer ter você em nossa equipe. Sua conta foi criada com sucesso pelo administrador.</p>
+                        <p style="font-size: 16px; line-height: 1.5;">Aqui estão suas informações para acessar o painel:</p>
+                        
+                        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 24px 0;">
+                            <p style="margin: 0 0 10px 0;"><strong>Email:</strong> ${email}</p>
+                            <p style="margin: 0;"><strong>Senha Provisória:</strong> ${password}</p>
+                        </div>
+                        
+                        <p style="font-size: 14px; color: #666;">Recomendamos que você anote essas informações com carinho ou troque sua senha no primeiro acesso.</p>
+                        
+                        <div style="text-align: center; margin-top: 32px;">
+                            <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/admin/login" style="background-color: #1e3a8a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Acessar Sistema</a>
+                        </div>
+                    </div>
+                    <div style="background-color: #f9fafb; padding: 16px; text-align: center; font-size: 12px; color: #9ca3af;">
+                        <p>© 2024 Imobiliária MVP. Todos os direitos reservados.</p>
+                    </div>
+                </div>
+            `,
+            });
+            console.log("Email de boas-vindas enviado para:", email);
+        } catch (emailError) {
+            // Não falhamos a criação da conta se o email falhar, apenas logamos
+            console.error("Erro ao enviar email de boas-vindas:", emailError);
+        }
 
         return NextResponse.json({
-            message: "Usuário criado com sucesso!",
-            userId: newUser.id
+            success: true,
+            user: { id: newUser.id, name: newUser.name, email: newUser.email }
         });
 
     } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: "Erro interno no servidor" }, { status: 500 });
+        console.error("Erro ao criar usuário:", error);
+        return NextResponse.json({ error: "Erro interno ao criar usuário" }, { status: 500 });
     }
 }
