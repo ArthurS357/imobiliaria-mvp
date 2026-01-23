@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, MessageSquare, Mail, Phone, Calendar, User } from "lucide-react";
-import { LeadAssigner } from "@/components/admin/LeadAssigner"; // Componente que criamos
+import { LeadAssigner } from "@/components/admin/LeadAssigner";
+import { LeadStatusUpdater } from "@/components/admin/LeadStatusUpdater"; // <--- NOVO COMPONENTE
 
 export default async function AdminMessagesPage() {
     const session = await getServerSession(authOptions);
@@ -21,13 +22,12 @@ export default async function AdminMessagesPage() {
         // ADMIN: Vê todas as mensagens + Carrega lista de corretores
         leads = await prisma.lead.findMany({
             orderBy: { createdAt: "desc" },
-            include: { assignedTo: true } // Inclui dados de quem está cuidando
+            include: { assignedTo: true }
         });
 
-        // Busca apenas usuários que são FUNCIONARIO (Corretores) ou ADMINS se eles também venderem
+        // Busca usuários (Corretores e Admins)
         brokers = await prisma.user.findMany({
             select: { id: true, name: true },
-            // Opcional: where: { role: "FUNCIONARIO" } se quiser listar só corretores
         });
 
     } else {
@@ -78,9 +78,9 @@ export default async function AdminMessagesPage() {
                                     {/* Conteúdo da Mensagem */}
                                     <div className="flex-grow space-y-3">
                                         <div className="flex items-center gap-2">
-                                            <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded uppercase tracking-wide">
-                                                {lead.status}
-                                            </span>
+                                            {/* --- AQUI MUDOU: Componente interativo de Status --- */}
+                                            <LeadStatusUpdater id={lead.id} currentStatus={lead.status} />
+
                                             <span className="text-xs text-gray-400 flex items-center gap-1">
                                                 <Calendar size={12} /> {new Date(lead.createdAt).toLocaleDateString('pt-BR')} às {new Date(lead.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
