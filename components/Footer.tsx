@@ -54,15 +54,15 @@ export function Footer() {
                         <ul className="space-y-4 text-sm flex flex-col items-center md:items-start">
                             <li className="flex items-center gap-3">
                                 <MapPin size={18} className="text-red-500 flex-shrink-0" />
-                                <span>Centro - São Paulo/SP</span>
+                                <span>Arujá - São Paulo/SP</span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Phone size={18} className="text-red-500 flex-shrink-0" />
-                                <span>(11) 99999-9999</span>
+                                <span>(11) 94600-9103</span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Mail size={18} className="text-red-500 flex-shrink-0" />
-                                <span>contato@imobiliariamvp.com</span>
+                                <span>brenomatiello@gmail.com </span>
                             </li>
                         </ul>
                     </div>
@@ -70,7 +70,7 @@ export function Footer() {
 
                 {/* Rodapé Inferior */}
                 <div className="border-t border-gray-800 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500 text-center md:text-left">
-                    <p>© 2026 Imobiliária MVP. Todos os direitos reservados.</p>
+                    <p>© 2026 Matiello Imoveis. Todos os direitos reservados.</p>
                     <div className="flex gap-4 md:gap-6">
                         <span>CRECI: 12345-J</span>
                         <Link href="#" className="hover:text-gray-300">Privacidade</Link>

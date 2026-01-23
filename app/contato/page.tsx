@@ -68,11 +68,11 @@ export default function ContactPage() {
                             <div className="space-y-6">
                                 <div className="flex items-start gap-4">
                                     <div className="bg-white p-3 rounded-lg shadow-sm text-blue-900"><Phone size={24} /></div>
-                                    <div><h3 className="font-bold text-gray-900">Telefone</h3><p className="text-gray-600">(11) 99999-9999</p></div>
+                                    <div><h3 className="font-bold text-gray-900">Telefone</h3><p className="text-gray-600">(11) 94600-9103</p></div>
                                 </div>
                                 <div className="flex items-start gap-4">
                                     <div className="bg-white p-3 rounded-lg shadow-sm text-blue-900"><Mail size={24} /></div>
-                                    <div><h3 className="font-bold text-gray-900">E-mail</h3><p className="text-gray-600">contato@mvp.com</p></div>
+                                    <div><h3 className="font-bold text-gray-900">E-mail</h3><p className="text-gray-600">brenomatiello@gmail.com </p></div>
                                 </div>
                             </div>
                         </div>

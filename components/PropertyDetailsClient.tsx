@@ -119,7 +119,7 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                 </div>
 
                                 <div className="space-y-4">
-                                    <a href={`https://wa.me/5511999999999?text=${mensagemZap}`} target="_blank" className="w-full bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 transform">
+                                    <a href={`https://wa.me/5511946009103?text=${mensagemZap}`} target="_blank" className="w-full bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 transform">
                                         <MessageCircle size={22} /> Chamar no WhatsApp
                                     </a>
 
