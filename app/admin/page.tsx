@@ -1,12 +1,9 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "../api/auth/[...nextauth]/route"; // Ajuste o caminho conforme sua estrutura
+import { authOptions } from "@/lib/auth"; // <--- Importação Corrigida aqui
 import { DashboardClient } from "@/components/admin/DashboardClient";
 import { Home, TrendingUp, Clock } from "lucide-react";
-import { PrismaClient } from "@prisma/client";
-
-// Inicializa Prisma para contar os dados reais (Opcional agora, mas bom para o MVP)
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma"; // <--- Usando o prisma singleton correto
 
 export default async function AdminDashboardPage() {
     // 1. SEGURANÇA: Verifica sessão no lado do servidor
@@ -16,16 +13,18 @@ export default async function AdminDashboardPage() {
         redirect("/admin/login");
     }
 
-    // Se quiser bloquear não-admins de verem essa tela:
+    // Bloqueio extra opcional
     if (session.user.role !== "ADMIN") {
         return (
-            <div className="p-8 text-center text-red-600">
-                Acesso restrito a administradores. <a href="/" className="underline">Voltar</a>
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-red-600 bg-gray-50">
+                <h1 className="text-2xl font-bold">Acesso restrito</h1>
+                <p>Esta área é exclusiva para administradores.</p>
+                <a href="/" className="px-4 py-2 bg-gray-200 rounded text-gray-800 hover:bg-gray-300 transition">Voltar para o Site</a>
             </div>
         )
     }
 
-    [cite_start]// 2. DADOS: Busca contadores para o Dashboard (Cláusula 2.2 do contrato) [cite: 32]
+    // 2. DADOS: Busca contadores reais do banco
     const totalImoveis = await prisma.property.count();
     const imoveisPendentes = await prisma.property.count({ where: { status: "PENDENTE" } });
     const imoveisVendidos = await prisma.property.count({ where: { status: "VENDIDO" } });
@@ -34,7 +33,7 @@ export default async function AdminDashboardPage() {
         <div className="min-h-screen bg-gray-50 pb-10">
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-                {/* Componente Cliente (Logout e Criar Usuário) */}
+                {/* Componente Cliente (Logout, Criar Usuário e Ações Rápidas) */}
                 <DashboardClient user={session.user} />
 
                 {/* Estatísticas Rápidas (Cards) */}

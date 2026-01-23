@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { UserPlus, LogOut, Save, ShieldCheck, Building, PlusCircle } from "lucide-react";
+import { UserPlus, LogOut, Save, ShieldCheck, Building, PlusCircle, List } from "lucide-react";
 
 export function DashboardClient({ user }: { user: { name?: string | null; email?: string | null; role?: string } }) {
     const [newUserEmail, setNewUserEmail] = useState("");
@@ -57,7 +57,7 @@ export function DashboardClient({ user }: { user: { name?: string | null; email?
                 </button>
             </div>
 
-            {/* --- NOVO: Área de Gestão de Imóveis (Destaque) --- */}
+            {/* --- ÁREA DE GESTÃO DE IMÓVEIS (Atualizada) --- */}
             <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-lg shadow-md p-6 text-white flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
                     <h2 className="text-xl font-bold flex items-center gap-2">
@@ -67,12 +67,23 @@ export function DashboardClient({ user }: { user: { name?: string | null; email?
                         Cadastre novos imóveis ou gerencie os anúncios existentes.
                     </p>
                 </div>
-                <Link
-                    href="/admin/imoveis/novo"
-                    className="bg-white text-blue-900 px-5 py-3 rounded font-medium hover:bg-gray-100 transition shadow-sm flex items-center gap-2 hover:scale-105 transform duration-200"
-                >
-                    <PlusCircle size={20} /> Cadastrar Novo Imóvel
-                </Link>
+
+                {/* Botões de Ação */}
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    <Link
+                        href="/admin/imoveis"
+                        className="bg-blue-700 text-white px-5 py-3 rounded font-medium hover:bg-blue-600 transition shadow-sm flex items-center justify-center gap-2 border border-blue-500"
+                    >
+                        <List size={20} /> Gerenciar Anúncios
+                    </Link>
+
+                    <Link
+                        href="/admin/imoveis/novo"
+                        className="bg-white text-blue-900 px-5 py-3 rounded font-medium hover:bg-gray-100 transition shadow-sm flex items-center justify-center gap-2 hover:scale-105 transform duration-200"
+                    >
+                        <PlusCircle size={20} /> Cadastrar Novo
+                    </Link>
+                </div>
             </div>
 
             {/* Seção de Gestão de Equipe (Apenas Admin vê) */}
