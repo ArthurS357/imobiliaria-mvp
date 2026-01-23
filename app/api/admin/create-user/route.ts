@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { Resend } from "resend";
-import { getServerSession } from "next-auth"; // Importar sessão
-import { authOptions } from "../../auth/[...nextauth]/route"; // Importar configs
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth"; // Importação corrigida
+import { prisma } from "@/lib/prisma";    // Importação corrigida
 
-const prisma = new PrismaClient();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
@@ -17,7 +16,6 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
         }
 
-        // Verificar se é ADMIN de verdade (via Banco ou Sessão)
         if (session.user.role !== "ADMIN") {
             return NextResponse.json(
                 { error: "Acesso negado. Apenas administradores." },
@@ -26,9 +24,9 @@ export async function POST(request: Request) {
         }
 
         const data = await request.json();
-        const { email, name } = data; // NÃO precisamos mais receber currentUserId
+        const { email, name } = data;
 
-        // 2. Verificar se o email já existe
+        // 2. Verificar duplicidade
         const userExists = await prisma.user.findUnique({ where: { email } });
         if (userExists) {
             return NextResponse.json(
@@ -37,7 +35,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // 3. Gerar senha e criar usuário (Igual ao anterior)
+        // 3. Criar usuário
         const generatedPassword = Math.random().toString(36).slice(-8);
         const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
@@ -50,21 +48,21 @@ export async function POST(request: Request) {
             },
         });
 
-        // 4. Enviar e-mail (Igual ao anterior)
+        // 4. Enviar e-mail
         await resend.emails.send({
-            from: "Imobiliaria MVP <onboarding@resend.dev>", // Use o domínio de teste do Resend se não tiver um próprio ainda
+            from: "Imobiliaria MVP <onboarding@resend.dev>", // Altere para seu domínio verificado quando tiver
             to: email,
             subject: "Acesso ao Sistema Imobiliário",
-            html: `<p>Login: ${email} <br /> Senha: ${generatedPassword}</p>`,
+            html: `<p>Olá ${name},<br/>Login: ${email} <br /> Senha: ${generatedPassword}</p>`,
         });
 
         return NextResponse.json({
-            message: "Usuário criado com segurança!",
+            message: "Usuário criado com sucesso!",
             userId: newUser.id
         });
 
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+        return NextResponse.json({ error: "Erro interno no servidor" }, { status: 500 });
     }
 }

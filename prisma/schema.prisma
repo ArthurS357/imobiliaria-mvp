@@ -1,79 +1,66 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // Conexão com Supabase ou Postgres local
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
-// 1. Hierarquia de Usuários (Controle de Acesso)
-enum Role {
-  ADMIN       // Pode criar usuários, aprovar imóveis e promover outros admins
-  FUNCIONARIO // Pode apenas cadastrar imóveis (ficam pendentes) e visualizar
-}
-
-// 2. Status do Imóvel (Fluxo de Aprovação)
-enum PropertyStatus {
-  PENDENTE   // Status inicial ao ser criado por funcionário
-  DISPONIVEL // Aprovado pelo Admin (visível no site)
-  VENDIDO    // Contabilizado no Dashboard
-  RESERVADO  // Não aparece na busca, mas não está vendido
-}
-
-// Modelo de Usuário (Corretores e Admins)
+// Modelo de Usuário
 model User {
   id        String   @id @default(cuid())
   name      String
   email     String   @unique
-  password  String   // Senha criptografada (hash)
+  password  String   // Senha hash
   
-  // Define o nível de acesso. Padrão é FUNCIONARIO para segurança.
-  role      Role     @default(FUNCIONARIO)
+  // SQLite não suporta Enum, então usamos String.
+  // Valores esperados: "ADMIN" ou "FUNCIONARIO"
+  role      String   @default("FUNCIONARIO")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relacionamento: Imóveis que este usuário cadastrou/é responsável
   properties Property[]
 
-  @@map("users") // Boas práticas: nome da tabela em minúsculo no banco
+  @@map("users")
 }
 
-// Modelo de Imóvel (MVP)
+// Modelo de Imóvel
 model Property {
-  id          String         @id @default(cuid())
+  id          String   @id @default(cuid())
   
-  // Informações Básicas
   titulo      String
   descricao   String
-  tipo        String         // Ex: Casa, Apartamento, Terreno (Para filtros)
-  preco       Decimal        @db.Decimal(10, 2)
+  tipo        String
   
-  // Localização (Para filtros de Bairro e Cidade)
+  // SQLite suporta Decimal, mas sem a configuração de precisão (@db.Decimal)
+  preco       Decimal 
+  
   cidade      String
   bairro      String
-  endereco    String?        // Pode ser oculto no site público
+  endereco    String?
   
-  // Características
-  quarto      Int            @default(0)
-  banheiro    Int            @default(0)
-  garagem     Int            @default(0)
-  area        Float          // Em metros quadrados
+  quarto      Int      @default(0)
+  banheiro    Int      @default(0)
+  garagem     Int      @default(0)
+  area        Float
   
-  // Mídia
-  fotos       String[]       // Lista de URLs das imagens
+  // SQLite não aceita listas (String[]). 
+  // Vamos salvar como String única (Ex: "url1;url2;url3")
+  fotos       String   @default("") 
   
-  // Controle
-  status      PropertyStatus @default(PENDENTE)
-  destaque    Boolean        @default(false) // Se true, aparece no carrossel da Home
+  // Valores esperados: "PENDENTE", "DISPONIVEL", "VENDIDO", "RESERVADO"
+  status      String   @default("PENDENTE")
+  destaque    Boolean  @default(false)
 
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  // Relacionamento com o Corretor (Quem cadastrou)
   corretorId  String
-  corretor    User           @relation(fields: [corretorId], references: [id])
+  corretor    User     @relation(fields: [corretorId], references: [id])
 
   @@map("properties")
 }
