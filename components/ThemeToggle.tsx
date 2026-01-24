@@ -8,25 +8,21 @@ export function ThemeToggle() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = React.useState(false);
 
-    // Evita erro de hidratação (só renderiza depois que montar no cliente)
-    React.useEffect(() => {
-        setMounted(true);
-    }, []);
+    React.useEffect(() => setMounted(true), []);
 
-    if (!mounted) {
-        return <div className="w-10 h-10" />; // Placeholder para evitar pulo visual
-    }
+    if (!mounted) return <div className="w-10 h-10" />;
 
     return (
         <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 text-blue-900 dark:text-blue-400 shadow-sm border border-transparent dark:border-gray-700"
             title="Alternar Tema"
         >
+            {/* Lógica: Se dark, mostra Lua. Se light, mostra Sol. */}
             {theme === "dark" ? (
-                <Sun size={20} className="text-yellow-500" />
+                <Moon size={20} className="fill-current" />
             ) : (
-                <Moon size={20} className="text-blue-900" />
+                <Sun size={20} className="fill-current" />
             )}
         </button>
     );

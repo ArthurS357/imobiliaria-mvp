@@ -1,7 +1,8 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma"; // Usando o singleton que criamos acima
+import { prisma } from "@/lib/prisma";
+import { loginSchema } from "@/lib/validations"; // <--- Importamos o schema de validação
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -12,27 +13,36 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Senha", type: "password" }
             },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    throw new Error("Dados incompletos");
+                // 1. Validação de Segurança com Zod
+                // Verifica se o formato do email e tamanho da senha estão corretos antes de ir ao banco
+                const result = loginSchema.safeParse(credentials);
+
+                if (!result.success) {
+                    throw new Error("Dados inválidos. Verifique email e senha.");
                 }
 
+                const { email, password } = result.data;
+
+                // 2. Busca no Banco de Dados
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email }
+                    where: { email }
                 });
 
                 if (!user || !user.password) {
-                    throw new Error("Usuário não encontrado");
+                    throw new Error("Usuário não encontrado.");
                 }
 
+                // 3. Verifica a Senha (Hash)
                 const isPasswordValid = await bcrypt.compare(
-                    credentials.password,
+                    password,
                     user.password
                 );
 
                 if (!isPasswordValid) {
-                    throw new Error("Senha incorreta");
+                    throw new Error("Senha incorreta.");
                 }
 
+                // 4. Retorna o usuário para a sessão
                 return {
                     id: user.id,
                     name: user.name,
@@ -52,14 +62,14 @@ export const authOptions: NextAuthOptions = {
         },
         async session({ session, token }) {
             if (session.user) {
-                session.user.id = token.id;
-                session.user.role = token.role;
+                session.user.id = token.id as string;
+                session.user.role = token.role as string;
             }
             return session;
         }
     },
     pages: {
-        signIn: "/admin/login",
+        signIn: "/admin/login", // Página customizada de login
     },
     session: {
         strategy: "jwt",

@@ -1,27 +1,28 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { leadSchema } from "@/lib/validations"; // Importe o Zod
 
 export async function POST(request: Request) {
     try {
-        const data = await request.json();
+        const body = await request.json();
 
-        // Validação básica
-        if (!data.name || !data.email || !data.message) {
-            return NextResponse.json({ error: "Campos obrigatórios faltando." }, { status: 400 });
+        // VALIDAÇÃO ZOD
+        const validation = leadSchema.safeParse(body);
+        if (!validation.success) {
+            return NextResponse.json(
+                { error: "Dados inválidos", details: validation.error.format() },
+                { status: 400 }
+            );
         }
 
+        const { name, email, phone, message } = validation.data;
+
         const lead = await prisma.lead.create({
-            data: {
-                name: data.name,
-                email: data.email,
-                phone: data.phone,
-                message: data.message,
-            },
+            data: { name, email, phone, message },
         });
 
-        return NextResponse.json(lead);
+        return NextResponse.json(lead, { status: 201 });
     } catch (error) {
-        console.error("Erro ao salvar lead:", error);
-        return NextResponse.json({ error: "Erro interno ao salvar mensagem." }, { status: 500 });
+        return NextResponse.json({ error: "Erro ao enviar mensagem" }, { status: 500 });
     }
 }
