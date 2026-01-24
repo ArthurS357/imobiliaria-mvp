@@ -13,13 +13,22 @@ export function Footer() {
                     <div className="space-y-4">
                         <div className="flex items-center justify-center md:justify-start gap-2 text-white font-bold text-xl mb-2">
                             <Building2 className="text-red-600" />
-                            IMOBILIÁRIA<span className="text-red-600">MVP</span>
+                            MATIELLO<span className="text-red-600">IMÓVEIS</span>
                         </div>
                         <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto md:mx-0">
-                            Conectando pessoas aos seus sonhos há mais de 10 anos. Transparência, segurança e agilidade.
+                            Conectando pessoas aos seus sonhos há mais de 2 anos. Transparência, segurança e agilidade.
                         </p>
                         <div className="flex justify-center md:justify-start gap-4 pt-2">
-                            <a href="#" className="hover:text-white transition bg-gray-800 p-2 rounded-full hover:bg-blue-600"><Instagram size={18} /></a>
+                            {/* Link do Instagram Atualizado */}
+                            <a
+                                href="https://www.instagram.com/matiello_imoveis?igsh=djRmMXh1bmN5ZTBr"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-white transition bg-gray-800 p-2 rounded-full hover:bg-blue-600"
+                            >
+                                <Instagram size={18} />
+                            </a>
+
                             <a href="#" className="hover:text-white transition bg-gray-800 p-2 rounded-full hover:bg-blue-800"><Facebook size={18} /></a>
                             <a href="#" className="hover:text-white transition bg-gray-800 p-2 rounded-full hover:bg-blue-700"><Linkedin size={18} /></a>
                         </div>
@@ -38,7 +47,7 @@ export function Footer() {
                     </div>
 
                     {/* Coluna 3: Categorias */}
-                    <div className="hidden md:block"> {/* Ocultar categorias no mobile para economizar espaço? Ou manter: */}
+                    <div className="hidden md:block">
                         <h3 className="text-white font-bold mb-4">Categorias</h3>
                         <ul className="space-y-3 text-sm">
                             <li><Link href="/imoveis?tipo=Casa" className="hover:text-white transition">Casas à Venda</Link></li>
@@ -72,7 +81,7 @@ export function Footer() {
                 <div className="border-t border-gray-800 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500 text-center md:text-left">
                     <p>© 2026 Matiello Imoveis. Todos os direitos reservados.</p>
                     <div className="flex gap-4 md:gap-6">
-                        <span>CRECI: 12345-J</span>
+                        <span>CRECI: 2999283-F</span>
                         <Link href="#" className="hover:text-gray-300">Privacidade</Link>
                     </div>
                 </div>

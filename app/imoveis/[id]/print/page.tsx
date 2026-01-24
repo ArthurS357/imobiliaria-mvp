@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { MapPin, Bed, Bath, Car, Maximize, Phone, Mail } from "lucide-react";
+import { PrintTrigger } from "@/components/PrintTrigger"; // <--- Importe o novo componente
 
 export default async function PrintPropertyPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -19,15 +20,11 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
         <div className="bg-white min-h-screen text-gray-900 p-8 max-w-[210mm] mx-auto print:p-0 print:max-w-none">
 
             {/* Botão para Imprimir (some na impressão) */}
-            <div className="mb-8 print:hidden flex justify-between items-center bg-gray-100 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Este é o modo de visualização para impressão/PDF.</p>
-                <button
-                    // @ts-ignore
-                    onClick={() => window.print()}
-                    className="bg-blue-900 text-white px-6 py-2 rounded font-bold hover:bg-blue-800"
-                >
-                    Imprimir / Salvar PDF
-                </button>
+            <div className="mb-8 print:hidden flex justify-between items-center bg-gray-100 p-4 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-600 font-medium">Este é o modo de visualização para impressão (A4).</p>
+
+                {/* Usamos o componente Client aqui para não dar erro */}
+                <PrintTrigger />
             </div>
 
             {/* CABEÇALHO */}
@@ -48,13 +45,14 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
 
             {/* IMAGEM PRINCIPAL */}
             {fotoPrincipal && (
-                <div className="w-full h-96 bg-gray-200 mb-6 rounded-lg overflow-hidden border border-gray-100">
+                <div className="w-full h-96 bg-gray-200 mb-6 rounded-lg overflow-hidden border border-gray-100 relative print:h-[300px]">
+                    {/* Usamos img normal para garantir impressão correta em todos navegadores */}
                     <img src={fotoPrincipal} alt="Capa" className="w-full h-full object-cover" />
                 </div>
             )}
 
             {/* GRID DE CARACTERÍSTICAS */}
-            <div className="grid grid-cols-4 gap-4 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
+            <div className="grid grid-cols-4 gap-4 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-100 print:bg-white print:border-y print:border-x-0 print:rounded-none">
                 <div className="text-center">
                     <Bed className="mx-auto text-blue-900 mb-2" size={32} />
                     <span className="block text-2xl font-bold">{property.quarto}</span>
@@ -81,7 +79,7 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
             <div className="grid grid-cols-3 gap-8 mb-8">
                 <div className="col-span-2">
                     <h2 className="text-xl font-bold text-gray-800 mb-3 border-b pb-2">Sobre o Imóvel</h2>
-                    <p className="text-gray-600 text-justify leading-relaxed text-sm whitespace-pre-line">
+                    <p className="text-gray-600 text-justify leading-relaxed text-sm whitespace-pre-line font-medium">
                         {property.descricao}
                     </p>
                 </div>
@@ -95,7 +93,7 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
             </div>
 
             {/* RODAPÉ COM CONTATO DO CORRETOR */}
-            <footer className="mt-auto border-t-2 border-gray-200 pt-6 flex items-center justify-between bg-gray-50 p-6 rounded-xl print:bg-transparent print:p-0 print:mt-10">
+            <footer className="mt-auto border-t-2 border-gray-200 pt-6 flex items-center justify-between bg-gray-50 p-6 rounded-xl print:bg-transparent print:p-0 print:mt-10 break-inside-avoid">
                 <div>
                     <p className="text-xs text-gray-400 uppercase font-bold mb-1">Responsável pelo Imóvel</p>
                     <p className="text-xl font-bold text-blue-900">{property.corretor.name}</p>

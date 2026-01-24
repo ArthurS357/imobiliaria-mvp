@@ -16,7 +16,7 @@ export default function AboutPage() {
                         <span className="text-blue-300">concretizando negócios.</span>
                     </h1>
                     <p className="text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed">
-                        Há mais de 10 anos conectando pessoas aos seus lares ideais com transparência, agilidade e segurança jurídica.
+                        Há mais de 2 anos conectando pessoas aos seus lares ideais com transparência, agilidade e segurança jurídica.
                     </p>
                 </div>
             </div>
@@ -31,7 +31,7 @@ export default function AboutPage() {
                         </h2>
                         <div className="w-20 h-1.5 bg-red-600 rounded-full"></div>
                         <p className="text-gray-600 text-lg leading-relaxed">
-                            Fundada com o objetivo de transformar o mercado imobiliário local, a <strong>IMOBILIÁRIA<span className="text-red-600">MVP</span></strong> nasceu da necessidade de um atendimento mais humano e tecnológico.
+                            Fundada com o objetivo de transformar o mercado imobiliário local, a <strong>MATIELLO<span className="text-red-600">IMÓVEIS</span></strong> nasceu da necessidade de um atendimento mais humano e tecnológico.
                         </p>
                         <p className="text-gray-600 text-lg leading-relaxed">
                             Entendemos que comprar ou vender um imóvel não é apenas uma transação financeira, mas um passo importante na vida de cada cliente. Por isso, investimos continuamente em tecnologia e na capacitação da nossa equipe.
@@ -56,7 +56,7 @@ export default function AboutPage() {
                 {/* --- DIFERENCIAIS --- */}
                 <div className="mb-24">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-gray-900">Por que escolher a MVP?</h2>
+                        <h2 className="text-3xl font-bold text-gray-900">Por que escolher a MATIELLO?</h2>
                         <p className="text-gray-500 mt-4 max-w-2xl mx-auto">
                             Nosso compromisso vai além da entrega das chaves.
                         </p>
@@ -109,7 +109,7 @@ export default function AboutPage() {
                     </div>
 
                     <div className="flex flex-col gap-4 w-full md:w-auto">
-                        <a href="https://wa.me/5511999999999" className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-lg text-center transition shadow-lg transform hover:-translate-y-1">
+                        <a href="https://wa.me/5511946009103" className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-lg text-center transition shadow-lg transform hover:-translate-y-1">
                             Falar no WhatsApp
                         </a>
                         <Link href="/contato" className="bg-transparent border-2 border-white hover:bg-white hover:text-blue-900 text-white font-bold py-4 px-8 rounded-lg text-center transition">

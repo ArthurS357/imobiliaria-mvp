@@ -8,8 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Matiello Imoveis | Imóveis em Arujá e Região",
   description: "Encontre a casa dos seus sonhos. Venda e locação de imóveis.",
-  // REMOVA A PARTE DE "icons" AQUI. 
-  // O Next.js vai detectar automaticamente o arquivo app/icon.png
+  // O Next.js detecta automaticamente o app/icon.png, não precisa configurar aqui
 };
 
 export default function RootLayout({
@@ -18,7 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    // suppressHydrationWarning é necessário para o next-themes funcionar sem erros
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
           {children}
