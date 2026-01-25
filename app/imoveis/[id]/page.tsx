@@ -31,11 +31,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
+    // Busca o imóvel e os dados do corretor (incluindo CRECI)
     const property = await prisma.property.findUnique({
         where: { id },
         include: {
             corretor: {
-                select: { name: true, email: true },
+                select: {
+                    name: true,
+                    email: true,
+                    creci: true // <--- ADICIONADO: Busca o CRECI do banco
+                },
             },
         },
     });
@@ -52,6 +57,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         orderBy: { createdAt: "desc" },
     });
 
+    // Serialização para passar objetos Date e Decimal do Prisma para o Client Component
     const serializedProperty = JSON.parse(JSON.stringify(property));
     const serializedRelated = JSON.parse(JSON.stringify(relatedProperties));
 

@@ -9,7 +9,7 @@ import { MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar, A
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// Carregamento dinâmico do Mapa (Client-side only)
+// Carregamento dinâmico do Mapa
 const MapClient = dynamic(() => import("@/components/Map"), {
     ssr: false,
     loading: () => (
@@ -36,7 +36,6 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
     const fotos = property.fotos ? property.fotos.split(";") : [];
     const mensagemZap = encodeURIComponent(`Olá! Vi o imóvel "${property.titulo}" no site e gostaria de mais informações.`);
 
-    // Verifica se tem coordenadas
     const showMap = property.latitude && property.longitude;
 
     return (
@@ -104,12 +103,10 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                             </div>
                         </div>
 
-                        {/* --- LOCALIZAÇÃO E MAPA --- */}
+                        {/* Mapa */}
                         {showMap && (
                             <div className="border-t border-gray-100 dark:border-gray-700 pt-8">
                                 <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Localização</h3>
-
-                                {/* Endereço por extenso */}
                                 <div className="flex items-start md:items-center gap-2 text-gray-600 dark:text-gray-300 mb-4">
                                     <MapPin size={20} className="text-blue-900 dark:text-blue-400 flex-shrink-0 mt-1 md:mt-0" />
                                     <span className="break-words">
@@ -117,8 +114,6 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                         {property.bairro}, {property.cidade}
                                     </span>
                                 </div>
-
-                                {/* Mapa: Altura ajustada (h-72 mobile, h-96 desktop) e Largura total */}
                                 <div className="h-72 md:h-96 w-full rounded-xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-600">
                                     <MapClient properties={[property]} />
                                 </div>
@@ -160,7 +155,12 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                         </div>
                                         <div className="min-w-0">
                                             <p className="font-bold text-gray-900 dark:text-white text-sm truncate">{property.corretor?.name || "Corretor de Plantão"}</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">CRECI: 12345-F</p>
+                                            {/* EXIBIÇÃO DINÂMICA DO CRECI */}
+                                            {property.corretor?.creci ? (
+                                                <p className="text-xs text-blue-600 dark:text-blue-400 font-bold">CRECI: {property.corretor.creci}</p>
+                                            ) : (
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">CRECI não informado</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

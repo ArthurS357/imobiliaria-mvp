@@ -12,6 +12,7 @@ import {
     LayoutDashboard,
     TrendingUp
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle"; // Importando o ThemeToggle
 
 export default async function AdminDashboard() {
     const session = await getServerSession(authOptions);
@@ -29,7 +30,7 @@ export default async function AdminDashboard() {
     const totalMensagens = await prisma.lead.count();
     const totalVisitas = await prisma.visit.count({ where: { status: "PENDENTE" } });
 
-    // Estatísticas específicas do corretor (Opcional)
+    // Estatísticas específicas do corretor
     const meusImoveis = !isAdmin
         ? await prisma.property.count({ where: { corretorId: session.user.id } })
         : 0;
@@ -44,33 +45,49 @@ export default async function AdminDashboard() {
                         <LayoutDashboard size={24} />
                     </div>
                     <div>
-                        <span className="font-bold text-xl tracking-tight block leading-none">Painel {isAdmin ? 'Admin' : 'Corretor'}</span>
+                        <span className="font-bold text-xl tracking-tight block leading-none text-gray-900 dark:text-white">
+                            Painel {isAdmin ? 'Admin' : 'Corretor'}
+                        </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">Bem-vindo de volta</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-6">
-                    <div className="text-right hidden sm:block">
+
+                <div className="flex items-center gap-4 md:gap-6">
+                    {/* Botão de Modo Escuro */}
+                    <div className="hidden sm:block">
+                        <ThemeToggle />
+                    </div>
+
+                    <div className="text-right hidden sm:block border-r border-gray-200 dark:border-gray-700 pr-6 mr-2">
                         <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{userName}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full inline-block mt-0.5">
                             {userRole}
                         </p>
                     </div>
+
+                    {/* Botão de Logout Melhorado */}
                     <Link
                         href="/api/auth/signout"
-                        className="p-2 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
-                        title="Sair"
+                        className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg transition-all font-medium text-sm group"
+                        title="Sair da conta"
                     >
-                        <LogOut size={20} />
+                        <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
+                        <span className="hidden md:inline">Sair</span>
                     </Link>
                 </div>
             </header>
 
             <main className="flex-grow p-6 max-w-7xl mx-auto w-full animate-enter">
 
+                {/* --- Visível apenas em Mobile (Theme Toggle) --- */}
+                <div className="sm:hidden flex justify-end mb-4">
+                    <ThemeToggle />
+                </div>
+
                 {/* Métricas (Cards) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     {/* Card 1 */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:shadow-md transition-all">
                         <div>
                             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">Imóveis Cadastrados</p>
                             <p className="text-4xl font-extrabold text-gray-800 dark:text-white tracking-tight">
@@ -84,7 +101,7 @@ export default async function AdminDashboard() {
                     </div>
 
                     {/* Card 2 */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:shadow-md transition-all">
                         <div>
                             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">Visitas Pendentes</p>
                             <p className="text-4xl font-extrabold text-gray-800 dark:text-white tracking-tight">{totalVisitas}</p>
@@ -95,7 +112,7 @@ export default async function AdminDashboard() {
                     </div>
 
                     {/* Card 3 */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:shadow-md transition-all">
                         <div>
                             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">Novos Leads</p>
                             <p className="text-4xl font-extrabold text-gray-800 dark:text-white tracking-tight">{totalMensagens}</p>
