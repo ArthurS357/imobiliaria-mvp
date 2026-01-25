@@ -17,7 +17,6 @@ export async function POST(request: Request) {
         }
 
         const data = await request.json();
-        // ADICIONADO: 'creci' na desestruturação
         const { name, email, password, role, creci } = data;
 
         // Validação básica
@@ -39,15 +38,22 @@ export async function POST(request: Request) {
                 name,
                 email,
                 password: hashedPassword,
-                role: role || "FUNCIONARIO", // Padrão é funcionário se não vier nada
-                creci: creci || null,        // <--- ADICIONADO: Salva o CRECI (ou null se vazio)
+                role: role || "FUNCIONARIO",
+                creci: creci || null,
             },
         });
 
-        // 3. Envia o Email de Boas-Vindas (Resend)
+        // 3. Envia o Email de Boas-Vindas
+        let emailSent = false;
+
+        // Define o remetente: usa variável de ambiente ou fallback para o teste
+        // Em produção, configure EMAIL_FROM=nao-responda@seudominio.com.br
+        const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+        const fromName = "Matiello Imóveis";
+
         try {
-            await resend.emails.send({
-                from: 'Matiello Imóveis <onboarding@resend.dev>', // Use seu domínio verificado se tiver
+            const { error } = await resend.emails.send({
+                from: `${fromName} <${fromEmail}>`,
                 to: email,
                 subject: 'Bem-vindo à Equipe! Suas credenciais de acesso',
                 html: `
@@ -78,14 +84,24 @@ export async function POST(request: Request) {
                 </div>
             `,
             });
-            console.log("Email de boas-vindas enviado para:", email);
+
+            if (error) {
+                console.error("Resend API Error:", error);
+                emailSent = false;
+            } else {
+                console.log("Email de boas-vindas enviado para:", email);
+                emailSent = true;
+            }
+
         } catch (emailError) {
-            // Não falhamos a criação da conta se o email falhar, apenas logamos
-            console.error("Erro ao enviar email de boas-vindas:", emailError);
+            console.error("Erro inesperado no envio de email:", emailError);
+            emailSent = false;
         }
 
+        // 4. Retorna sucesso da criação + status do email
         return NextResponse.json({
             success: true,
+            emailSent: emailSent, // O frontend pode usar isso para exibir um alerta se for false
             user: { id: newUser.id, name: newUser.name, email: newUser.email }
         });
 
