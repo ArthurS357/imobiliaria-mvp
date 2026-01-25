@@ -21,7 +21,6 @@ interface Property {
     id: string;
     titulo: string;
     preco: number;
-    // CORREÇÃO AQUI: Adicionado '| null'
     latitude?: number | null;
     longitude?: number | null;
     fotos?: string | null; // Fotos também podem vir null do banco

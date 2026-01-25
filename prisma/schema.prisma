@@ -112,7 +112,7 @@ model Visit {
   property    Property @relation(fields: [propertyId], references: [id])
   propertyId  String
 
-  // NOVO: Quem é o corretor responsável por essa visita?
+  // Quem é o corretor responsável por essa visita?
   assignedToId  String?
   assignedTo    User?   @relation("AssignedVisits", fields: [assignedToId], references: [id])
 

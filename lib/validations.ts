@@ -16,10 +16,10 @@ export const leadSchema = z.object({
 
 // Schema para Visita
 export const visitSchema = z.object({
-    propertyId: z.string(), // <--- MUDANÇA: Removemos .cuid() para aceitar qualquer ID válido do banco
+    propertyId: z.string(), // <--- .cuid() para aceitar qualquer ID válido do banco
     date: z.string().refine((val) => !isNaN(Date.parse(val)), "Data inválida"),
     timeOfDay: z.enum(["MANHA", "TARDE"]),
     name: z.string().min(2, "Nome muito curto"),
     email: z.string().email("Email inválido"),
-    phone: z.string().or(z.literal("")).optional(), // <--- MUDANÇA: Aceita explicitamente string vazia ""
+    phone: z.string().or(z.literal("")).optional(), // <--- Aceita explicitamente string vazia ""
 });

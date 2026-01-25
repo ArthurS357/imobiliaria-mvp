@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const preco = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(property.preco));
 
     return {
-        title: `${property.titulo} | Imobiliária MVP`,
+        title: `${property.titulo} | Matiello Imóveis`,
         description: `Confira este imóvel em ${property.cidade} por ${preco}.`,
         openGraph: {
             title: property.titulo,
@@ -39,7 +39,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
                 select: {
                     name: true,
                     email: true,
-                    creci: true // <--- ADICIONADO: Busca o CRECI do banco
+                    creci: true // <--- Busca o CRECI do banco
                 },
             },
         },

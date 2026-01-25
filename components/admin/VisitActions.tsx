@@ -37,7 +37,7 @@ export function VisitActions({ id, currentStatus }: VisitActionsProps) {
         setLoading(true);
         try {
             const res = await fetch(`/api/visits/${id}`, {
-                method: "DELETE", // Requer implementação na API
+                method: "DELETE",
             });
 
             if (res.ok) {

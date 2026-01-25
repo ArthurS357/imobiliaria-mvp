@@ -94,12 +94,12 @@ export function PropertyCard({ property }: PropertyProps) {
             {getStatusBadge(property.status)}
           </div>
 
-          {/* BOTÃO DE FAVORITAR (NOVO) */}
+          {/* BOTÃO DE FAVORITAR */}
           <button
             onClick={toggleFavorite}
             className={`absolute top-4 right-4 z-20 p-2 rounded-full shadow-md transition-all duration-200 ${isFavorite
-                ? "bg-white text-red-500 scale-110"
-                : "bg-white/80 text-gray-400 hover:bg-white hover:text-red-500"
+              ? "bg-white text-red-500 scale-110"
+              : "bg-white/80 text-gray-400 hover:bg-white hover:text-red-500"
               }`}
             title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           >

@@ -16,7 +16,7 @@ export function VisitScheduler({ propertyId }: VisitSchedulerProps) {
         timeOfDay: "MANHA",
         name: "",
         email: "",
-        phone: "" // Agora temos um campo dedicado para o telefone
+        phone: ""
     });
 
     const handleSubmit = async (e: React.FormEvent) => {

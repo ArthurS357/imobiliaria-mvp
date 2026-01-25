@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, User, Home, Building2, Phone, Info, Heart } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle'; // <--- Importe aqui
+import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -81,7 +81,7 @@ export function Header() {
                         {/* AÇÕES DIREITA */}
                         <div className="hidden md:flex items-center gap-4">
 
-                            {/* --- NOVO: Botão de Tema --- */}
+                            {/* --- Botão de Tema --- */}
                             <ThemeToggle />
 
                             {/* Botão de Favoritos */}
@@ -124,7 +124,7 @@ export function Header() {
             {isMobileMenuOpen && (
                 <div className="fixed inset-0 top-20 z-40 bg-white dark:bg-gray-900 md:hidden overflow-y-auto animate-fade-in pb-20 border-t border-gray-100 dark:border-gray-800">
                     <div className="p-4 space-y-2">
-                        {/* ... Links mantidos (eles usam a classe mobileLinkClass que já atualizamos) ... */}
+                        {/* ... eles usam a classe mobileLinkClass ... */}
 
                         <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/")}>
                             <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-full text-blue-900 dark:text-blue-400"><Home size={20} /></div>

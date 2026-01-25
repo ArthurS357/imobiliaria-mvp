@@ -43,3 +43,16 @@
     transform: translateY(0);
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+    /* Remove margens padrão do navegador */
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

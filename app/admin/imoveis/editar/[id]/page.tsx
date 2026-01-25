@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Save, ArrowLeft } from "lucide-react";
+import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
-import { useSession } from "next-auth/react"; // <--- Importe o useSession
+import { useSession } from "next-auth/react";
 
 export default function EditPropertyPage() {
-    const { data: session } = useSession(); // <--- Pegamos os dados da sessão
+    const { data: session } = useSession();
     const params = useParams();
     const router = useRouter();
+
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -96,6 +97,7 @@ export default function EditPropertyPage() {
             if (res.ok) {
                 alert("Imóvel atualizado com sucesso!");
                 router.push("/admin/imoveis");
+                router.refresh();
             } else {
                 alert("Erro ao atualizar.");
             }
@@ -106,174 +108,211 @@ export default function EditPropertyPage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Carregando dados...</div>;
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+            <div className="flex flex-col items-center gap-3">
+                <Loader2 className="animate-spin text-blue-600" size={32} />
+                <p className="text-gray-500 dark:text-gray-400">Carregando dados do imóvel...</p>
+            </div>
+        </div>
+    );
 
-    // Verifica se é Admin
     const isAdmin = session?.user?.role === "ADMIN";
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 p-8">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
+            <div className="max-w-5xl mx-auto">
 
-                <div className="flex items-center justify-between mb-8">
+                {/* Cabeçalho */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Editar Imóvel</h1>
-                        <p className="text-gray-500">Atualize as informações do anúncio.</p>
+                        <h1 className="text-3xl font-bold text-gray-800 dark:text-white tracking-tight">Editar Imóvel</h1>
+                        <p className="text-gray-500 dark:text-gray-400">Atualize as informações do anúncio.</p>
                     </div>
-                    <Link href="/admin/imoveis" className="text-gray-600 hover:text-blue-900 flex items-center gap-2">
-                        <ArrowLeft size={20} /> Cancelar
+                    <Link href="/admin/imoveis" className="text-gray-600 dark:text-gray-300 hover:text-blue-900 dark:hover:text-blue-400 flex items-center gap-2 font-medium px-4 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm">
+                        <ArrowLeft size={20} /> Cancelar e Voltar
                     </Link>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-8">
 
-                    {/* SÓ MOSTRA SE FOR ADMIN */}
+                    {/* CARD ADMIN: Controle de Status (Só aparece para Admin) */}
                     {isAdmin && (
-                        <div className="bg-blue-50 p-4 rounded-md border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl shadow-sm border border-blue-100 dark:border-blue-900/30 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-blue-100 dark:border-blue-900/30 flex items-center gap-2">
+                                <ShieldCheck className="text-blue-700 dark:text-blue-400" size={20} />
+                                <h2 className="font-bold text-blue-900 dark:text-blue-200">Área Administrativa</h2>
+                            </div>
+                            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div>
+                                    <label className="block text-sm font-bold text-blue-900 dark:text-blue-300 mb-1.5">Status do Anúncio</label>
+                                    <select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={handleChange}
+                                        className="w-full p-3 border border-blue-200 dark:border-blue-800 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none transition font-medium"
+                                    >
+                                        <option value="PENDENTE">🟡 Pendente (Aguardando Aprovação)</option>
+                                        <option value="DISPONIVEL">🟢 Disponível (Visível no Site)</option>
+                                        <option value="VENDIDO">🔵 Vendido</option>
+                                        <option value="RESERVADO">⚪ Reservado</option>
+                                    </select>
+                                </div>
+                                <div className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-100 dark:border-blue-800 h-full mt-1">
+                                    <label className="flex items-center gap-3 cursor-pointer w-full select-none">
+                                        <input
+                                            type="checkbox"
+                                            name="destaque"
+                                            checked={formData.destaque}
+                                            onChange={handleChange}
+                                            className="w-6 h-6 text-blue-900 rounded border-gray-300 focus:ring-blue-500 transition cursor-pointer"
+                                        />
+                                        <div>
+                                            <span className="block text-blue-900 dark:text-blue-300 font-bold">Imóvel em Destaque?</span>
+                                            <span className="text-xs text-blue-600 dark:text-blue-400">Aparecerá no topo da página inicial.</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Aviso para Corretores (Não Admins) */}
+                    {!isAdmin && (
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl border border-yellow-200 dark:border-yellow-800/50 flex items-start gap-3">
+                            <AlertTriangle className="text-yellow-600 dark:text-yellow-500 shrink-0" size={20} />
                             <div>
-                                <label className="block text-sm font-bold text-blue-900 mb-1">Status do Anúncio (Admin)</label>
-                                <select
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleChange}
-                                    className="block w-full rounded-md border-blue-200 shadow-sm focus:border-blue-500"
-                                >
-                                    <option value="PENDENTE">🟡 Pendente (Aguardando)</option>
-                                    <option value="DISPONIVEL">🟢 Disponível (No Site)</option>
-                                    <option value="VENDIDO">🔵 Vendido</option>
-                                    <option value="RESERVADO">⚪ Reservado</option>
+                                <h3 className="font-bold text-yellow-800 dark:text-yellow-400 text-sm">Status Atual: {formData.status}</h3>
+                                <p className="text-yellow-700 dark:text-yellow-500 text-xs mt-1">
+                                    Alterações de status ou destaque devem ser solicitadas ao administrador.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CARD 1: Informações Básicas */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gray-50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
+                            <Info className="text-blue-600 dark:text-blue-400" size={20} />
+                            <h2 className="font-bold text-gray-800 dark:text-white">Informações Principais</h2>
+                        </div>
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="col-span-2">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Título do Anúncio</label>
+                                <input required name="titulo" value={formData.titulo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" placeholder="Ex: Belíssima Casa no Condomínio..." />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Tipo de Imóvel</label>
+                                <select name="tipo" value={formData.tipo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none transition">
+                                    <option value="Casa">Casa</option>
+                                    <option value="Apartamento">Apartamento</option>
+                                    <option value="Terreno">Terreno</option>
+                                    <option value="Comercial">Comercial</option>
+                                    <option value="Sítio/Chácara">Sítio/Chácara</option>
                                 </select>
                             </div>
-
-                            <div className="flex items-center">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        name="destaque"
-                                        checked={formData.destaque}
-                                        onChange={handleChange}
-                                        className="w-5 h-5 text-blue-900 rounded border-gray-300 focus:ring-blue-500"
-                                    />
-                                    <span className="text-blue-900 font-medium">Destacar na Página Inicial?</span>
-                                </label>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Se NÃO for Admin, mostra apenas um aviso informativo */}
-                    {!isAdmin && (
-                        <div className="bg-yellow-50 p-4 rounded-md border border-yellow-100 text-yellow-800 text-sm">
-                            <strong>Status atual: {formData.status}</strong>
-                            <p>Para alterar o status ou destacar este imóvel, solicite ao administrador.</p>
-                        </div>
-                    )}
-
-                    {/* ... Restante do formulário igual ... */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Título do Anúncio</label>
-                            <input name="titulo" value={formData.titulo} required onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:outline-none" />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Tipo de Imóvel</label>
-                            <select name="tipo" value={formData.tipo} onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none">
-                                <option value="Casa">Casa</option>
-                                <option value="Apartamento">Apartamento</option>
-                                <option value="Terreno">Terreno</option>
-                                <option value="Comercial">Comercial</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Preço (R$)</label>
-                            <input name="preco" value={formData.preco} type="number" step="0.01" required onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
-                        </div>
-                    </div>
-
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Galeria de Fotos</h3>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <ImageUpload
-                                value={formData.fotos}
-                                onChange={(urls) => setFormData({ ...formData, fotos: urls })}
-                                onRemove={(url) => setFormData({ ...formData, fotos: formData.fotos.filter((current) => current !== url) })}
-                            />
-                            <p className="text-xs text-gray-500 mt-2">A primeira foto será usada como capa.</p>
-                        </div>
-                    </div>
-
-                    {/* Localização */}
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Localização</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Cidade</label>
-                                <input name="cidade" value={formData.cidade} required onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Valor de Venda (R$)</label>
+                                <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" placeholder="0,00" />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Bairro</label>
-                                <input name="bairro" value={formData.bairro} required onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Endereço</label>
-                                <input name="endereco" value={formData.endereco} onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
+                            <div className="col-span-2">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Descrição Detalhada</label>
+                                <textarea required name="descricao" value={formData.descricao} rows={4} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition resize-y" />
                             </div>
                         </div>
                     </div>
 
-                    {/* Coordenadas */}
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Coordenadas (Opcional)</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* CARD 2: Detalhes */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gray-50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
+                            <Home className="text-blue-600 dark:text-blue-400" size={20} />
+                            <h2 className="font-bold text-gray-800 dark:text-white">Características</h2>
+                        </div>
+                        <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Latitude</label>
-                                <input name="latitude" type="number" step="any" value={formData.latitude} onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none" />
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Quartos</label>
+                                <input type="number" name="quarto" value={formData.quarto} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Longitude</label>
-                                <input name="longitude" type="number" step="any" value={formData.longitude} onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:outline-none" />
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Banheiros</label>
+                                <input type="number" name="banheiro" value={formData.banheiro} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Vagas</label>
+                                <input type="number" name="garagem" value={formData.garagem} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Área Útil (m²)</label>
+                                <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Características</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Quartos</label>
-                                <input name="quarto" value={formData.quarto} type="number" onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
+                    {/* CARD 3: Localização */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gray-50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
+                            <MapPin className="text-blue-600 dark:text-blue-400" size={20} />
+                            <h2 className="font-bold text-gray-800 dark:text-white">Localização</h2>
+                        </div>
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Cidade</label>
+                                    <input required name="cidade" value={formData.cidade} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Bairro</label>
+                                    <input required name="bairro" value={formData.bairro} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Endereço</label>
+                                    <input name="endereco" value={formData.endereco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Banheiros</label>
-                                <input name="banheiro" value={formData.banheiro} type="number" onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Vagas</label>
-                                <input name="garagem" value={formData.garagem} type="number" onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Área (m²)</label>
-                                <input name="area" value={formData.area} type="number" required onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
+                            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                                <h3 className="text-sm font-bold text-blue-900 dark:text-blue-300 mb-3">Coordenadas do Mapa</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Latitude</label>
+                                        <input type="number" step="any" name="latitude" value={formData.latitude} onChange={handleChange} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="-23.5505" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Longitude</label>
+                                        <input type="number" step="any" name="longitude" value={formData.longitude} onChange={handleChange} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="-46.6333" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-4 border-t pt-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Descrição Detalhada</label>
-                        <textarea name="descricao" value={formData.descricao} rows={5} required onChange={handleChange} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm focus:outline-none" />
+                    {/* CARD 4: Fotos */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gray-50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
+                            <ImageIcon className="text-blue-600 dark:text-blue-400" size={20} />
+                            <h2 className="font-bold text-gray-800 dark:text-white">Galeria de Fotos</h2>
+                        </div>
+                        <div className="p-6">
+                            <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
+                                <ImageUpload
+                                    value={formData.fotos}
+                                    onChange={(urls) => setFormData({ ...formData, fotos: urls })}
+                                    onRemove={(url) => setFormData({ ...formData, fotos: formData.fotos.filter((current) => current !== url) })}
+                                />
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+                                    Arraste para reordenar. A primeira foto será a capa.
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="flex justify-end gap-4 pt-6">
-                        <Link href="/admin/imoveis" className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-                            Cancelar
-                        </Link>
+                    {/* Botão Salvar Flutuante ou Fixo */}
+                    <div className="flex justify-end pt-4 pb-12">
                         <button
                             type="submit"
                             disabled={saving}
-                            className="flex items-center gap-2 bg-blue-900 text-white px-6 py-3 rounded-md hover:bg-blue-800 transition shadow-lg disabled:opacity-50"
+                            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2 disabled:opacity-70 disabled:transform-none"
                         >
-                            {saving ? "Salvando..." : <><Save size={20} /> Salvar Alterações</>}
+                            {saving ? <><Loader2 className="animate-spin" size={20} /> Salvando...</> : <><Save size={20} /> Salvar Alterações</>}
                         </button>
                     </div>
 

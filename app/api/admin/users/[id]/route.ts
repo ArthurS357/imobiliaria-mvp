@@ -19,7 +19,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         name: data.name,
         email: data.email,
         role: data.role,
-        creci: data.creci || null, // <--- ADICIONADO: Atualiza o CRECI
+        creci: data.creci || null, // <--- Atualiza o CRECI
     };
 
     // Se enviou senha nova, faz o hash

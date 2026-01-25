@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, MessageSquare, Mail, Phone, Calendar, User } from "lucide-react";
 import { LeadAssigner } from "@/components/admin/LeadAssigner";
 import { LeadStatusUpdater } from "@/components/admin/LeadStatusUpdater";
-import { DeleteLeadButton } from "@/components/admin/DeleteLeadButton"; // <--- Importamos o botão de excluir
+import { DeleteLeadButton } from "@/components/admin/DeleteLeadButton";
 
 export default async function AdminMessagesPage() {
     const session = await getServerSession(authOptions);
