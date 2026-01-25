@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
-import { Resend } from "resend"; // <--- Importe o Resend
+import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -17,7 +17,8 @@ export async function POST(request: Request) {
         }
 
         const data = await request.json();
-        const { name, email, password, role } = data;
+        // ADICIONADO: 'creci' na desestruturação
+        const { name, email, password, role, creci } = data;
 
         // Validação básica
         if (!email || !password || !name) {
@@ -39,14 +40,15 @@ export async function POST(request: Request) {
                 email,
                 password: hashedPassword,
                 role: role || "FUNCIONARIO", // Padrão é funcionário se não vier nada
+                creci: creci || null,        // <--- ADICIONADO: Salva o CRECI (ou null se vazio)
             },
         });
 
         // 3. Envia o Email de Boas-Vindas (Resend)
         try {
             await resend.emails.send({
-                from: 'Imobiliária MVP <onboarding@resend.dev>', // Use seu domínio verificado se tiver, senão use o de teste do Resend
-                to: email, // O email do novo corretor
+                from: 'Matiello Imóveis <onboarding@resend.dev>', // Use seu domínio verificado se tiver
+                to: email,
                 subject: 'Bem-vindo à Equipe! Suas credenciais de acesso',
                 html: `
                 <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
@@ -61,6 +63,7 @@ export async function POST(request: Request) {
                         <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 24px 0;">
                             <p style="margin: 0 0 10px 0;"><strong>Email:</strong> ${email}</p>
                             <p style="margin: 0;"><strong>Senha Provisória:</strong> ${password}</p>
+                            ${creci ? `<p style="margin: 10px 0 0 0;"><strong>CRECI:</strong> ${creci}</p>` : ''}
                         </div>
                         
                         <p style="font-size: 14px; color: #666;">Recomendamos que você anote essas informações com carinho ou troque sua senha no primeiro acesso.</p>
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
                         </div>
                     </div>
                     <div style="background-color: #f9fafb; padding: 16px; text-align: center; font-size: 12px; color: #9ca3af;">
-                        <p>© 2024 Imobiliária MVP. Todos os direitos reservados.</p>
+                        <p>© 2026 Imobiliária MVP. Todos os direitos reservados.</p>
                     </div>
                 </div>
             `,

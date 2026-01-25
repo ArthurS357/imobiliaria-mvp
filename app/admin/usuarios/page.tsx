@@ -9,19 +9,23 @@ interface User {
     name: string;
     email: string;
     role: string;
-    creci?: string | null; // Adicionado campo opcional
+    creci?: string | null;
 }
 
 export default function UserManagementPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
-    const [editingUser, setEditingUser] = useState<User | null>(null);
 
-    // Estado para o Modal de Criação
-    // Adicionado o campo creci no estado inicial
+    // Estados para criação e edição
+    const [editingUser, setEditingUser] = useState<User | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
+
+    // Estados do formulário de criação
     const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "FUNCIONARIO", creci: "" });
-    const [creating, setCreating] = useState(false);
+
+    // Estados de Loading (Feedback visual)
+    const [creating, setCreating] = useState(false); // Para o botão "Criar"
+    const [isSaving, setIsSaving] = useState(false); // Para o botão "Salvar" (Edição)
 
     // Busca usuários
     useEffect(() => {
@@ -54,11 +58,10 @@ export default function UserManagementPage() {
             });
 
             if (res.ok) {
-                alert("Usuário criado com sucesso! Um e-mail com as credenciais foi enviado.");
+                alert("Usuário criado com sucesso!");
                 setShowCreateModal(false);
-                // Limpa form incluindo o CRECI
                 setNewUser({ name: "", email: "", password: "", role: "FUNCIONARIO", creci: "" });
-                fetchUsers(); // Recarrega lista
+                fetchUsers();
             } else {
                 const err = await res.json();
                 alert(err.error || "Erro ao criar usuário.");
@@ -86,17 +89,25 @@ export default function UserManagementPage() {
         e.preventDefault();
         if (!editingUser) return;
 
-        const res = await fetch(`/api/admin/users/${editingUser.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(editingUser),
-        });
+        setIsSaving(true); // Inicia o loading "Salvando..."
 
-        if (res.ok) {
-            setEditingUser(null);
-            fetchUsers();
-        } else {
-            alert("Erro ao atualizar");
+        try {
+            const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(editingUser),
+            });
+
+            if (res.ok) {
+                setEditingUser(null);
+                fetchUsers();
+            } else {
+                alert("Erro ao atualizar");
+            }
+        } catch (error) {
+            alert("Erro de conexão");
+        } finally {
+            setIsSaving(false); // Finaliza o loading
         }
     };
 
@@ -135,58 +146,23 @@ export default function UserManagementPage() {
                             <form onSubmit={handleCreate} className="space-y-5">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Nome Completo</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        value={newUser.name}
-                                        onChange={e => setNewUser({ ...newUser, name: e.target.value })}
-                                        className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="Ex: João Silva"
-                                    />
+                                    <input required type="text" value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: João Silva" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Email Corporativo</label>
-                                    <input
-                                        required
-                                        type="email"
-                                        value={newUser.email}
-                                        onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                        className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="joao@imobiliaria.com"
-                                    />
+                                    <input required type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="joao@imobiliaria.com" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Senha Inicial</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        value={newUser.password}
-                                        onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                        className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono"
-                                        placeholder="Senha forte123"
-                                    />
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Essa senha será enviada por email para o usuário.</p>
+                                    <input required type="text" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono" placeholder="Senha forte123" />
                                 </div>
-
-                                {/* Novo Campo CRECI */}
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">CRECI (Opcional)</label>
-                                    <input
-                                        type="text"
-                                        value={newUser.creci}
-                                        onChange={e => setNewUser({ ...newUser, creci: e.target.value })}
-                                        className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="Ex: 12345-F"
-                                    />
+                                    <input type="text" value={newUser.creci} onChange={e => setNewUser({ ...newUser, creci: e.target.value })} className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: 12345-F" />
                                 </div>
-
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Cargo</label>
-                                    <select
-                                        value={newUser.role}
-                                        onChange={e => setNewUser({ ...newUser, role: e.target.value })}
-                                        className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    >
+                                    <select value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })} className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                                         <option value="FUNCIONARIO">Corretor (Padrão)</option>
                                         <option value="ADMIN">Administrador (Acesso Total)</option>
                                     </select>
@@ -197,7 +173,7 @@ export default function UserManagementPage() {
                                     <button
                                         type="submit"
                                         disabled={creating}
-                                        className="px-6 py-2.5 bg-blue-900 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-800 dark:hover:bg-blue-600 font-bold transition flex items-center gap-2 disabled:opacity-70"
+                                        className="px-6 py-2.5 bg-blue-900 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-800 dark:hover:bg-blue-600 font-bold transition flex items-center gap-2 disabled:opacity-70 min-w-[140px] justify-center"
                                     >
                                         {creating ? <><Loader2 className="animate-spin" size={20} /> Criando...</> : "Criar Conta"}
                                     </button>
@@ -209,7 +185,7 @@ export default function UserManagementPage() {
 
                 {/* --- MODAL DE EDIÇÃO --- */}
                 {editingUser && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
                             <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Editar Usuário</h2>
                             <form onSubmit={handleUpdate} className="space-y-4">
@@ -229,7 +205,7 @@ export default function UserManagementPage() {
                                         className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
-                                {/* Campo CRECI na edição */}
+                                {/* ADICIONADO: Campo CRECI no modal de edição */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">CRECI</label>
                                     <input
@@ -250,9 +226,15 @@ export default function UserManagementPage() {
                                         <option value="ADMIN">Administrador</option>
                                     </select>
                                 </div>
-                                <div className="flex justify-end gap-2 mt-4">
+                                <div className="flex justify-end gap-2 mt-4 pt-4 border-t dark:border-gray-700">
                                     <button type="button" onClick={() => setEditingUser(null)} className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">Cancelar</button>
-                                    <button type="submit" className="px-4 py-2 bg-blue-900 dark:bg-blue-700 text-white rounded hover:bg-blue-800 dark:hover:bg-blue-600 transition">Salvar</button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSaving}
+                                        className="px-4 py-2 bg-blue-900 dark:bg-blue-700 text-white rounded hover:bg-blue-800 dark:hover:bg-blue-600 transition flex items-center gap-2 disabled:opacity-70 min-w-[100px] justify-center"
+                                    >
+                                        {isSaving ? <><Loader2 className="animate-spin" size={16} /> Salvando...</> : "Salvar"}
+                                    </button>
                                 </div>
                             </form>
                         </div>

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
 
-// PUT: Atualizar usuário (Senha, Email, Cargo)
+// PUT: Atualizar usuário (Senha, Email, Cargo, CRECI)
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
 
@@ -18,7 +18,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const updateData: any = {
         name: data.name,
         email: data.email,
-        role: data.role
+        role: data.role,
+        creci: data.creci || null, // <--- ADICIONADO: Atualiza o CRECI
     };
 
     // Se enviou senha nova, faz o hash
@@ -33,6 +34,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         });
         return NextResponse.json(user);
     } catch (error) {
+        console.error("Erro update user:", error);
         return NextResponse.json({ error: "Erro ao atualizar. Email já existe?" }, { status: 400 });
     }
 }
@@ -58,6 +60,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         await prisma.user.delete({ where: { id } });
         return NextResponse.json({ success: true });
     } catch (error) {
-        return NextResponse.json({ error: "Erro ao excluir. O usuário possui imóveis vinculados?" }, { status: 400 });
+        return NextResponse.json({ error: "Erro ao excluir. O usuário possui imóveis ou registros vinculados?" }, { status: 400 });
     }
 }

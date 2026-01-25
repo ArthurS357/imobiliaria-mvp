@@ -50,7 +50,7 @@ export default function LoginPage() {
                         Área Restrita
                     </h2>
                     <p className="mt-2 text-sm text-gray-600">
-                        Acesse o painel administrativo da <span className="font-bold">IMOBILIÁRIA<span className="text-red-600">MVP</span></span>
+                        Acesse o painel administrativo da <span className="font-bold">MATIELLO<span className="text-red-600">IMÓVEIS</span></span>
                     </p>
                 </div>
 
