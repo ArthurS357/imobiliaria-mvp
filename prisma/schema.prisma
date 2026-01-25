@@ -13,7 +13,8 @@ model User {
   name      String
   email     String   @unique
   password  String   // Senha hash
-  
+  creci     String?  // Campo CRECI opcional
+
   // SQLite não suporta Enum, então usamos String.
   // Valores esperados: "ADMIN" ou "FUNCIONARIO"
   role      String   @default("FUNCIONARIO")

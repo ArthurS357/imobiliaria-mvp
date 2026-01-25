@@ -1,15 +1,15 @@
 import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer"; // Importar Footer
+import { Footer } from "@/components/Footer";
 import { CheckCircle, Users, Award, MapPin, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function AboutPage() {
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col transition-colors duration-300">
             <Header />
 
             {/* --- HERO SECTION --- */}
-            <div className="bg-blue-900 text-white py-24 px-4">
+            <div className="bg-blue-900 dark:bg-blue-950 text-white py-24 px-4 transition-colors duration-300">
                 <div className="max-w-4xl mx-auto text-center">
                     <h1 className="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">
                         Construindo sonhos, <br />
@@ -26,29 +26,29 @@ export default function AboutPage() {
                 {/* --- HISTÓRIA --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-24">
                     <div className="space-y-6">
-                        <h2 className="text-3xl font-bold text-gray-900">
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
                             Nossa História
                         </h2>
                         <div className="w-20 h-1.5 bg-red-600 rounded-full"></div>
-                        <p className="text-gray-600 text-lg leading-relaxed">
+                        <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
                             Fundada com o objetivo de transformar o mercado imobiliário local, a <strong>MATIELLO<span className="text-red-600">IMÓVEIS</span></strong> nasceu da necessidade de um atendimento mais humano e tecnológico.
                         </p>
-                        <p className="text-gray-600 text-lg leading-relaxed">
+                        <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
                             Entendemos que comprar ou vender um imóvel não é apenas uma transação financeira, mas um passo importante na vida de cada cliente. Por isso, investimos continuamente em tecnologia e na capacitação da nossa equipe.
                         </p>
 
                         <div className="pt-4">
-                            <Link href="/imoveis" className="inline-flex items-center gap-2 text-blue-900 font-bold hover:gap-3 transition-all">
+                            <Link href="/imoveis" className="inline-flex items-center gap-2 text-blue-900 dark:text-blue-400 font-bold hover:gap-3 transition-all">
                                 Ver nossos imóveis disponíveis <ArrowRight size={20} />
                             </Link>
                         </div>
                     </div>
 
                     {/* Placeholder Visual */}
-                    <div className="bg-gray-100 rounded-2xl h-96 flex items-center justify-center relative overflow-hidden shadow-lg border border-gray-200 group">
+                    <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl h-96 flex items-center justify-center relative overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700 group transition-colors">
                         <div className="text-center transition transform group-hover:scale-110 duration-700">
-                            <Users size={64} className="mx-auto text-gray-300 mb-4" />
-                            <span className="text-gray-400 font-medium">Foto da Equipe</span>
+                            <Users size={64} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                            <span className="text-gray-400 dark:text-gray-500 font-medium">Foto da Equipe</span>
                         </div>
                     </div>
                 </div>
@@ -56,39 +56,42 @@ export default function AboutPage() {
                 {/* --- DIFERENCIAIS --- */}
                 <div className="mb-24">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-gray-900">Por que escolher a MATIELLO?</h2>
-                        <p className="text-gray-500 mt-4 max-w-2xl mx-auto">
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Por que escolher a MATIELLO?</h2>
+                        <p className="text-gray-500 dark:text-gray-400 mt-4 max-w-2xl mx-auto">
                             Nosso compromisso vai além da entrega das chaves.
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="bg-gray-50 p-8 rounded-xl border border-gray-100 hover:shadow-md transition hover:-translate-y-1 duration-300">
-                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-900 mb-6">
+                        {/* Card 1 */}
+                        <div className="bg-gray-50 dark:bg-gray-900 p-8 rounded-xl border border-gray-100 dark:border-gray-800 hover:shadow-md transition hover:-translate-y-1 duration-300">
+                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center text-blue-900 dark:text-blue-400 mb-6">
                                 <CheckCircle size={24} />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-800 mb-3">Transparência Total</h3>
-                            <p className="text-gray-600">
+                            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Transparência Total</h3>
+                            <p className="text-gray-600 dark:text-gray-400">
                                 Sem letras miúdas. Apresentamos todas as informações, taxas e condições de forma clara.
                             </p>
                         </div>
 
-                        <div className="bg-gray-50 p-8 rounded-xl border border-gray-100 hover:shadow-md transition hover:-translate-y-1 duration-300">
-                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-900 mb-6">
+                        {/* Card 2 */}
+                        <div className="bg-gray-50 dark:bg-gray-900 p-8 rounded-xl border border-gray-100 dark:border-gray-800 hover:shadow-md transition hover:-translate-y-1 duration-300">
+                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center text-blue-900 dark:text-blue-400 mb-6">
                                 <Award size={24} />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-800 mb-3">Expertise de Mercado</h3>
-                            <p className="text-gray-600">
+                            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Expertise de Mercado</h3>
+                            <p className="text-gray-600 dark:text-gray-400">
                                 Nossa equipe conhece cada bairro da cidade, garantindo a avaliação correta.
                             </p>
                         </div>
 
-                        <div className="bg-gray-50 p-8 rounded-xl border border-gray-100 hover:shadow-md transition hover:-translate-y-1 duration-300">
-                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-900 mb-6">
+                        {/* Card 3 */}
+                        <div className="bg-gray-50 dark:bg-gray-900 p-8 rounded-xl border border-gray-100 dark:border-gray-800 hover:shadow-md transition hover:-translate-y-1 duration-300">
+                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center text-blue-900 dark:text-blue-400 mb-6">
                                 <Users size={24} />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-800 mb-3">Atendimento Único</h3>
-                            <p className="text-gray-600">
+                            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Atendimento Único</h3>
+                            <p className="text-gray-600 dark:text-gray-400">
                                 Adaptamos nossa busca e negociação para atender às suas necessidades específicas.
                             </p>
                         </div>
@@ -96,7 +99,7 @@ export default function AboutPage() {
                 </div>
 
                 {/* --- LOCALIZAÇÃO --- */}
-                <div className="bg-blue-900 rounded-2xl text-white p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
+                <div className="bg-blue-900 dark:bg-blue-950 rounded-2xl text-white p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl transition-colors">
                     <div className="space-y-4">
                         <h2 className="text-3xl font-bold">Venha tomar um café conosco</h2>
                         <div className="flex items-start gap-3 text-blue-100">
@@ -112,7 +115,7 @@ export default function AboutPage() {
                         <a href="https://wa.me/5511946009103" className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-lg text-center transition shadow-lg transform hover:-translate-y-1">
                             Falar no WhatsApp
                         </a>
-                        <Link href="/contato" className="bg-transparent border-2 border-white hover:bg-white hover:text-blue-900 text-white font-bold py-4 px-8 rounded-lg text-center transition">
+                        <Link href="/contato" className="bg-transparent border-2 border-white hover:bg-white hover:text-blue-900 dark:hover:text-blue-950 text-white font-bold py-4 px-8 rounded-lg text-center transition">
                             Enviar E-mail
                         </Link>
                     </div>

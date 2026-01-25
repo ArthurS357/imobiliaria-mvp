@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, Trash2 } from "lucide-react";
 
 interface VisitActionsProps {
     id: string;
@@ -13,6 +13,7 @@ export function VisitActions({ id, currentStatus }: VisitActionsProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
 
+    // Função para atualizar (Confirmar/Cancelar)
     const updateStatus = async (status: string) => {
         setLoading(true);
         try {
@@ -21,9 +22,31 @@ export function VisitActions({ id, currentStatus }: VisitActionsProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status }),
             });
-            router.refresh(); // Atualiza a página para mostrar o novo status
+            router.refresh();
         } catch (error) {
             alert("Erro ao atualizar status.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Função para EXCLUIR definitivamente
+    const deleteVisit = async () => {
+        if (!confirm("Tem certeza que deseja excluir esta visita permanentemente?")) return;
+
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/visits/${id}`, {
+                method: "DELETE", // Requer implementação na API
+            });
+
+            if (res.ok) {
+                router.refresh();
+            } else {
+                alert("Erro ao excluir visita.");
+            }
+        } catch (error) {
+            alert("Erro de conexão.");
         } finally {
             setLoading(false);
         }
@@ -33,8 +56,21 @@ export function VisitActions({ id, currentStatus }: VisitActionsProps) {
         return <Loader2 className="animate-spin text-gray-400" size={20} />;
     }
 
-    // Se já foi cancelada, mostra apenas um texto discreto
-    if (currentStatus === "CANCELADA") return <span className="text-xs text-red-400 font-medium">Cancelado</span>;
+    // Se já foi cancelada, mostra texto e opção de excluir
+    if (currentStatus === "CANCELADA") {
+        return (
+            <div className="flex items-center gap-2">
+                <span className="text-xs text-red-400 font-medium">Cancelado</span>
+                <button
+                    onClick={deleteVisit}
+                    className="bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 p-1.5 rounded-full transition"
+                    title="Excluir Visita"
+                >
+                    <Trash2 size={16} />
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="flex gap-2">
@@ -54,6 +90,14 @@ export function VisitActions({ id, currentStatus }: VisitActionsProps) {
                 title="Cancelar Visita"
             >
                 <X size={18} />
+            </button>
+
+            <button
+                onClick={deleteVisit}
+                className="bg-gray-100 text-gray-500 hover:bg-gray-200 p-2 rounded-full transition ml-1"
+                title="Excluir Visita"
+            >
+                <Trash2 size={18} />
             </button>
         </div>
     );
