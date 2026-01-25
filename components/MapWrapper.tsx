@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-// Define as interfaces compatíveis com o seu componente Map
+// Tipagem flexível para aceitar dados do banco
 interface Property {
     id: string;
     titulo: string;
@@ -16,11 +16,11 @@ interface MapWrapperProps {
     properties: Property[];
 }
 
-// A importação dinâmica com ssr: false agora vive aqui, num Client Component seguro
+// Carregamento dinâmico ISOLADO (Evita erro 'window is not defined')
 const MapClient = dynamic(() => import("@/components/Map"), {
     ssr: false,
     loading: () => (
-        <div className="h-96 w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 rounded-2xl animate-pulse">
+        <div className="h-full w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 rounded-2xl animate-pulse">
             Carregando mapa...
         </div>
     ),
