@@ -1,4 +1,3 @@
-```markdown
 # 🏡 Imobiliária MVP
 
 Sistema moderno para gestão e vitrine de imóveis, desenvolvido com as tecnologias mais recentes do ecossistema React. Focado em performance, SEO e experiência do usuário (UX).
