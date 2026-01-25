@@ -112,25 +112,29 @@ export async function DELETE(
 ) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+
+        // Verificamos APENAS se é ADMIN.
+        // Se não for admin, rejeita, mesmo que seja o dono.
+        if (!session || session.user.role !== "ADMIN") {
+            return NextResponse.json({
+                error: "Permissão negada. Apenas administradores podem excluir imóveis do sistema."
+            }, { status: 403 });
+        }
 
         const { id } = await params;
 
-        // Verifica se o imóvel existe
+        // Verifica existência antes de deletar
         const property = await prisma.property.findUnique({ where: { id } });
-
-        if (!property) return NextResponse.json({ error: "Imóvel não encontrado" }, { status: 404 });
-
-        // Regra de Propriedade:
-        // Apenas o dono do imóvel (corretorId) ou um ADMIN podem excluir.
-        if (session.user.role !== "ADMIN" && property.corretorId !== session.user.id) {
-            return NextResponse.json({ error: "Você não tem permissão para excluir este imóvel." }, { status: 403 });
+        if (!property) {
+            return NextResponse.json({ error: "Imóvel não encontrado" }, { status: 404 });
         }
 
         await prisma.property.delete({ where: { id } });
 
-        return NextResponse.json({ message: "Imóvel excluído com sucesso" });
+        return NextResponse.json({ message: "Imóvel excluído com sucesso (Admin)" });
+
     } catch (error) {
-        return NextResponse.json({ error: "Erro ao excluir" }, { status: 500 });
+        console.error("Erro ao excluir imóvel:", error);
+        return NextResponse.json({ error: "Erro interno ao excluir" }, { status: 500 });
     }
 }
