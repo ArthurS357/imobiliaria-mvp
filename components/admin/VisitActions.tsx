@@ -7,9 +7,10 @@ import { Check, X, Loader2, Trash2 } from "lucide-react";
 interface VisitActionsProps {
     id: string;
     currentStatus: string;
+    isAdmin: boolean; // <--- ADICIONADO AQUI
 }
 
-export function VisitActions({ id, currentStatus }: VisitActionsProps) {
+export function VisitActions({ id, currentStatus, isAdmin }: VisitActionsProps) { // <--- RECEBIDO AQUI
     const router = useRouter();
     const [loading, setLoading] = useState(false);
 
@@ -43,7 +44,7 @@ export function VisitActions({ id, currentStatus }: VisitActionsProps) {
             if (res.ok) {
                 router.refresh();
             } else {
-                alert("Erro ao excluir visita.");
+                alert("Erro ao excluir visita. Verifique se você tem permissão.");
             }
         } catch (error) {
             alert("Erro de conexão.");
@@ -56,18 +57,21 @@ export function VisitActions({ id, currentStatus }: VisitActionsProps) {
         return <Loader2 className="animate-spin text-gray-400" size={20} />;
     }
 
-    // Se já foi cancelada, mostra texto e opção de excluir
+    // Se já foi cancelada
     if (currentStatus === "CANCELADA") {
         return (
             <div className="flex items-center gap-2">
                 <span className="text-xs text-red-400 font-medium">Cancelado</span>
-                <button
-                    onClick={deleteVisit}
-                    className="bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 p-1.5 rounded-full transition"
-                    title="Excluir Visita"
-                >
-                    <Trash2 size={16} />
-                </button>
+                {/* Só mostra o botão de excluir se for ADMIN */}
+                {isAdmin && (
+                    <button
+                        onClick={deleteVisit}
+                        className="bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 p-1.5 rounded-full transition"
+                        title="Excluir Visita (Admin)"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                )}
             </div>
         );
     }
@@ -92,13 +96,16 @@ export function VisitActions({ id, currentStatus }: VisitActionsProps) {
                 <X size={18} />
             </button>
 
-            <button
-                onClick={deleteVisit}
-                className="bg-gray-100 text-gray-500 hover:bg-gray-200 p-2 rounded-full transition ml-1"
-                title="Excluir Visita"
-            >
-                <Trash2 size={18} />
-            </button>
+            {/* Só mostra o botão de excluir se for ADMIN */}
+            {isAdmin && (
+                <button
+                    onClick={deleteVisit}
+                    className="bg-gray-100 text-gray-500 hover:bg-gray-200 p-2 rounded-full transition ml-1"
+                    title="Excluir Visita (Admin)"
+                >
+                    <Trash2 size={18} />
+                </button>
+            )}
         </div>
     );
 }

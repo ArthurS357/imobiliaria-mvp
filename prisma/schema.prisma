@@ -28,7 +28,7 @@ model User {
   // Relação: Leads (Mensagens) atribuídos a este usuário
   assignedLeads Lead[]     @relation("AssignedLeads")
 
-  // Relação: Visitas atribuídas a este usuário (NOVO)
+  // Relação: Visitas atribuídas a este usuário
   assignedVisits Visit[]   @relation("AssignedVisits")
 
   @@map("users")
@@ -37,6 +37,8 @@ model User {
 // Modelo de Imóvel
 model Property {
   id          String   @id @default(cuid())
+  
+  // OBS: Campo 'codigo' removido pois SQLite não suporta autoincrement em campo não-ID.
   
   titulo      String
   descricao   String
@@ -48,7 +50,6 @@ model Property {
   cidade      String
   bairro      String
   endereco    String?
-  
   quarto      Int      @default(0)
   banheiro    Int      @default(0)
   garagem     Int      @default(0)
@@ -71,8 +72,11 @@ model Property {
   corretorId  String
   corretor    User     @relation(fields: [corretorId], references: [id])
 
-  // Relação inversa para as visitas (Imóvel tem várias visitas)
+  // Relação inversa para as visitas
   visits      Visit[]
+
+  // Relação inversa para Leads (Um imóvel pode ter vários leads)
+  leads       Lead[]
 
   @@map("properties")
 }
@@ -93,6 +97,10 @@ model Lead {
   assignedToId  String?
   assignedTo    User?   @relation("AssignedLeads", fields: [assignedToId], references: [id])
 
+  // Relação com Imóvel (Opcional) - Permite saber qual imóvel gerou esse contato
+  propertyId    String?
+  property      Property? @relation(fields: [propertyId], references: [id])
+
   @@map("leads")
 }
 
@@ -104,7 +112,6 @@ model Visit {
   name        String
   email       String
   phone       String?
-  
   status      String   @default("PENDENTE") // PENDENTE, CONFIRMADA, CANCELADA
 
   createdAt   DateTime @default(now())
