@@ -38,44 +38,55 @@ export function Header() {
                         {/* LOGO */}
                         <div className="flex-shrink-0 flex items-center z-50">
                             <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
-                                <div className="hidden md:flex items-center justify-center bg-blue-900 rounded-lg shadow-sm px-3 py-1">
+
+                                {/* Logo Desktop */}
+                                <div className="hidden md:flex items-center justify-center">
                                     <Image
                                         src="/logo.png"
                                         alt="Logo Imobiliária"
                                         width={500}
                                         height={150}
-                                        className="h-14 w-auto object-contain"
+                                        // AQUI ESTÁ O TRUQUE: 'invert' no modo claro (vira preto), 'dark:invert-0' no modo escuro (fica branco)
+                                        className="h-16 w-auto object-contain dark:invert-0 invert transition-all duration-300"
                                         priority
                                         onError={(e) => {
                                             e.currentTarget.style.display = 'none';
                                             const parent = e.currentTarget.parentElement;
                                             if (parent) {
-                                                parent.classList.remove('bg-blue-900', 'shadow-sm', 'px-3', 'py-1');
-                                                // Fallback SVG adaptado para Dark Mode
                                                 parent.innerHTML = '<span class="text-2xl font-extrabold text-blue-900 dark:text-white tracking-tight flex items-center gap-1"><svg class="text-red-600" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> IMOBILIÁRIA<span class="text-red-600">MVP</span></span>';
                                             }
                                         }}
                                     />
                                 </div>
+
                                 {/* Logo Mobile */}
-                                <div className="md:hidden relative bg-blue-900 rounded-md p-1 flex items-center justify-center">
+                                <div className="md:hidden relative flex items-center justify-center">
                                     <Image
                                         src="/logo.png"
                                         alt="Logo"
                                         width={120}
                                         height={40}
-                                        className="h-8 w-auto object-contain"
+                                        // MESMA CORREÇÃO AQUI
+                                        className="h-10 w-auto object-contain dark:invert-0 invert transition-all duration-300"
                                     />
                                 </div>
                             </Link>
                         </div>
 
                         {/* NAV DESKTOP */}
-                        <nav className="hidden md:flex space-x-8">
-                            <Link href="/" className={navLinkClass("/")}>Início</Link>
-                            <Link href="/imoveis" className={navLinkClass("/imoveis")}>Imóveis</Link>
-                            <Link href="/sobre" className={navLinkClass("/sobre")}>Quem Somos</Link>
-                            <Link href="/contato" className={navLinkClass("/contato")}>Contato</Link>
+                        <nav className="hidden md:flex items-center gap-8">
+                            <Link href="/" className={navLinkClass('/')}>
+                                <Home size={18} /> Início
+                            </Link>
+                            <Link href="/imoveis" className={navLinkClass('/imoveis')}>
+                                <Building2 size={18} /> Imóveis
+                            </Link>
+                            <Link href="/sobre" className={navLinkClass('/sobre')}>
+                                <Info size={18} /> Quem Somos
+                            </Link>
+                            <Link href="/contato" className={navLinkClass('/contato')}>
+                                <Phone size={18} /> Contato
+                            </Link>
                         </nav>
 
                         {/* AÇÕES DIREITA */}
@@ -104,18 +115,18 @@ export function Header() {
                             </Link>
                         </div>
 
-                        {/* BOTÃO MOBILE */}
+                        {/* BOTÃO MENU MOBILE */}
                         <div className="md:hidden flex items-center gap-4 z-50">
-                            {/* Tema no Mobile (fora do menu pra ser acessível) */}
                             <ThemeToggle />
 
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg focus:outline-none"
+                                className="p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg focus:outline-none transition-colors"
                             >
                                 {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
                             </button>
                         </div>
+
                     </div>
                 </div>
             </header>
@@ -124,7 +135,6 @@ export function Header() {
             {isMobileMenuOpen && (
                 <div className="fixed inset-0 top-20 z-40 bg-white dark:bg-gray-900 md:hidden overflow-y-auto animate-fade-in pb-20 border-t border-gray-100 dark:border-gray-800">
                     <div className="p-4 space-y-2">
-                        {/* ... eles usam a classe mobileLinkClass ... */}
 
                         <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/")}>
                             <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-full text-blue-900 dark:text-blue-400"><Home size={20} /></div>
