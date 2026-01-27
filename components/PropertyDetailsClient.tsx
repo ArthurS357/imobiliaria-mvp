@@ -34,6 +34,7 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
     );
 
     const fotos = property.fotos ? property.fotos.split(";") : [];
+    // Garante que features seja um array, mesmo se vier null/undefined
     const featuresList = property.features ? property.features.split(",") : [];
 
     const mensagemZap = encodeURIComponent(`Olá! Vi o imóvel "${property.titulo}" no site e gostaria de mais informações.`);
@@ -142,6 +143,14 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                         {/* 3. SOBRE O IMÓVEL (Descrição) */}
                         <div className="mb-8">
                             <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Sobre o imóvel</h2>
+
+                            {/* EXIBE O TÍTULO PERSONALIZADO SE EXISTIR */}
+                            {property.sobreTitulo && (
+                                <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-400 mb-3 leading-tight">
+                                    {property.sobreTitulo}
+                                </h3>
+                            )}
+
                             <div className="prose text-gray-600 dark:text-gray-300 max-w-none whitespace-pre-line leading-relaxed text-justify text-lg">
                                 {property.descricao}
                             </div>
@@ -166,7 +175,7 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                     </div>
                 </div>
 
-                {/* COLUNA DIREITA (Sidebar Fixa - Mantida igual) */}
+                {/* COLUNA DIREITA (Sidebar Fixa) */}
                 <div className="lg:col-span-1">
                     <div className="sticky top-24 space-y-6">
 

@@ -58,6 +58,8 @@ model Property {
   area        Float    // Área Útil / Construída
   areaTerreno Float?   @default(0) // NOVO: Área do Terreno (Total)
   
+  sobreTitulo String?  @default("")
+  
   // Salva lista de URLs separadas por ponto e vírgula
   fotos       String?  @default("") 
   

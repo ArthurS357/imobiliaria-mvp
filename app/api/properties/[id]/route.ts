@@ -79,6 +79,9 @@ export async function PUT(
             data: {
                 titulo: data.titulo,
                 descricao: data.descricao,
+                // NOVO CAMPO: Título da secção Sobre
+                sobreTitulo: data.sobreTitulo,
+
                 tipo: data.tipo,
                 preco: data.preco ? parseFloat(data.preco) : undefined,
                 cidade: data.cidade,
@@ -90,7 +93,7 @@ export async function PUT(
 
                 // Áreas (Métricas)
                 area: data.area ? parseFloat(data.area) : undefined,
-                areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : undefined, // NOVO
+                areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : undefined,
 
                 // Atualizações condicionais de Strings Especiais
                 ...(fotosString !== undefined && { fotos: fotosString }),

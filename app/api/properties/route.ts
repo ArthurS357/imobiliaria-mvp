@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     }
 }
 
-// POST: Cadastrar novo imóvel (ATUALIZADO COM NOVOS CAMPOS)
+// POST: Cadastrar novo imóvel (ATUALIZADO COM SOBRE TÍTULO)
 export async function POST(request: Request) {
     try {
         // 1. Segurança: Quem está cadastrando?
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 
         // 3. Tratamento de Arrays para String (SQLite não suporta arrays nativos)
         const fotosString = Array.isArray(data.fotos) ? data.fotos.join(";") : "";
-        
+
         // NOVO: Tratamento do Checklist
         const featuresString = Array.isArray(data.features) ? data.features.join(",") : "";
 
@@ -94,6 +94,9 @@ export async function POST(request: Request) {
             data: {
                 titulo: data.titulo,
                 descricao: data.descricao,
+                // NOVO CAMPO: Título da secção Sobre
+                sobreTitulo: data.sobreTitulo || "",
+
                 tipo: data.tipo,
                 preco: parseFloat(data.preco),
                 cidade: data.cidade,
@@ -102,11 +105,11 @@ export async function POST(request: Request) {
                 quarto: parseInt(data.quarto),
                 banheiro: parseInt(data.banheiro),
                 garagem: parseInt(data.garagem),
-                
+
                 // Áreas
                 area: parseFloat(data.area), // Área construída
-                areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : 0, // NOVO: Área terreno
-                
+                areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : 0, // Área terreno
+
                 fotos: fotosString,
                 status: initialStatus,
                 corretorId: session.user.id,

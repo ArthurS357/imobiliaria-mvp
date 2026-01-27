@@ -6,9 +6,7 @@ import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, Shiel
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useSession } from "next-auth/react";
-// Importamos o componente de checklist centralizado
 import { FeatureSelector } from "@/components/admin/FeatureSelector";
-// Importamos a lista de tipos padronizada
 import { PROPERTY_TYPES } from "@/lib/constants";
 
 export default function EditPropertyPage() {
@@ -21,8 +19,9 @@ export default function EditPropertyPage() {
 
     const [formData, setFormData] = useState({
         titulo: "",
+        sobreTitulo: "", // Novo campo
         descricao: "",
-        tipo: PROPERTY_TYPES[0], // Padrão inicial
+        tipo: PROPERTY_TYPES[0],
         preco: "",
         cidade: "",
         bairro: "",
@@ -31,13 +30,13 @@ export default function EditPropertyPage() {
         banheiro: "0",
         garagem: "0",
         area: "",        // Área Construída
-        areaTerreno: "", // Área Total do Terreno
+        areaTerreno: "", // Área Total
         latitude: "",
         longitude: "",
         fotos: [] as string[],
-        features: [] as string[], // Estado para o checklist
-        displayAddress: true,     // Controle de Privacidade
-        displayDetails: true,     // Controle de Privacidade
+        features: [] as string[],
+        displayAddress: true,
+        displayDetails: true,
         status: "PENDENTE",
         destaque: false
     });
@@ -54,6 +53,7 @@ export default function EditPropertyPage() {
 
                 setFormData({
                     titulo: data.titulo,
+                    sobreTitulo: data.sobreTitulo || "", // Carrega o título da seção sobre
                     descricao: data.descricao,
                     tipo: data.tipo,
                     preco: data.preco,
@@ -64,11 +64,10 @@ export default function EditPropertyPage() {
                     banheiro: data.banheiro,
                     garagem: data.garagem,
                     area: data.area,
-                    areaTerreno: data.areaTerreno || "", // Carrega área do terreno
+                    areaTerreno: data.areaTerreno || "",
                     latitude: data.latitude || "",
                     longitude: data.longitude || "",
                     fotos: data.fotos ? data.fotos.split(";") : [],
-                    // Converte a string "Piscina,Churrasqueira" de volta para array
                     features: data.features ? data.features.split(",") : [],
                     status: data.status,
                     destaque: data.destaque,
@@ -242,11 +241,27 @@ export default function EditPropertyPage() {
                                 </label>
                                 <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" placeholder="0,00" />
                             </div>
+
+                            {/* NOVO CAMPO: TÍTULO DA SECÇÃO SOBRE */}
+                            <div className="col-span-2">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                    Título da Secção "Sobre" (Opcional)
+                                </label>
+                                <input
+                                    name="sobreTitulo"
+                                    value={formData.sobreTitulo}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition"
+                                    placeholder="Ex: Oportunidade única com acabamento de luxo..."
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Um destaque que aparecerá acima da descrição detalhada.</p>
+                            </div>
+
                             <div className="col-span-2">
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Descrição Detalhada <span className="text-[#eaca42]">*</span>
                                 </label>
-                                <textarea required name="descricao" value={formData.descricao} rows={4} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition resize-y" />
+                                <textarea required name="descricao" value={formData.descricao} rows={6} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition resize-y" />
                             </div>
                         </div>
                     </div>
@@ -301,14 +316,12 @@ export default function EditPropertyPage() {
                                             Área Útil / Construída (m²) <span className="text-[#eaca42]">*</span>
                                         </label>
                                         <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400" />
-                                        <p className="text-xs text-gray-500 mt-1">Tamanho interno do imóvel.</p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                             Área do Terreno (m²)
                                         </label>
                                         <input type="number" name="areaTerreno" value={formData.areaTerreno} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400" />
-                                        <p className="text-xs text-gray-500 mt-1">Tamanho total do lote.</p>
                                     </div>
                                 </div>
                             </div>

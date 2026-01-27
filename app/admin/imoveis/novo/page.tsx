@@ -6,7 +6,7 @@ import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, Maxim
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { FeatureSelector } from "@/components/admin/FeatureSelector";
-import { PROPERTY_TYPES } from "@/lib/constants"; // Importa os tipos atualizados
+import { PROPERTY_TYPES } from "@/lib/constants";
 
 export default function NewPropertyPage() {
     const router = useRouter();
@@ -14,8 +14,9 @@ export default function NewPropertyPage() {
 
     const [formData, setFormData] = useState({
         titulo: "",
+        sobreTitulo: "", // Novo campo de destaque
         descricao: "",
-        tipo: PROPERTY_TYPES[0], // Padrão: Primeiro item da lista (Casa)
+        tipo: PROPERTY_TYPES[0], // Padrão: Primeiro item da lista
         preco: "",
         cidade: "",
         bairro: "",
@@ -23,7 +24,7 @@ export default function NewPropertyPage() {
         quarto: "",
         banheiro: "",
         garagem: "",
-        area: "",        // Área Útil / Construída
+        area: "",        // Área Útil
         areaTerreno: "", // Área Total do Terreno
         latitude: "",
         longitude: "",
@@ -101,10 +102,10 @@ export default function NewPropertyPage() {
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Título do Anúncio <span className="text-[#eaca42]">*</span>
                                 </label>
-                                <input required name="titulo" value={formData.titulo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Ex: Casa de Alto Padrão..." />
+                                <input required name="titulo" value={formData.titulo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Ex: Casa de Alto Padrão no Centro..." />
                             </div>
 
-                            {/* SELEÇÃO DE TIPOS (DINÂMICA) */}
+                            {/* SELEÇÃO DE TIPOS */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Tipo <span className="text-[#eaca42]">*</span>
@@ -127,11 +128,27 @@ export default function NewPropertyPage() {
                                 </label>
                                 <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="0,00" />
                             </div>
+
+                            {/* NOVO CAMPO: TÍTULO DA SECÇÃO SOBRE */}
                             <div className="col-span-2">
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                    Descrição <span className="text-[#eaca42]">*</span>
+                                    Título da Secção "Sobre" (Opcional)
                                 </label>
-                                <textarea required name="descricao" value={formData.descricao} rows={4} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                                <input
+                                    name="sobreTitulo"
+                                    value={formData.sobreTitulo}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition"
+                                    placeholder="Ex: Oportunidade única com acabamento de luxo..."
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Um destaque que aparecerá acima da descrição detalhada.</p>
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                    Descrição Detalhada <span className="text-[#eaca42]">*</span>
+                                </label>
+                                <textarea required name="descricao" value={formData.descricao} rows={6} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-y" />
                             </div>
                         </div>
                     </div>
@@ -174,7 +191,7 @@ export default function NewPropertyPage() {
                                 </div>
                             </div>
 
-                            {/* SEÇÃO DE METRAGEM (ÁREAS) */}
+                            {/* SEÇÃO DE METRAGEM */}
                             <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-8">
                                 <div className="flex items-center gap-2 mb-4">
                                     <Maximize size={18} className="text-[#eaca42]" />
