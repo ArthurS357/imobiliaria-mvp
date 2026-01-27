@@ -1,5 +1,3 @@
-// lib/constants.ts
-
 export const PROPERTY_TYPES = [
     "Casa",
     "Apartamento",
@@ -11,7 +9,12 @@ export const PROPERTY_TYPES = [
     "Sobrado",
     "Cobertura",
     "Studio/Flat",
-    "Lote em Condomínio"
+    "Kitnet",
+    "Lote em Condomínio",
+    "Fazenda",
+    "Prédio Inteiro",
+    "Ponto Comercial",
+    "Pousada/Hotel"
 ];
 
 // Lista organizada por categorias para exibição no Front-end
@@ -19,12 +22,12 @@ export const PROPERTY_FEATURES_CATEGORIZED = [
     {
         category: "Lazer e Bem-estar",
         features: [
-            "Piscina", "Piscina Aquecida", "Piscina Infantil", "Raia Olímpica",
+            "Piscina", "Piscina Aquecida", "Piscina Infantil", "Piscina com Raia", "Piscina de Borda Infinita",
             "Churrasqueira", "Forno de Pizza", "Espaço Gourmet", "Salão de Festas",
             "Salão de Jogos", "Brinquedoteca", "Playground", "Quadra Poliesportiva",
-            "Quadra de Tênis", "Campo de Futebol", "Quadra de Squash", "Sauna",
-            "Spa/Hidromassagem", "Ofurô", "Academia/Fitness", "Espaço Zen",
-            "Cinema/Home Theater", "Pista de Cooper"
+            "Quadra de Tênis", "Quadra de Beach Tennis", "Campo de Futebol", "Quadra de Squash",
+            "Sauna", "Spa/Hidromassagem", "Ofurô", "Academia/Fitness", "Espaço Zen",
+            "Cinema/Home Theater", "Pista de Cooper", "Redário", "Horta Comunitária", "Rooftop"
         ]
     },
     {
@@ -33,38 +36,58 @@ export const PROPERTY_FEATURES_CATEGORIZED = [
             "Elevador", "Elevador de Serviço", "Elevador Privativo", "Gerador de Energia",
             "Acessibilidade (PCD)", "Rampa de Acesso", "Bicicletário",
             "Carregador de Carro Elétrico", "Coworking", "Lavanderia Coletiva",
-            "Mini Mercado", "Restaurante/Café", "Espaço Pet/Pet Place", "Área Verde/Jardim",
-            "Heliponto", "Vaga para Visitantes"
+            "Mini Mercado/Convenência", "Restaurante/Café", "Espaço Pet/Pet Place",
+            "Área Verde/Jardim", "Heliponto", "Vaga para Visitantes", "Car Wash/Lava-Rápido",
+            "Zeladoria", "Coleta Seletiva"
         ]
     },
     {
         category: "Segurança",
         features: [
-            "Portaria 24h", "Portaria Remota", "Guarita Blindada", "Portão Eletrônico",
+            "Portaria 24h", "Portaria Remota/Eletrônica", "Guarita Blindada", "Portão Eletrônico",
             "Controle de Acesso Facial/Biometria", "Câmeras de Segurança", "Monitoramento 24h",
-            "Ronda/Vigilância", "Interfone", "Cerca Elétrica", "Alarme", "Fechadura Digital"
+            "Ronda/Vigilância", "Interfone", "Cerca Elétrica", "Alarme", "Fechadura Digital",
+            "Pulmão de Segurança"
         ]
     },
     {
         category: "Conforto e Diferenciais (Interno)",
         features: [
             "Ar Condicionado", "Preparação para Ar Condicionado", "Aquecimento a Gás",
-            "Aquecimento Solar", "Lareira", "Mobiliado", "Armários Planejados", "Closet",
-            "Home Office", "Varanda/Sacada", "Varanda Gourmet", "Cortina de Vidro",
-            "Cozinha Americana", "Despensa", "Lavabo", "Área de Serviço",
-            "Dependência de Empregada", "Depósito Privativo", "Isolamento Acústico"
+            "Aquecimento Solar", "Lareira", "Mobiliado", "Semi-mobiliado", "Armários Planejados",
+            "Closet", "Home Office", "Varanda/Sacada", "Varanda Gourmet", "Cortina de Vidro",
+            "Cozinha Americana", "Despensa", "Lavabo", "Área de Serviço", "Lavanderia",
+            "Dependência de Empregada", "Banheiro de Empregada", "Depósito Privativo",
+            "Isolamento Acústico", "Automação Residencial", "Gás Individual", "Hidrômetro Individual"
         ]
     },
     {
-        category: "Acabamento e Localização",
+        category: "Acabamento e Estrutura",
         features: [
-            "Piso Porcelanato", "Piso de Madeira/Laminado", "Piso Vinílico",
-            "Teto Rebaixado (Gesso)", "Iluminação em LED", "Box Blindex", "Pé Direito Alto",
-            "Vista Panorâmica", "Vista para o Mar", "Vista para Montanha",
-            "Sol da Manhã", "Sol da Tarde", "Andar Alto", "Andar Baixo", "Frente para Rua"
+            "Piso Porcelanato", "Piso de Madeira/Laminado", "Piso Vinílico", "Piso Frio",
+            "Teto Rebaixado (Gesso)", "Sanca de Gesso", "Iluminação em LED", "Box Blindex",
+            "Pé Direito Alto", "Janelas Grandes", "Vista Panorâmica", "Vista para o Mar",
+            "Vista para Montanha", "Sol da Manhã", "Sol da Tarde", "Andar Alto", "Andar Baixo",
+            "Frente para Rua", "Reformado Recentemente"
+        ]
+    },
+    {
+        category: "Rural e Agronegócio",
+        features: [
+            "Casa de Caseiro", "Curral", "Estábulo", "Galpão Agrícola", "Lago/Rio",
+            "Nascente", "Poço Artesiano", "Pasto", "Pomar", "Horta", "Energia Rural",
+            "Tanque de Peixes", "Silo", "Cerca", "Mata Nativa"
+        ]
+    },
+    {
+        category: "Comercial e Industrial",
+        features: [
+            "Mezanino", "Doca", "Entrada para Caminhões", "Pátio de Manobra",
+            "Energia Trifásica", "Piso Reforçado/Industrial", "Escritório Integrado",
+            "Copa/Refeitório", "Vestiário", "Recepção", "Auditório", "Cabeamento Estruturado"
         ]
     }
 ];
 
-// Lista achatada (Flat) para validações e uso geral
+// Lista achatada (Flat) para validações e uso geral no banco de dados
 export const PROPERTY_FEATURES = PROPERTY_FEATURES_CATEGORIZED.flatMap(c => c.features);

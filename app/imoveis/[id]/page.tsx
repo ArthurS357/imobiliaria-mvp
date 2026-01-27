@@ -5,10 +5,13 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyDetailsClient } from "@/components/PropertyDetailsClient";
 
+// Gera os metadados para SEO (Título da aba, descrição Google, imagem de compartilhamento)
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
     const { id } = await params;
+
     const property = await prisma.property.findUnique({
         where: { id },
+        // Selecionamos apenas o necessário para o SEO
         select: { titulo: true, descricao: true, fotos: true, preco: true, cidade: true }
     });
 
@@ -19,10 +22,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
     return {
         title: `${property.titulo} | Matiello Imóveis`,
-        description: `Confira este imóvel em ${property.cidade} por ${preco}.`,
+        description: `Confira este imóvel em ${property.cidade}. Valor: ${preco}. ${property.descricao.substring(0, 100)}...`,
         openGraph: {
             title: property.titulo,
-            description: `Oportunidade única: ${preco}`,
+            description: `Oportunidade em ${property.cidade}: ${preco}`,
             images: capa ? [capa] : [],
         },
     };
@@ -31,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    // Busca o imóvel e os dados do corretor (incluindo CRECI)
+    // 1. Busca o imóvel com TODOS os dados (incluindo os novos campos areaTerreno, features, etc)
     const property = await prisma.property.findUnique({
         where: { id },
         include: {
@@ -39,7 +42,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
                 select: {
                     name: true,
                     email: true,
-                    creci: true // <--- Busca o CRECI do banco
+                    creci: true // Importante para exibir no card do corretor
                 },
             },
         },
@@ -47,6 +50,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
 
     if (!property) return notFound();
 
+    // 2. Busca imóveis relacionados (mesmo tipo, disponíveis, exceto o atual)
     const relatedProperties = await prisma.property.findMany({
         where: {
             tipo: property.tipo,
@@ -57,19 +61,26 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         orderBy: { createdAt: "desc" },
     });
 
-    // Serialização para passar objetos Date e Decimal do Prisma para o Client Component
+    // 3. Serialização: O Prisma retorna objetos Date e Decimal que o Next.js (Client Component) não aceita diretamente.
+    // O JSON.parse(JSON.stringify) converte tudo para string/number simples.
     const serializedProperty = JSON.parse(JSON.stringify(property));
     const serializedRelated = JSON.parse(JSON.stringify(relatedProperties));
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-500 overflow-x-hidden">
             <Header />
+
             <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Passamos os dados completos para o Client Component.
+                   É lá no 'PropertyDetailsClient' que vamos renderizar o Checklist, 
+                   a Área do Terreno e aplicar a lógica de privacidade.
+                */}
                 <PropertyDetailsClient
                     property={serializedProperty}
                     relatedProperties={serializedRelated}
                 />
             </main>
+
             <Footer />
         </div>
     );

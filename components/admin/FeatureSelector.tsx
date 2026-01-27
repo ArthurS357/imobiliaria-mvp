@@ -12,8 +12,10 @@ export function FeatureSelector({ selectedFeatures, onChange }: FeatureSelectorP
 
     const toggleFeature = (feature: string) => {
         if (selectedFeatures.includes(feature)) {
+            // Remove se já existe
             onChange(selectedFeatures.filter((f) => f !== feature));
         } else {
+            // Adiciona se não existe
             onChange([...selectedFeatures, feature]);
         }
     };
@@ -28,7 +30,7 @@ export function FeatureSelector({ selectedFeatures, onChange }: FeatureSelectorP
                     </h2>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Selecione tudo o que este imóvel oferece.
+                    Selecione os diferenciais do imóvel por categoria.
                 </p>
             </div>
 
@@ -58,8 +60,9 @@ export function FeatureSelector({ selectedFeatures, onChange }: FeatureSelectorP
                                                 value={feature}
                                                 checked={isSelected}
                                                 onChange={() => toggleFeature(feature)}
-                                                className="peer sr-only"
+                                                className="peer sr-only" // Esconde o checkbox nativo
                                             />
+                                            {/* Checkbox Customizado */}
                                             <div className={`
                                                 w-5 h-5 rounded border flex items-center justify-center transition-colors
                                                 ${isSelected
