@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     }
 }
 
-// POST: Cadastrar novo imóvel (ATUALIZADO COM LATITUDE/LONGITUDE)
+// POST: Cadastrar novo imóvel (ATUALIZADO COM NOVOS CAMPOS)
 export async function POST(request: Request) {
     try {
         // 1. Segurança: Quem está cadastrando?
@@ -84,8 +84,11 @@ export async function POST(request: Request) {
         // Se for ADMIN, já pode criar como DISPONIVEL. Se for FUNCIONARIO, entra como PENDENTE.
         const initialStatus = session.user.role === "ADMIN" ? "DISPONIVEL" : "PENDENTE";
 
-        // 3. Tratamento das Fotos (Array -> String única para SQLite)
+        // 3. Tratamento de Arrays para String (SQLite não suporta arrays nativos)
         const fotosString = Array.isArray(data.fotos) ? data.fotos.join(";") : "";
+        
+        // NOVO: Tratamento do Checklist
+        const featuresString = Array.isArray(data.features) ? data.features.join(",") : "";
 
         const property = await prisma.property.create({
             data: {
@@ -99,15 +102,23 @@ export async function POST(request: Request) {
                 quarto: parseInt(data.quarto),
                 banheiro: parseInt(data.banheiro),
                 garagem: parseInt(data.garagem),
-                area: parseFloat(data.area),
+                
+                // Áreas
+                area: parseFloat(data.area), // Área construída
+                areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : 0, // NOVO: Área terreno
+                
                 fotos: fotosString,
                 status: initialStatus,
                 corretorId: session.user.id,
 
-                // --- NOVOS CAMPOS DO MAPA ---
-                // Verifica se veio dado, senão salva null
+                // Campos do Mapa
                 latitude: data.latitude ? parseFloat(data.latitude) : null,
                 longitude: data.longitude ? parseFloat(data.longitude) : null,
+
+                // --- NOVOS CAMPOS (Checklist & Privacidade) ---
+                features: featuresString,
+                displayAddress: data.displayAddress ?? true, // Se não vier, assume true
+                displayDetails: data.displayDetails ?? true, // Se não vier, assume true
             },
         });
 

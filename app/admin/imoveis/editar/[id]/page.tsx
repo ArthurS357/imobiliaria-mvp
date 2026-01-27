@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, ShieldCheck, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, ShieldCheck, AlertTriangle, Maximize, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useSession } from "next-auth/react";
 // Importamos o componente de checklist centralizado
 import { FeatureSelector } from "@/components/admin/FeatureSelector";
+// Importamos a lista de tipos padronizada
+import { PROPERTY_TYPES } from "@/lib/constants";
 
 export default function EditPropertyPage() {
     const { data: session } = useSession();
@@ -20,7 +22,7 @@ export default function EditPropertyPage() {
     const [formData, setFormData] = useState({
         titulo: "",
         descricao: "",
-        tipo: "Casa",
+        tipo: PROPERTY_TYPES[0], // Padrão inicial
         preco: "",
         cidade: "",
         bairro: "",
@@ -28,7 +30,8 @@ export default function EditPropertyPage() {
         quarto: "0",
         banheiro: "0",
         garagem: "0",
-        area: "",
+        area: "",        // Área Construída
+        areaTerreno: "", // Área Total do Terreno
         latitude: "",
         longitude: "",
         fotos: [] as string[],
@@ -61,6 +64,7 @@ export default function EditPropertyPage() {
                     banheiro: data.banheiro,
                     garagem: data.garagem,
                     area: data.area,
+                    areaTerreno: data.areaTerreno || "", // Carrega área do terreno
                     latitude: data.latitude || "",
                     longitude: data.longitude || "",
                     fotos: data.fotos ? data.fotos.split(";") : [],
@@ -214,18 +218,24 @@ export default function EditPropertyPage() {
                                 </label>
                                 <input required name="titulo" value={formData.titulo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" placeholder="Ex: Belíssima Casa no Condomínio..." />
                             </div>
+
+                            {/* SELEÇÃO DINÂMICA DE TIPOS */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Tipo de Imóvel <span className="text-[#eaca42]">*</span>
                                 </label>
-                                <select name="tipo" value={formData.tipo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none transition">
-                                    <option value="Casa">Casa</option>
-                                    <option value="Apartamento">Apartamento</option>
-                                    <option value="Terreno">Terreno</option>
-                                    <option value="Comercial">Comercial</option>
-                                    <option value="Sítio/Chácara">Sítio/Chácara</option>
+                                <select
+                                    name="tipo"
+                                    value={formData.tipo}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none transition"
+                                >
+                                    {PROPERTY_TYPES.map((type) => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
                                 </select>
                             </div>
+
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Valor de Venda (R$) <span className="text-[#eaca42]">*</span>
@@ -277,15 +287,33 @@ export default function EditPropertyPage() {
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Vagas</label>
                                     <input type="number" name="garagem" value={formData.garagem} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                        Área Útil (m²) <span className="text-[#eaca42]">*</span>
-                                    </label>
-                                    <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+                            </div>
+
+                            {/* SEÇÃO DE METRAGEM (ÁREAS) */}
+                            <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-8">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Maximize size={18} className="text-[#eaca42]" />
+                                    <h3 className="font-semibold text-gray-800 dark:text-white">Metragem e Dimensões</h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                            Área Útil / Construída (m²) <span className="text-[#eaca42]">*</span>
+                                        </label>
+                                        <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400" />
+                                        <p className="text-xs text-gray-500 mt-1">Tamanho interno do imóvel.</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                            Área do Terreno (m²)
+                                        </label>
+                                        <input type="number" name="areaTerreno" value={formData.areaTerreno} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400" />
+                                        <p className="text-xs text-gray-500 mt-1">Tamanho total do lote.</p>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* COMPONENTE CHECKLIST CENTRALIZADO */}
+                            {/* COMPONENTE DE CHECKLIST */}
                             <div className="mt-6">
                                 <FeatureSelector
                                     selectedFeatures={formData.features}

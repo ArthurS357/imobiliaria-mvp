@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, Eye, EyeOff } from "lucide-react";
+import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, Maximize, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
-// Importamos o componente isolado para limpar o código
 import { FeatureSelector } from "@/components/admin/FeatureSelector";
+import { PROPERTY_TYPES } from "@/lib/constants"; // Importa os tipos atualizados
 
 export default function NewPropertyPage() {
     const router = useRouter();
@@ -15,7 +15,7 @@ export default function NewPropertyPage() {
     const [formData, setFormData] = useState({
         titulo: "",
         descricao: "",
-        tipo: "Casa",
+        tipo: PROPERTY_TYPES[0], // Padrão: Primeiro item da lista (Casa)
         preco: "",
         cidade: "",
         bairro: "",
@@ -23,13 +23,14 @@ export default function NewPropertyPage() {
         quarto: "",
         banheiro: "",
         garagem: "",
-        area: "",
+        area: "",        // Área Útil / Construída
+        areaTerreno: "", // Área Total do Terreno
         latitude: "",
         longitude: "",
         fotos: [] as string[],
-        features: [] as string[], // O componente FeatureSelector vai gerenciar isso
-        displayAddress: true,     // Padrão: Mostrar
-        displayDetails: true,     // Padrão: Mostrar
+        features: [] as string[],
+        displayAddress: true,
+        displayDetails: true,
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -102,18 +103,24 @@ export default function NewPropertyPage() {
                                 </label>
                                 <input required name="titulo" value={formData.titulo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Ex: Casa de Alto Padrão..." />
                             </div>
+
+                            {/* SELEÇÃO DE TIPOS (DINÂMICA) */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Tipo <span className="text-[#eaca42]">*</span>
                                 </label>
-                                <select name="tipo" value={formData.tipo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                                    <option value="Casa">Casa</option>
-                                    <option value="Apartamento">Apartamento</option>
-                                    <option value="Terreno">Terreno</option>
-                                    <option value="Comercial">Comercial</option>
-                                    <option value="Sítio/Chácara">Sítio/Chácara</option>
+                                <select
+                                    name="tipo"
+                                    value={formData.tipo}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                >
+                                    {PROPERTY_TYPES.map((type) => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
                                 </select>
                             </div>
+
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Valor (R$) <span className="text-[#eaca42]">*</span>
@@ -155,25 +162,43 @@ export default function NewPropertyPage() {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Quartos</label>
-                                    <input type="number" name="quarto" value={formData.quarto} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                                    <input type="number" name="quarto" value={formData.quarto} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Banheiros</label>
-                                    <input type="number" name="banheiro" value={formData.banheiro} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                                    <input type="number" name="banheiro" value={formData.banheiro} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Vagas</label>
-                                    <input type="number" name="garagem" value={formData.garagem} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                        Área (m²) <span className="text-[#eaca42]">*</span>
-                                    </label>
-                                    <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                                    <input type="number" name="garagem" value={formData.garagem} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                 </div>
                             </div>
 
-                            {/* SUBSTITUIÇÃO: Componente FeatureSelector */}
+                            {/* SEÇÃO DE METRAGEM (ÁREAS) */}
+                            <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-8">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Maximize size={18} className="text-[#eaca42]" />
+                                    <h3 className="font-semibold text-gray-800 dark:text-white">Metragem e Dimensões</h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                            Área Útil / Construída (m²) <span className="text-[#eaca42]">*</span>
+                                        </label>
+                                        <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400" placeholder="Ex: 150" />
+                                        <p className="text-xs text-gray-500 mt-1">Tamanho interno do imóvel.</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                            Área do Terreno (m²)
+                                        </label>
+                                        <input type="number" name="areaTerreno" value={formData.areaTerreno} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400" placeholder="Ex: 300" />
+                                        <p className="text-xs text-gray-500 mt-1">Tamanho total do lote.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* COMPONENTE DE CHECKLIST */}
                             <div className="mt-6">
                                 <FeatureSelector
                                     selectedFeatures={formData.features}
@@ -219,7 +244,7 @@ export default function NewPropertyPage() {
                                     <input required name="bairro" value={formData.bairro} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Endereço (Rua, Nº)</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Endereço</label>
                                     <input name="endereco" value={formData.endereco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                 </div>
                             </div>

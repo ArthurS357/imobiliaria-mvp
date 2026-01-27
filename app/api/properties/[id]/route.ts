@@ -46,16 +46,14 @@ export async function PUT(
             return NextResponse.json({ error: "Imóvel não existe" }, { status: 404 });
         }
 
-        // 2. SEGURANÇA DE PROPRIEDADE (NOVO):
+        // 2. SEGURANÇA DE PROPRIEDADE:
         // Se o usuário NÃO for ADMIN e NÃO for o dono do imóvel -> BLOQUEIA A EDIÇÃO.
-        // Isso impede que um corretor edite o imóvel de outro via API.
         if (session.user.role !== "ADMIN" && existingProperty.corretorId !== session.user.id) {
             return NextResponse.json({ error: "Você não tem permissão para editar este imóvel." }, { status: 403 });
         }
 
         // 3. SEGURANÇA DE CAMPOS ADMINISTRATIVOS:
         // Se o usuário NÃO for ADMIN, removemos status e destaque do objeto de atualização.
-        // Assim, o corretor pode editar o título/preço do SEU imóvel, mas não pode se auto-aprovar.
         if (session.user.role !== "ADMIN") {
             delete data.status;
             delete data.destaque;
@@ -69,7 +67,13 @@ export async function PUT(
             fotosString = data.fotos;
         }
 
-        // 5. Atualização no Banco de Dados
+        // 5. Tratamento de Features (Checklist)
+        let featuresString = undefined;
+        if (data.features && Array.isArray(data.features)) {
+            featuresString = data.features.join(",");
+        }
+
+        // 6. Atualização no Banco de Dados
         const updatedProperty = await prisma.property.update({
             where: { id },
             data: {
@@ -83,18 +87,26 @@ export async function PUT(
                 quarto: data.quarto ? parseInt(data.quarto) : undefined,
                 banheiro: data.banheiro ? parseInt(data.banheiro) : undefined,
                 garagem: data.garagem ? parseInt(data.garagem) : undefined,
-                area: data.area ? parseFloat(data.area) : undefined,
 
-                // Atualiza fotos apenas se fotosString foi definido
+                // Áreas (Métricas)
+                area: data.area ? parseFloat(data.area) : undefined,
+                areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : undefined, // NOVO
+
+                // Atualizações condicionais de Strings Especiais
                 ...(fotosString !== undefined && { fotos: fotosString }),
+                ...(featuresString !== undefined && { features: featuresString }),
 
                 // Status e Destaque só atualizam se não tiverem sido deletados pela regra de segurança (passo 3)
                 ...(data.status && { status: data.status }),
                 ...(data.destaque !== undefined && { destaque: data.destaque }),
 
-                // --- NOVOS CAMPOS DO MAPA ---
+                // Campos do Mapa
                 latitude: data.latitude ? parseFloat(data.latitude) : null,
                 longitude: data.longitude ? parseFloat(data.longitude) : null,
+
+                // Campos de Privacidade (Booleanos)
+                ...(data.displayAddress !== undefined && { displayAddress: data.displayAddress }),
+                ...(data.displayDetails !== undefined && { displayDetails: data.displayDetails }),
             },
         });
 
@@ -114,7 +126,6 @@ export async function DELETE(
         const session = await getServerSession(authOptions);
 
         // Verificamos APENAS se é ADMIN.
-        // Se não for admin, rejeita, mesmo que seja o dono.
         if (!session || session.user.role !== "ADMIN") {
             return NextResponse.json({
                 error: "Permissão negada. Apenas administradores podem excluir imóveis do sistema."

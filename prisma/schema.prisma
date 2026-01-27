@@ -53,7 +53,10 @@ model Property {
   quarto      Int      @default(0)
   banheiro    Int      @default(0)
   garagem     Int      @default(0)
-  area        Float
+  
+  // ÁREAS (MÉTRICAS)
+  area        Float    // Área Útil / Construída
+  areaTerreno Float?   @default(0) // NOVO: Área do Terreno (Total)
   
   // Salva lista de URLs separadas por ponto e vírgula
   fotos       String?  @default("") 
