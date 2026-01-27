@@ -62,9 +62,14 @@ model Property {
   status      String   @default("PENDENTE")
   destaque    Boolean  @default(false)
 
-  // NOVOS CAMPOS PARA O MAPA
+  // CAMPOS PARA O MAPA
   latitude    Float?
   longitude   Float?
+
+  // --- (CHECKLIST E PRIVACIDADE) ---
+  features        String?  @default("")   // Checklist completo salvo como string (ex: "Piscina,Academia")
+  displayAddress  Boolean  @default(true) // Se false, esconde o endereço exato no site
+  displayDetails  Boolean  @default(true) // Se false, esconde detalhes específicos (opcional)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

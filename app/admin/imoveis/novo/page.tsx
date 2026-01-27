@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2 } from "lucide-react";
+import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
+// Importamos o componente isolado para limpar o código
+import { FeatureSelector } from "@/components/admin/FeatureSelector";
 
 export default function NewPropertyPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
 
-    // Estado do formulário
     const [formData, setFormData] = useState({
         titulo: "",
         descricao: "",
@@ -26,10 +27,19 @@ export default function NewPropertyPage() {
         latitude: "",
         longitude: "",
         fotos: [] as string[],
+        features: [] as string[], // O componente FeatureSelector vai gerenciar isso
+        displayAddress: true,     // Padrão: Mostrar
+        displayDetails: true,     // Padrão: Mostrar
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value, type } = e.target;
+        if (type === "checkbox") {
+            const checked = (e.target as HTMLInputElement).checked;
+            setFormData((prev) => ({ ...prev, [name]: checked }));
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -53,10 +63,10 @@ export default function NewPropertyPage() {
                 router.push("/admin/imoveis");
                 router.refresh();
             } else {
-                alert("Erro ao cadastrar imóvel. Verifique os dados.");
+                alert("Erro ao cadastrar imóvel.");
             }
         } catch (error) {
-            alert("Erro de conexão com o servidor.");
+            alert("Erro de conexão.");
         } finally {
             setLoading(false);
         }
@@ -65,21 +75,21 @@ export default function NewPropertyPage() {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
             <div className="max-w-5xl mx-auto">
-
-                {/* Cabeçalho */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-800 dark:text-white tracking-tight">Novo Imóvel</h1>
-                        <p className="text-gray-500 dark:text-gray-400">Preencha as informações para publicar um novo anúncio.</p>
+                        <p className="text-gray-500 dark:text-gray-400">
+                            Preencha as informações obrigatórias marcadas com <span className="text-[#eaca42] font-bold">*</span>.
+                        </p>
                     </div>
-                    <Link href="/admin/imoveis" className="text-gray-600 dark:text-gray-300 hover:text-blue-900 dark:hover:text-blue-400 flex items-center gap-2 font-medium px-4 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm">
-                        <ArrowLeft size={20} /> Voltar para Lista
+                    <Link href="/admin/imoveis" className="flex items-center gap-2 px-4 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm text-gray-700 dark:text-gray-200">
+                        <ArrowLeft size={20} /> Voltar
                     </Link>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
 
-                    {/* CARD 1: Informações Básicas */}
+                    {/* CARD 1: Informações Principais */}
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                         <div className="bg-blue-50/50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
                             <Info className="text-blue-600 dark:text-blue-400" size={20} />
@@ -87,12 +97,16 @@ export default function NewPropertyPage() {
                         </div>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="col-span-2">
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Título do Anúncio</label>
-                                <input required name="titulo" value={formData.titulo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" placeholder="Ex: Belíssima Casa no Condomínio..." />
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                    Título do Anúncio <span className="text-[#eaca42]">*</span>
+                                </label>
+                                <input required name="titulo" value={formData.titulo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Ex: Casa de Alto Padrão..." />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Tipo de Imóvel</label>
-                                <select name="tipo" value={formData.tipo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none transition">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                    Tipo <span className="text-[#eaca42]">*</span>
+                                </label>
+                                <select name="tipo" value={formData.tipo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                     <option value="Casa">Casa</option>
                                     <option value="Apartamento">Apartamento</option>
                                     <option value="Terreno">Terreno</option>
@@ -101,79 +115,126 @@ export default function NewPropertyPage() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Valor de Venda (R$)</label>
-                                <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" placeholder="0,00" />
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                    Valor (R$) <span className="text-[#eaca42]">*</span>
+                                </label>
+                                <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="0,00" />
                             </div>
                             <div className="col-span-2">
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Descrição Detalhada</label>
-                                <textarea required name="descricao" value={formData.descricao} rows={4} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition resize-y" placeholder="Descreva os diferenciais do imóvel..." />
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                    Descrição <span className="text-[#eaca42]">*</span>
+                                </label>
+                                <textarea required name="descricao" value={formData.descricao} rows={4} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                             </div>
                         </div>
                     </div>
 
-                    {/* CARD 2: Detalhes do Imóvel */}
+                    {/* CARD 2: Detalhes e Checklist */}
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div className="bg-blue-50/50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
-                            <Home className="text-blue-600 dark:text-blue-400" size={20} />
-                            <h2 className="font-bold text-gray-800 dark:text-white">Características</h2>
+                        <div className="bg-blue-50/50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Home className="text-blue-600 dark:text-blue-400" size={20} />
+                                <h2 className="font-bold text-gray-800 dark:text-white">Detalhes do Imóvel</h2>
+                            </div>
+
+                            {/* CHECKBOX DE PRIVACIDADE: DETALHES */}
+                            <label className="flex items-center gap-2 text-sm cursor-pointer bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                <input
+                                    type="checkbox"
+                                    name="displayDetails"
+                                    checked={formData.displayDetails}
+                                    onChange={handleChange}
+                                    className="w-4 h-4 text-[#eaca42] rounded border-gray-300 focus:ring-[#eaca42]"
+                                />
+                                {formData.displayDetails ? <Eye size={16} className="text-green-600" /> : <EyeOff size={16} className="text-gray-400" />}
+                                <span className="text-gray-700 dark:text-gray-300 font-medium">Mostrar Detalhes no Site</span>
+                            </label>
                         </div>
-                        <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Quartos</label>
-                                <input type="number" name="quarto" value={formData.quarto} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+
+                        <div className="p-6">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Quartos</label>
+                                    <input type="number" name="quarto" value={formData.quarto} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Banheiros</label>
+                                    <input type="number" name="banheiro" value={formData.banheiro} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Vagas</label>
+                                    <input type="number" name="garagem" value={formData.garagem} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                        Área (m²) <span className="text-[#eaca42]">*</span>
+                                    </label>
+                                    <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Banheiros</label>
-                                <input type="number" name="banheiro" value={formData.banheiro} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Vagas</label>
-                                <input type="number" name="garagem" value={formData.garagem} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Área Útil (m²)</label>
-                                <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+
+                            {/* SUBSTITUIÇÃO: Componente FeatureSelector */}
+                            <div className="mt-6">
+                                <FeatureSelector
+                                    selectedFeatures={formData.features}
+                                    onChange={(newFeatures) => setFormData({ ...formData, features: newFeatures })}
+                                />
                             </div>
                         </div>
                     </div>
 
                     {/* CARD 3: Localização */}
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div className="bg-blue-50/50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
-                            <MapPin className="text-blue-600 dark:text-blue-400" size={20} />
-                            <h2 className="font-bold text-gray-800 dark:text-white">Localização</h2>
+                        <div className="bg-blue-50/50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <MapPin className="text-blue-600 dark:text-blue-400" size={20} />
+                                <h2 className="font-bold text-gray-800 dark:text-white">Localização</h2>
+                            </div>
+
+                            {/* CHECKBOX DE PRIVACIDADE: ENDEREÇO */}
+                            <label className="flex items-center gap-2 text-sm cursor-pointer bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                <input
+                                    type="checkbox"
+                                    name="displayAddress"
+                                    checked={formData.displayAddress}
+                                    onChange={handleChange}
+                                    className="w-4 h-4 text-[#eaca42] rounded border-gray-300 focus:ring-[#eaca42]"
+                                />
+                                {formData.displayAddress ? <Eye size={16} className="text-green-600" /> : <EyeOff size={16} className="text-gray-400" />}
+                                <span className="text-gray-700 dark:text-gray-300 font-medium">Mostrar Endereço no Site</span>
+                            </label>
                         </div>
                         <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Cidade</label>
-                                    <input required name="cidade" value={formData.cidade} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                        Cidade <span className="text-[#eaca42]">*</span>
+                                    </label>
+                                    <input required name="cidade" value={formData.cidade} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Bairro</label>
-                                    <input required name="bairro" value={formData.bairro} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                                        Bairro <span className="text-[#eaca42]">*</span>
+                                    </label>
+                                    <input required name="bairro" value={formData.bairro} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Endereço (Rua, Nº)</label>
-                                    <input name="endereco" value={formData.endereco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" />
+                                    <input name="endereco" value={formData.endereco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                                 </div>
                             </div>
-
                             <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
-                                <h3 className="text-sm font-bold text-blue-900 dark:text-blue-300 mb-3">Coordenadas para o Mapa (Opcional)</h3>
+                                <h3 className="text-sm font-bold text-blue-900 dark:text-blue-300 mb-3">Mapa (Opcional)</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Latitude</label>
-                                        <input type="number" step="any" name="latitude" value={formData.latitude} onChange={handleChange} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="-23.5505" />
+                                        <input type="number" step="any" name="latitude" value={formData.latitude} onChange={handleChange} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-sm" placeholder="-23.5505" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Longitude</label>
-                                        <input type="number" step="any" name="longitude" value={formData.longitude} onChange={handleChange} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm" placeholder="-46.6333" />
+                                        <input type="number" step="any" name="longitude" value={formData.longitude} onChange={handleChange} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-sm" placeholder="-46.6333" />
                                     </div>
                                 </div>
-                                <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-2">
-                                    💡 Dica: No Google Maps, clique com o botão direito no local desejado e copie os números (Latitude, Longitude).
-                                </p>
                             </div>
                         </div>
                     </div>
@@ -182,33 +243,22 @@ export default function NewPropertyPage() {
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                         <div className="bg-blue-50/50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
                             <ImageIcon className="text-blue-600 dark:text-blue-400" size={20} />
-                            <h2 className="font-bold text-gray-800 dark:text-white">Galeria de Fotos</h2>
+                            <h2 className="font-bold text-gray-800 dark:text-white">Fotos <span className="text-[#eaca42]">*</span></h2>
                         </div>
                         <div className="p-6">
-                            <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
-                                <ImageUpload
-                                    value={formData.fotos}
-                                    onChange={(urls) => setFormData({ ...formData, fotos: urls })}
-                                    onRemove={(url) => setFormData({ ...formData, fotos: formData.fotos.filter((current) => current !== url) })}
-                                />
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-                                    Formatos aceitos: JPG, PNG. A primeira foto selecionada será a capa do anúncio.
-                                </p>
-                            </div>
+                            <ImageUpload
+                                value={formData.fotos}
+                                onChange={(urls) => setFormData({ ...formData, fotos: urls })}
+                                onRemove={(url) => setFormData({ ...formData, fotos: formData.fotos.filter((current) => current !== url) })}
+                            />
                         </div>
                     </div>
 
-                    {/* Botão Salvar (Fixo no final ou flutuante) */}
                     <div className="flex justify-end pt-4 pb-12">
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2 disabled:opacity-70 disabled:transform-none"
-                        >
-                            {loading ? <><Loader2 className="animate-spin" size={20} /> Salvando...</> : <><Save size={20} /> Publicar Imóvel</>}
+                        <button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 disabled:opacity-70">
+                            {loading ? <><Loader2 className="animate-spin" size={20} /> Salvando...</> : <><Save size={20} /> Publicar</>}
                         </button>
                     </div>
-
                 </form>
             </div>
         </div>
