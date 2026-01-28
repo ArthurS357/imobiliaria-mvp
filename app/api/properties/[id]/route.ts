@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// GET: Buscar um único imóvel (Para página de detalhes ou edição)
+// GET: Buscar um único imóvel
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -39,7 +39,7 @@ export async function PUT(
         const { id } = await params;
         const data = await request.json();
 
-        // 1. Busca o imóvel existente para verificar quem é o dono
+        // 1. Busca o imóvel existente para verificar permissão
         const existingProperty = await prisma.property.findUnique({ where: { id } });
 
         if (!existingProperty) {
@@ -47,19 +47,19 @@ export async function PUT(
         }
 
         // 2. SEGURANÇA DE PROPRIEDADE:
-        // Se o usuário NÃO for ADMIN e NÃO for o dono do imóvel -> BLOQUEIA A EDIÇÃO.
         if (session.user.role !== "ADMIN" && existingProperty.corretorId !== session.user.id) {
             return NextResponse.json({ error: "Você não tem permissão para editar este imóvel." }, { status: 403 });
         }
 
         // 3. SEGURANÇA DE CAMPOS ADMINISTRATIVOS:
-        // Se o usuário NÃO for ADMIN, removemos status e destaque do objeto de atualização.
+        // Apenas Admin altera Status, Destaque e Tipo de Contrato
         if (session.user.role !== "ADMIN") {
             delete data.status;
             delete data.destaque;
+            delete data.tipoContrato; // Novo campo restrito
         }
 
-        // 4. Tratamento de fotos (Array -> String única com separador ;)
+        // 4. Tratamento de fotos (Array -> String)
         let fotosString = undefined;
         if (data.fotos && Array.isArray(data.fotos)) {
             fotosString = data.fotos.join(";");
@@ -67,7 +67,7 @@ export async function PUT(
             fotosString = data.fotos;
         }
 
-        // 5. Tratamento de Features (Checklist)
+        // 5. Tratamento de Features (Array -> String)
         let featuresString = undefined;
         if (data.features && Array.isArray(data.features)) {
             featuresString = data.features.join(",");
@@ -77,37 +77,57 @@ export async function PUT(
         const updatedProperty = await prisma.property.update({
             where: { id },
             data: {
+                // DADOS BÁSICOS
                 titulo: data.titulo,
                 descricao: data.descricao,
-                // NOVO CAMPO: Título da secção Sobre
                 sobreTitulo: data.sobreTitulo,
-
                 tipo: data.tipo,
+                finalidade: data.finalidade, // NOVO
+
+                // VALORES
                 preco: data.preco ? parseFloat(data.preco) : undefined,
+                tipoValor: data.tipoValor, // NOVO
+                periodoPagamento: data.periodoPagamento, // NOVO
+                depositoSeguranca: data.depositoSeguranca ? parseFloat(data.depositoSeguranca) : undefined, // NOVO
+
+                valorCondominio: data.valorCondominio ? parseFloat(data.valorCondominio) : undefined, // NOVO
+                periodicidadeCondominio: data.periodicidadeCondominio, // NOVO
+
+                // ENDEREÇO
                 cidade: data.cidade,
                 bairro: data.bairro,
                 endereco: data.endereco,
-                quarto: data.quarto ? parseInt(data.quarto) : undefined,
-                banheiro: data.banheiro ? parseInt(data.banheiro) : undefined,
-                garagem: data.garagem ? parseInt(data.garagem) : undefined,
-
-                // Áreas (Métricas)
-                area: data.area ? parseFloat(data.area) : undefined,
-                areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : undefined,
-
-                // Atualizações condicionais de Strings Especiais
-                ...(fotosString !== undefined && { fotos: fotosString }),
-                ...(featuresString !== undefined && { features: featuresString }),
-
-                // Status e Destaque só atualizam se não tiverem sido deletados pela regra de segurança (passo 3)
-                ...(data.status && { status: data.status }),
-                ...(data.destaque !== undefined && { destaque: data.destaque }),
-
-                // Campos do Mapa
                 latitude: data.latitude ? parseFloat(data.latitude) : null,
                 longitude: data.longitude ? parseFloat(data.longitude) : null,
 
-                // Campos de Privacidade (Booleanos)
+                // DETALHES FÍSICOS
+                quarto: data.quarto ? parseInt(data.quarto) : undefined,
+                suites: data.suites ? parseInt(data.suites) : undefined, // NOVO
+                banheiro: data.banheiro ? parseInt(data.banheiro) : undefined,
+
+                // VAGAS DETALHADAS
+                garagem: data.garagem ? parseInt(data.garagem) : undefined,
+                vagasCobertas: data.vagasCobertas ? parseInt(data.vagasCobertas) : undefined, // NOVO
+                vagasDescobertas: data.vagasDescobertas ? parseInt(data.vagasDescobertas) : undefined, // NOVO
+                vagasSubsolo: data.vagasSubsolo !== undefined ? data.vagasSubsolo : undefined, // NOVO
+
+                // ÁREAS
+                area: data.area ? parseFloat(data.area) : undefined,
+                areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : undefined,
+
+                // DETALHES DE MERCADO
+                statusMercado: data.statusMercado, // NOVO
+                condicaoImovel: data.condicaoImovel, // NOVO
+                anoConstrucao: data.anoConstrucao ? parseInt(data.anoConstrucao) : null, // NOVO
+
+                // CAMPOS ADMINISTRATIVOS (Atualizam só se não foram deletados no passo 3)
+                ...(data.tipoContrato && { tipoContrato: data.tipoContrato }), // NOVO
+                ...(data.status && { status: data.status }),
+                ...(data.destaque !== undefined && { destaque: data.destaque }),
+
+                // STRINGS ESPECIAIS E PRIVACIDADE
+                ...(fotosString !== undefined && { fotos: fotosString }),
+                ...(featuresString !== undefined && { features: featuresString }),
                 ...(data.displayAddress !== undefined && { displayAddress: data.displayAddress }),
                 ...(data.displayDetails !== undefined && { displayDetails: data.displayDetails }),
             },
@@ -128,7 +148,6 @@ export async function DELETE(
     try {
         const session = await getServerSession(authOptions);
 
-        // Verificamos APENAS se é ADMIN.
         if (!session || session.user.role !== "ADMIN") {
             return NextResponse.json({
                 error: "Permissão negada. Apenas administradores podem excluir imóveis do sistema."
@@ -137,7 +156,6 @@ export async function DELETE(
 
         const { id } = await params;
 
-        // Verifica existência antes de deletar
         const property = await prisma.property.findUnique({ where: { id } });
         if (!property) {
             return NextResponse.json({ error: "Imóvel não encontrado" }, { status: 404 });

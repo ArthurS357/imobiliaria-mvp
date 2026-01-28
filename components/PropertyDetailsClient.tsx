@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { PropertyCard } from "@/components/PropertyCard";
 import { MortgageCalculator } from "@/components/MortgageCalculator";
 import { VisitScheduler } from "@/components/VisitScheduler";
-import { MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar, ArrowRight, CheckCircle2, Ruler } from "lucide-react";
+import { MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar, ArrowRight, CheckCircle2, Ruler, Building, Shield, Tag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -34,13 +34,15 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
     );
 
     const fotos = property.fotos ? property.fotos.split(";") : [];
-    // Garante que features seja um array, mesmo se vier null/undefined
     const featuresList = property.features ? property.features.split(",") : [];
 
     const mensagemZap = encodeURIComponent(`Olá! Vi o imóvel "${property.titulo}" no site e gostaria de mais informações.`);
 
     // Só mostra o mapa se tiver coordenadas E se a privacidade de endereço permitir
     const showMap = property.latitude && property.longitude && property.displayAddress;
+
+    // Formatações de moeda
+    const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
     return (
         <>
@@ -70,6 +72,11 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                         Vendido
                                     </span>
                                 )}
+                                {property.status === 'RESERVADO' && (
+                                    <span className="bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-wide shadow-sm">
+                                        Reservado
+                                    </span>
+                                )}
                             </div>
                         </div>
                         {fotos.length > 1 && (
@@ -90,42 +97,103 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                     {/* Container Principal de Informações */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 border border-gray-100 dark:border-gray-700">
 
-                        {/* 1. RESUMO (Características Principais) */}
+                        {/* 0. BADGES INFORMATIVOS (Novo) */}
+                        <div className="flex flex-wrap gap-3 mb-8">
+                            {property.statusMercado && (
+                                <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                                    <Tag size={14} /> {property.statusMercado}
+                                </span>
+                            )}
+                            {property.condicaoImovel && (
+                                <span className="inline-flex items-center gap-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                                    <CheckCircle2 size={14} /> {property.condicaoImovel}
+                                </span>
+                            )}
+                            {property.anoConstrucao && (
+                                <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                                    <Calendar size={14} /> Ano: {property.anoConstrucao}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* 1. RESUMO (Atualizado) */}
                         {property.displayDetails && (
                             <div className="border-b border-gray-100 dark:border-gray-700 pb-8 mb-8">
                                 <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Resumo</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                    <div className="flex flex-col items-center justify-center gap-2 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl text-center">
-                                        <Bed className="text-blue-900 dark:text-blue-400" size={28} />
-                                        <div><span className="block font-bold text-xl text-gray-900 dark:text-white">{property.quarto}</span><span className="text-xs uppercase font-semibold text-gray-500">Quartos</span></div>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center gap-2 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl text-center">
-                                        <Bath className="text-blue-900 dark:text-blue-400" size={28} />
-                                        <div><span className="block font-bold text-xl text-gray-900 dark:text-white">{property.banheiro}</span><span className="text-xs uppercase font-semibold text-gray-500">Banheiros</span></div>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center gap-2 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl text-center">
-                                        <Car className="text-blue-900 dark:text-blue-400" size={28} />
-                                        <div><span className="block font-bold text-xl text-gray-900 dark:text-white">{property.garagem}</span><span className="text-xs uppercase font-semibold text-gray-500">Vagas</span></div>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center gap-2 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl text-center">
-                                        <Ruler className="text-blue-900 dark:text-blue-400" size={28} />
-                                        <div><span className="block font-bold text-xl text-gray-900 dark:text-white">{property.area}</span><span className="text-xs uppercase font-semibold text-gray-500">m² Útil</span></div>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                    {/* Dormitórios */}
+                                    <div className="flex flex-col items-center justify-center gap-1 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl text-center">
+                                        <Bed className="text-blue-900 dark:text-blue-400" size={24} />
+                                        <div>
+                                            <span className="block font-bold text-lg text-gray-900 dark:text-white">{property.quarto}</span>
+                                            <span className="text-[10px] uppercase font-semibold text-gray-500">Dormitórios</span>
+                                        </div>
                                     </div>
 
-                                    {/* Exibe Área do Terreno se existir */}
-                                    {(property.areaTerreno > 0) && (
-                                        <div className="col-span-2 md:col-span-4 flex items-center justify-center gap-3 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-100 dark:border-green-900/30 mt-2">
-                                            <Maximize size={20} className="text-green-600 dark:text-green-400" />
-                                            <span className="text-sm font-medium text-green-800 dark:text-green-300">
-                                                Área Total do Terreno: <strong>{property.areaTerreno} m²</strong>
-                                            </span>
+                                    {/* Suítes (Novo) */}
+                                    <div className="flex flex-col items-center justify-center gap-1 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl text-center">
+                                        <Bath className="text-blue-900 dark:text-blue-400" size={24} />
+                                        <div>
+                                            <span className="block font-bold text-lg text-gray-900 dark:text-white">{property.suites || 0}</span>
+                                            <span className="text-[10px] uppercase font-semibold text-gray-500">Suítes</span>
                                         </div>
-                                    )}
+                                    </div>
+
+                                    {/* Vagas (Com detalhamento) */}
+                                    <div className="flex flex-col items-center justify-center gap-1 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl text-center relative group">
+                                        <Car className="text-blue-900 dark:text-blue-400" size={24} />
+                                        <div>
+                                            <span className="block font-bold text-lg text-gray-900 dark:text-white">{property.garagem}</span>
+                                            <span className="text-[10px] uppercase font-semibold text-gray-500">Vagas</span>
+                                        </div>
+                                        {/* Tooltip simples para detalhe das vagas */}
+                                        {(property.vagasCobertas > 0 || property.vagasDescobertas > 0 || property.vagasSubsolo) && (
+                                            <div className="absolute bottom-full mb-2 bg-gray-900 text-white text-xs p-2 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity w-max z-10 pointer-events-none">
+                                                {property.vagasCobertas ? `${property.vagasCobertas} Cobertas ` : ''}
+                                                {property.vagasDescobertas ? `| ${property.vagasDescobertas} Descobertas ` : ''}
+                                                {property.vagasSubsolo ? '| Subsolo' : ''}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Área Útil */}
+                                    <div className="flex flex-col items-center justify-center gap-1 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl text-center">
+                                        <Ruler className="text-blue-900 dark:text-blue-400" size={24} />
+                                        <div>
+                                            <span className="block font-bold text-lg text-gray-900 dark:text-white">{property.area}</span>
+                                            <span className="text-[10px] uppercase font-semibold text-gray-500">m² Útil</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Área Terreno */}
+                                    <div className="flex flex-col items-center justify-center gap-1 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl text-center">
+                                        <Maximize className="text-blue-900 dark:text-blue-400" size={24} />
+                                        <div>
+                                            <span className="block font-bold text-lg text-gray-900 dark:text-white">{property.areaTerreno || "-"}</span>
+                                            <span className="text-[10px] uppercase font-semibold text-gray-500">m² Terreno</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* 2. COMODIDADES & DIFERENCIAIS (Checklist) */}
+                        {/* 2. SOBRE O IMÓVEL (Reordenado) */}
+                        <div className="mb-8 border-b border-gray-100 dark:border-gray-700 pb-8">
+                            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Sobre o imóvel</h2>
+
+                            {/* Título de Destaque */}
+                            {property.sobreTitulo && (
+                                <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-400 mb-3 leading-tight">
+                                    {property.sobreTitulo}
+                                </h3>
+                            )}
+
+                            <div className="prose text-gray-600 dark:text-gray-300 max-w-none whitespace-pre-line leading-relaxed text-justify text-lg">
+                                {property.descricao}
+                            </div>
+                        </div>
+
+                        {/* 3. COMODIDADES & DIFERENCIAIS */}
                         {featuresList.length > 0 && (
                             <div className="border-b border-gray-100 dark:border-gray-700 pb-8 mb-8">
                                 <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Comodidades & Diferenciais</h3>
@@ -140,25 +208,9 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                             </div>
                         )}
 
-                        {/* 3. SOBRE O IMÓVEL (Descrição) */}
-                        <div className="mb-8">
-                            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Sobre o imóvel</h2>
-
-                            {/* EXIBE O TÍTULO PERSONALIZADO SE EXISTIR */}
-                            {property.sobreTitulo && (
-                                <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-400 mb-3 leading-tight">
-                                    {property.sobreTitulo}
-                                </h3>
-                            )}
-
-                            <div className="prose text-gray-600 dark:text-gray-300 max-w-none whitespace-pre-line leading-relaxed text-justify text-lg">
-                                {property.descricao}
-                            </div>
-                        </div>
-
-                        {/* 4. LOCALIZAÇÃO (Mapa) */}
+                        {/* 4. LOCALIZAÇÃO */}
                         {showMap && (
-                            <div className="border-t border-gray-100 dark:border-gray-700 pt-8">
+                            <div className="pt-2">
                                 <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Localização</h3>
                                 <div className="flex items-start md:items-center gap-2 text-gray-600 dark:text-gray-300 mb-4">
                                     <MapPin size={20} className="text-[#eaca42] flex-shrink-0 mt-1 md:mt-0" />
@@ -181,6 +233,11 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
 
                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
                             <div className="mb-6">
+                                {/* Badge de Finalidade */}
+                                <span className={`inline-block px-3 py-1 rounded text-xs font-bold uppercase tracking-wider mb-3 ${property.finalidade === 'Locação' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                    {property.finalidade || 'Venda'}
+                                </span>
+
                                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-2 break-words">{property.titulo}</h1>
                                 <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
                                     <MapPin size={16} className="flex-shrink-0 text-[#eaca42]" />
@@ -193,12 +250,44 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                 </div>
                             </div>
 
-                            <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/50">
-                                <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">Valor de Venda</p>
-                                <p className="text-3xl md:text-4xl font-extrabold text-blue-900 dark:text-white break-words">
-                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
+                            <div className="mb-6 p-5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                                <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
+                                    {property.tipoValor || "Valor"}
                                 </p>
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                    <p className="text-3xl md:text-4xl font-extrabold text-blue-900 dark:text-white break-words">
+                                        {formatCurrency(property.preco)}
+                                    </p>
+                                    {/* Período de Pagamento (se for aluguel) */}
+                                    {property.finalidade === 'Locação' && property.periodoPagamento && (
+                                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">/ {property.periodoPagamento}</span>
+                                    )}
+                                </div>
                             </div>
+
+                            {/* Taxas Adicionais (Condomínio e Depósito) */}
+                            {(property.valorCondominio > 0 || (property.depositoSeguranca ?? 0) > 0) && (
+                                <div className="mb-6 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg space-y-3">
+                                    {property.valorCondominio > 0 && (
+                                        <div className="flex justify-between items-center text-sm">
+                                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                                <Building size={16} />
+                                                <span>Condomínio <span className="text-xs opacity-70">({property.periodicidadeCondominio})</span></span>
+                                            </div>
+                                            <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(property.valorCondominio)}</span>
+                                        </div>
+                                    )}
+                                    {(property.depositoSeguranca ?? 0) > 0 && (
+                                        <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-200 dark:border-gray-600">
+                                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                                <Shield size={16} />
+                                                <span>Depósito Caução</span>
+                                            </div>
+                                            <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(property.depositoSeguranca)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="space-y-4">
                                 <a href={`https://wa.me/5511946009103?text=${mensagemZap}`} target="_blank" className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">

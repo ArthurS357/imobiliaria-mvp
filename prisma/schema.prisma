@@ -38,54 +38,67 @@ model User {
 model Property {
   id          String   @id @default(cuid())
   
-  // OBS: Campo 'codigo' removido pois SQLite não suporta autoincrement em campo não-ID.
-  
+  // DADOS BÁSICOS
   titulo      String
+  sobreTitulo String?  @default("") 
   descricao   String
-  tipo        String
+  tipo        String   // Casa, Apt, etc.
   
-  // Alterado para Float para facilitar compatibilidade com JS
-  preco       Float    
+  // FINALIDADE (NOVO)
+  finalidade  String   @default("Venda") // "Venda" ou "Locação"
+
+  // PREÇOS E CONDIÇÕES (NOVOS)
+  preco             Float    
+  tipoValor         String?  @default("Preço fixo") // "Aluguel mensal", "Consultar", "Negociável", etc.
+  periodoPagamento  String?  // "Mensal", "Anual" (Para locação)
+  depositoSeguranca Float?   @default(0) // (Para locação)
   
+  valorCondominio         Float?   @default(0)
+  periodicidadeCondominio String?  // "Mensal", "Anual"
+
+  // DETALHES FÍSICOS (NOVOS E ATUALIZADOS)
+  area        Float    // Área Útil / Construída
+  areaTerreno Float?   @default(0) // Área do Terreno
+  
+  quarto      Int      @default(0) // Dormitórios
+  suites      Int      @default(0) // NOVO: Suítes
+  banheiro    Int      @default(0)
+  
+  // VAGAS DETALHADAS (NOVOS)
+  garagem          Int      @default(0) // Total
+  vagasCobertas    Int      @default(0) // NOVO
+  vagasDescobertas Int      @default(0) // NOVO
+  vagasSubsolo     Boolean  @default(false) // NOVO: Se as vagas são no subsolo
+
+  // DETALHES DE MERCADO E CONSTRUÇÃO (NOVOS)
+  statusMercado   String?  // "Ótimo preço", "Nova construção", etc.
+  anoConstrucao   Int?     // Ano (ex: 2024)
+  condicaoImovel  String?  // "Ótima", "Regular", etc.
+  tipoContrato    String?  @default("Sem Exclusividade") // "Com Exclusividade" / "Sem Exclusividade"
+
+  // LOCALIZAÇÃO
   cidade      String
   bairro      String
   endereco    String?
-  quarto      Int      @default(0)
-  banheiro    Int      @default(0)
-  garagem     Int      @default(0)
-  
-  // ÁREAS (MÉTRICAS)
-  area        Float    // Área Útil / Construída
-  areaTerreno Float?   @default(0) // NOVO: Área do Terreno (Total)
-  
-  sobreTitulo String?  @default("")
-  
-  // Salva lista de URLs separadas por ponto e vírgula
-  fotos       String?  @default("") 
-  
-  // Valores esperados: "PENDENTE", "DISPONIVEL", "VENDIDO", "RESERVADO"
-  status      String   @default("PENDENTE")
-  destaque    Boolean  @default(false)
-
-  // CAMPOS PARA O MAPA
   latitude    Float?
   longitude   Float?
 
-  // --- (CHECKLIST E PRIVACIDADE) ---
-  features        String?  @default("")   // Checklist completo salvo como string (ex: "Piscina,Academia")
-  displayAddress  Boolean  @default(true) // Se false, esconde o endereço exato no site
-  displayDetails  Boolean  @default(true) // Se false, esconde detalhes específicos (opcional)
+  // MIDIA E EXTRAS
+  fotos           String?  @default("") 
+  features        String?  @default("") // Checklist completo
+  
+  // SISTEMA E PRIVACIDADE
+  status          String   @default("PENDENTE") // PENDENTE, DISPONIVEL, VENDIDO, RESERVADO
+  destaque        Boolean  @default(false)
+  displayAddress  Boolean  @default(true) // Se false, esconde o endereço exato
+  displayDetails  Boolean  @default(true) // Se false, esconde detalhes específicos
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   corretorId  String
   corretor    User     @relation(fields: [corretorId], references: [id])
-
-  // Relação inversa para as visitas
   visits      Visit[]
-
-  // Relação inversa para Leads (Um imóvel pode ter vários leads)
   leads       Lead[]
 
   @@map("properties")
