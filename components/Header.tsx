@@ -43,15 +43,16 @@ export function Header() {
                         <div className="flex-shrink-0 flex items-center z-50">
                             <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
 
-                                {/* --- Logo Desktop --- */}
-                                <div className="hidden md:flex items-center justify-center relative h-20 w-80">
+                                {/* --- Logo Desktop (AUMENTADA) --- */}
+                                {/* Aumentei container para w-96 e apliquei scale-125 */}
+                                <div className="hidden md:flex items-center justify-center relative h-24 w-96 overflow-visible">
                                     <Image
                                         src={logoSrc}
                                         alt="Logo Imobiliária"
                                         fill
-                                        className="object-contain"
+                                        className="object-contain transform scale-125"
                                         priority
-                                        sizes="(max-width: 768px) 100vw, 320px"
+                                        sizes="(max-width: 768px) 100vw, 384px"
                                         onError={(e) => {
                                             e.currentTarget.style.display = 'none';
                                             const parent = e.currentTarget.parentElement;
@@ -62,16 +63,15 @@ export function Header() {
                                     />
                                 </div>
 
-                                {/* --- Logo Mobile COM ZOOM --- */}
-                                {/* Mantivemos o container h-20 w-72 */}
-                                <div className="md:hidden relative flex items-center justify-center h-20 w-72">
+                                {/* --- Logo Mobile (AUMENTADA) --- */}
+                                {/* Aumentei container para w-64 e apliquei scale-150 para destaque total */}
+                                <div className="md:hidden relative flex items-center justify-center h-20 w-64 overflow-visible">
                                     <Image
                                         src={logoSrc}
                                         alt="Logo"
                                         fill
-                                        // ADICIONADO: transform scale-[1.75] para aumentar 75% a imagem dentro do container
-                                        className="object-contain transform scale-[1.05]"
-                                        sizes="(max-width: 768px) 280px, 0px"
+                                        className="object-contain transform scale-150"
+                                        sizes="(max-width: 768px) 256px, 0px"
                                         onError={(e) => {
                                             e.currentTarget.style.display = 'none';
                                             const parent = e.currentTarget.parentElement;
