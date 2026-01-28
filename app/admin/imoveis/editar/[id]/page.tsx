@@ -7,7 +7,8 @@ import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useSession } from "next-auth/react";
 import { FeatureSelector } from "@/components/admin/FeatureSelector";
-import { PROPERTY_TYPES } from "@/lib/constants";
+// Importamos a lista de tipos categorizada
+import { PROPERTY_TYPES, PROPERTY_TYPES_CATEGORIZED } from "@/lib/constants";
 
 export default function EditPropertyPage() {
     const { data: session } = useSession();
@@ -19,7 +20,7 @@ export default function EditPropertyPage() {
 
     const [formData, setFormData] = useState({
         titulo: "",
-        sobreTitulo: "", // Novo campo
+        sobreTitulo: "",
         descricao: "",
         tipo: PROPERTY_TYPES[0],
         preco: "",
@@ -53,7 +54,7 @@ export default function EditPropertyPage() {
 
                 setFormData({
                     titulo: data.titulo,
-                    sobreTitulo: data.sobreTitulo || "", // Carrega o título da seção sobre
+                    sobreTitulo: data.sobreTitulo || "",
                     descricao: data.descricao,
                     tipo: data.tipo,
                     preco: data.preco,
@@ -218,7 +219,7 @@ export default function EditPropertyPage() {
                                 <input required name="titulo" value={formData.titulo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition" placeholder="Ex: Belíssima Casa no Condomínio..." />
                             </div>
 
-                            {/* SELEÇÃO DINÂMICA DE TIPOS */}
+                            {/* SELEÇÃO DINÂMICA DE TIPOS (AGRUPADA) */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Tipo de Imóvel <span className="text-[#eaca42]">*</span>
@@ -229,8 +230,14 @@ export default function EditPropertyPage() {
                                     onChange={handleChange}
                                     className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none transition"
                                 >
-                                    {PROPERTY_TYPES.map((type) => (
-                                        <option key={type} value={type}>{type}</option>
+                                    {PROPERTY_TYPES_CATEGORIZED.map((group) => (
+                                        <optgroup key={group.label} label={group.label} className="dark:bg-gray-700 font-bold text-gray-900 dark:text-gray-200">
+                                            {group.types.map((type) => (
+                                                <option key={type} value={type} className="text-gray-700 dark:text-gray-300 font-normal">
+                                                    {type}
+                                                </option>
+                                            ))}
+                                        </optgroup>
                                     ))}
                                 </select>
                             </div>

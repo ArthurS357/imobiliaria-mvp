@@ -6,7 +6,8 @@ import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, Maxim
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { FeatureSelector } from "@/components/admin/FeatureSelector";
-import { PROPERTY_TYPES } from "@/lib/constants";
+// Importamos a lista categorizada para o Select e a lista plana para o valor padrão
+import { PROPERTY_TYPES, PROPERTY_TYPES_CATEGORIZED } from "@/lib/constants";
 
 export default function NewPropertyPage() {
     const router = useRouter();
@@ -16,7 +17,7 @@ export default function NewPropertyPage() {
         titulo: "",
         sobreTitulo: "", // Novo campo de destaque
         descricao: "",
-        tipo: PROPERTY_TYPES[0], // Padrão: Primeiro item da lista
+        tipo: PROPERTY_TYPES[0], // Padrão: Primeiro item da lista geral
         preco: "",
         cidade: "",
         bairro: "",
@@ -105,7 +106,7 @@ export default function NewPropertyPage() {
                                 <input required name="titulo" value={formData.titulo} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Ex: Casa de Alto Padrão no Centro..." />
                             </div>
 
-                            {/* SELEÇÃO DE TIPOS */}
+                            {/* SELEÇÃO DE TIPOS (AGRUPADA POR CATEGORIA) */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Tipo <span className="text-[#eaca42]">*</span>
@@ -116,8 +117,14 @@ export default function NewPropertyPage() {
                                     onChange={handleChange}
                                     className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 >
-                                    {PROPERTY_TYPES.map((type) => (
-                                        <option key={type} value={type}>{type}</option>
+                                    {PROPERTY_TYPES_CATEGORIZED.map((group) => (
+                                        <optgroup key={group.label} label={group.label} className="dark:bg-gray-700 font-bold text-gray-900 dark:text-gray-200">
+                                            {group.types.map((type) => (
+                                                <option key={type} value={type} className="text-gray-700 dark:text-gray-300 font-normal">
+                                                    {type}
+                                                </option>
+                                            ))}
+                                        </optgroup>
                                     ))}
                                 </select>
                             </div>
@@ -129,7 +136,7 @@ export default function NewPropertyPage() {
                                 <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="0,00" />
                             </div>
 
-                            {/* NOVO CAMPO: TÍTULO DA SECÇÃO SOBRE */}
+                            {/* TÍTULO DA SECÇÃO SOBRE */}
                             <div className="col-span-2">
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Título da Secção "Sobre" (Opcional)
@@ -191,7 +198,7 @@ export default function NewPropertyPage() {
                                 </div>
                             </div>
 
-                            {/* SEÇÃO DE METRAGEM */}
+                            {/* SEÇÃO DE METRAGEM (ÁREAS) */}
                             <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-8">
                                 <div className="flex items-center gap-2 mb-4">
                                     <Maximize size={18} className="text-[#eaca42]" />
