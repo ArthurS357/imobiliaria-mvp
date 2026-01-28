@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MapPin, Bed, Bath, Car, Maximize, ArrowRight, Heart, Building2 } from "lucide-react";
+import { MapPin, Bed, Bath, Car, Maximize, ArrowRight, Heart, Building2, Ruler } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface PropertyProps {
   property: {
@@ -13,14 +14,18 @@ interface PropertyProps {
     bairro: string;
     endereco?: string | null;
     quarto: number;
+    suites?: number; // Novo
     banheiro: number;
     garagem: number;
     area: number;
-    areaTerreno?: number | null; // Novo campo opcional
+    areaTerreno?: number | null;
     fotos: string | null;
     tipo: string;
     status: string;
-    displayAddress?: boolean; // Novo campo opcional
+    finalidade?: string; // Novo
+    tipoValor?: string;  // Novo
+    periodoPagamento?: string; // Novo
+    displayAddress?: boolean;
   };
 }
 
@@ -36,7 +41,7 @@ export function PropertyCard({ property }: PropertyProps) {
   }, [property.id]);
 
   const toggleFavorite = (e: React.MouseEvent) => {
-    e.preventDefault(); // Evita abrir o link do card
+    e.preventDefault();
     e.stopPropagation();
 
     const favorites = JSON.parse(localStorage.getItem("mvp_favorites") || "[]");
@@ -72,7 +77,7 @@ export function PropertyCard({ property }: PropertyProps) {
         return <span className="bg-yellow-500/90 backdrop-blur-sm text-white px-3 py-1 text-xs font-bold rounded uppercase tracking-wider shadow-sm">Reservado</span>;
       default:
         // Exibe o TIPO do imóvel (Casa, Apto) se estiver Disponível ou Pendente
-        return <span className="bg-blue-600/90 backdrop-blur-sm text-white px-3 py-1 text-xs font-bold rounded uppercase tracking-wider shadow-sm">{property.tipo}</span>;
+        return <span className="bg-gray-900/80 backdrop-blur-sm text-white px-3 py-1 text-xs font-bold rounded uppercase tracking-wider shadow-sm">{property.tipo}</span>;
     }
   };
 
@@ -88,10 +93,11 @@ export function PropertyCard({ property }: PropertyProps) {
         {/* Imagem */}
         <div className="relative h-64 overflow-hidden bg-gray-200 dark:bg-gray-700">
           {primeiraFoto ? (
-            <img
+            <Image
               src={primeiraFoto}
               alt={property.titulo}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-100 dark:bg-gray-800">
@@ -101,24 +107,34 @@ export function PropertyCard({ property }: PropertyProps) {
           )}
 
           {/* Sombra Gradiente na base da foto para destacar preço */}
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/60 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/70 to-transparent"></div>
 
-          {/* Badge Superior Esquerdo */}
+          {/* Badge Superior Esquerdo (Status/Tipo) */}
           <div className="absolute top-4 left-4 z-10">
             {getStatusBadge(property.status)}
           </div>
 
+          {/* Badge Superior Direito (Finalidade) */}
+          <div className={`absolute top-4 right-4 z-10 text-xs font-bold px-3 py-1 rounded uppercase tracking-wider shadow-sm 
+              ${property.finalidade === 'Locação' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'}`}>
+            {property.finalidade || "Venda"}
+          </div>
+
           {/* Preço na Imagem (Estilo Moderno) */}
           <div className="absolute bottom-4 left-4 z-10">
-            <p className="text-white font-bold text-xl drop-shadow-md">
+            <p className="text-white font-bold text-xl drop-shadow-md flex items-baseline gap-1">
               {precoFormatado}
+              {property.finalidade === 'Locação' && property.periodoPagamento && (
+                <span className="text-xs font-medium opacity-80">/{property.periodoPagamento}</span>
+              )}
             </p>
           </div>
 
           {/* BOTÃO DE FAVORITAR */}
+          {/* Posicionado um pouco abaixo do topo para não conflitar com badge */}
           <button
             onClick={toggleFavorite}
-            className={`absolute top-4 right-4 z-20 p-2 rounded-full shadow-lg transition-all duration-300 ${isFavorite
+            className={`absolute top-14 right-4 z-20 p-2 rounded-full shadow-lg transition-all duration-300 ${isFavorite
               ? "bg-white text-red-500 scale-110"
               : "bg-black/30 backdrop-blur-md text-white hover:bg-white hover:text-red-500"
               }`}
@@ -149,25 +165,39 @@ export function PropertyCard({ property }: PropertyProps) {
 
           {/* Ícones de Métricas */}
           <div className="grid grid-cols-4 gap-2 border-t border-gray-100 dark:border-gray-700 pt-4 mt-auto">
+
+            {/* Quartos */}
             <div className="text-center group/icon">
               <div className="flex justify-center text-gray-400 dark:text-gray-500 mb-1 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors"><Bed size={20} /></div>
               <span className="text-sm text-gray-700 dark:text-gray-300 font-bold block">{property.quarto}</span>
-              <span className="text-[10px] text-gray-400 uppercase font-semibold">Quartos</span>
+              <span className="text-[10px] text-gray-400 uppercase font-semibold">Dorms</span>
             </div>
+
+            {/* Banheiros / Suítes (Prioriza Suítes se houver) */}
             <div className="text-center border-l border-gray-100 dark:border-gray-700 group/icon">
               <div className="flex justify-center text-gray-400 dark:text-gray-500 mb-1 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors"><Bath size={20} /></div>
-              <span className="text-sm text-gray-700 dark:text-gray-300 font-bold block">{property.banheiro}</span>
-              <span className="text-[10px] text-gray-400 uppercase font-semibold">Ban</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 font-bold block">
+                {(property.suites || 0) > 0 ? property.suites : property.banheiro}
+              </span>
+              <span className="text-[10px] text-gray-400 uppercase font-semibold">
+                {(property.suites || 0) > 0 ? "Suítes" : "Ban"}
+              </span>
             </div>
+
+            {/* Vagas */}
             <div className="text-center border-l border-gray-100 dark:border-gray-700 group/icon">
               <div className="flex justify-center text-gray-400 dark:text-gray-500 mb-1 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors"><Car size={20} /></div>
               <span className="text-sm text-gray-700 dark:text-gray-300 font-bold block">{property.garagem}</span>
               <span className="text-[10px] text-gray-400 uppercase font-semibold">Vagas</span>
             </div>
+
+            {/* Área */}
             <div className="text-center border-l border-gray-100 dark:border-gray-700 group/icon">
-              <div className="flex justify-center text-gray-400 dark:text-gray-500 mb-1 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors"><Maximize size={20} /></div>
+              <div className="flex justify-center text-gray-400 dark:text-gray-500 mb-1 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors">
+                {areaDisplay.label === "Terreno" ? <Maximize size={20} /> : <Ruler size={20} />}
+              </div>
               <span className="text-sm text-gray-700 dark:text-gray-300 font-bold block">{areaDisplay.value}</span>
-              <span className="text-[10px] text-gray-400 uppercase font-semibold">m² {areaDisplay.label}</span>
+              <span className="text-[10px] text-gray-400 uppercase font-semibold">m²</span>
             </div>
           </div>
 

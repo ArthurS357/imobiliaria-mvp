@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, MapPin, Edit, Eye, ArrowLeft, Printer, X } from "lucide-react";
+import { Plus, Search, MapPin, Edit, Eye, ArrowLeft, Printer, X, Bed, Car, Ruler, Bath } from "lucide-react";
 import { DeletePropertyButton } from "@/components/admin/DeletePropertyButton";
 import { CopySalesTextButton } from "@/components/admin/CopySalesTextButton";
 
-// CORREÇÃO: Adicionados 'quarto' e 'area' na interface
+// INTERFACE ATUALIZADA: Com os novos campos para exibição no card
 interface Property {
   id: string;
   titulo: string;
@@ -15,12 +15,25 @@ interface Property {
   bairro: string;
   status: string;
   fotos: string | null;
-  quarto: number; // <--- Adicionado
-  area: number;   // <--- Adicionado
+  // Novos campos físicos
+  quarto: number;
+  suites: number;
+  banheiro: number;
+  garagem: number;
+  area: number;
+  finalidade: string; // Venda ou Locação
+
+  // Objeto do corretor
   corretor: {
     name: string;
     creci: string | null;
   };
+
+  // Campos opcionais que podem ser úteis para o botão de copiar texto
+  vagasCobertas?: number;
+  vagasDescobertas?: number;
+  condicaoImovel?: string;
+  tipoValor?: string;
 }
 
 export default function AdminPropertiesPage() {
@@ -64,7 +77,10 @@ export default function AdminPropertiesPage() {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
-      Carregando imóveis...
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p>Carregando imóveis...</p>
+      </div>
     </div>
   );
 
@@ -120,8 +136,8 @@ export default function AdminPropertiesPage() {
                 key={status}
                 onClick={() => setStatusFilter(status)}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap border ${statusFilter === status
-                    ? "bg-blue-900 text-white border-blue-900 dark:bg-blue-600 dark:border-blue-600"
-                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  ? "bg-blue-900 text-white border-blue-900 dark:bg-blue-600 dark:border-blue-600"
+                  : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
               >
                 {status === "TODOS" ? "Todos" : status}
@@ -151,8 +167,8 @@ export default function AdminPropertiesPage() {
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-600">
                     <tr>
-                      <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm w-1/3">Imóvel</th>
-                      <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm">Preço</th>
+                      <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm w-5/12">Imóvel</th>
+                      <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm">Valor & Tipo</th>
                       <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm">Status</th>
                       <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm">Corretor</th>
                       <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm text-right">Ações</th>
@@ -162,10 +178,10 @@ export default function AdminPropertiesPage() {
                     {filteredProperties.map((property) => (
                       <tr key={property.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition group">
 
-                        {/* Foto e Título */}
+                        {/* Coluna 1: Foto, Título e Detalhes Rápidos */}
                         <td className="p-4">
-                          <div className="flex items-center gap-4">
-                            <div className="h-14 w-14 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-600 relative group-hover:scale-105 transition-transform">
+                          <div className="flex items-start gap-4">
+                            <div className="h-16 w-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-600 relative group-hover:scale-105 transition-transform">
                               {property.fotos ? (
                                 <img src={property.fotos.split(";")[0]} alt="" className="h-full w-full object-cover" />
                               ) : (
@@ -173,20 +189,46 @@ export default function AdminPropertiesPage() {
                               )}
                             </div>
                             <div>
-                              <p className="font-bold text-gray-800 dark:text-gray-200 line-clamp-1 text-sm md:text-base">{property.titulo}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                              <p className="font-bold text-gray-800 dark:text-gray-200 line-clamp-1 text-base">{property.titulo}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5 mb-2">
                                 <MapPin size={12} /> {property.bairro}, {property.cidade}
                               </p>
+
+                              {/* MELHORIA: Ícones de resumo */}
+                              <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                                <span className="flex items-center gap-1" title="Dormitórios">
+                                  <Bed size={14} className="text-blue-500" />
+                                  {property.quarto} {property.suites > 0 && <span className="text-[10px] opacity-70">({property.suites} st)</span>}
+                                </span>
+                                <span className="flex items-center gap-1" title="Vagas">
+                                  <Car size={14} className="text-blue-500" /> {property.garagem}
+                                </span>
+                                <span className="flex items-center gap-1" title="Área Útil">
+                                  <Ruler size={14} className="text-blue-500" /> {property.area}m²
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </td>
 
-                        {/* Preço */}
-                        <td className="p-4 text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
+                        {/* Coluna 2: Preço e Finalidade */}
+                        <td className="p-4 whitespace-nowrap">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
+                            </span>
+                            {/* MELHORIA: Badge de Finalidade */}
+                            <span className={`text-[10px] font-bold uppercase w-fit px-2 py-0.5 rounded mt-1
+                                ${property.finalidade === 'Locação'
+                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                              }`}>
+                              {property.finalidade}
+                            </span>
+                          </div>
                         </td>
 
-                        {/* Status */}
+                        {/* Coluna 3: Status */}
                         <td className="p-4">
                           <span className={`text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide border
                             ${property.status === 'DISPONIVEL' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' : ''}
@@ -198,7 +240,7 @@ export default function AdminPropertiesPage() {
                           </span>
                         </td>
 
-                        {/* Corretor */}
+                        {/* Coluna 4: Corretor */}
                         <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center text-xs font-bold border border-blue-200 dark:border-blue-800">
@@ -215,10 +257,10 @@ export default function AdminPropertiesPage() {
                           </div>
                         </td>
 
-                        {/* Ações */}
+                        {/* Coluna 5: Ações */}
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            {/* O componente agora receberá o objeto 'property' com todos os campos necessários */}
+                            {/* Passa o objeto property completo para o gerador de texto */}
                             <CopySalesTextButton property={property} />
 
                             <Link
