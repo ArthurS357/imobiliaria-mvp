@@ -42,7 +42,7 @@ export const PROPERTY_TYPES_CATEGORIZED = [
 export const PROPERTY_TYPES = PROPERTY_TYPES_CATEGORIZED.flatMap(category => category.types);
 
 
-// 2. NOVAS CONSTANTES PARA O SISTEMA DE CADASTRO COMPLETO
+// 2. CONSTANTES PARA O SISTEMA DE CADASTRO
 
 export const FINALIDADES = [
     "Venda",
@@ -99,6 +99,21 @@ export const PERIODICIDADE = [
 
 export const PROPERTY_FEATURES_CATEGORIZED = [
     {
+        category: "Localização e Vista",
+        features: [
+            "Acessível de barco", "Área residencial", "Casa de campo", "Centro da cidade", 
+            "Com vista para o mar", "Vista Panorâmica", "Vista para Montanha",
+            "Em rua movimentada", "Em rua tranquila", "Rua asfaltada", "Remoto (distante)",
+            "Perto de estação ferroviária", "Perto de metrô", "Perto de ônibus", 
+            "Perto de rodovia", "Perto de aeroporto",
+            "Perto de escolas", "Perto de hospital", "Perto de igreja", 
+            "Perto de lojas/shopping", "Perto de parque", "Perto de praça",
+            "Frente para o Norte", "Frente para o Sul", "Frente para o Leste", "Frente para o Oeste",
+            "Vista Nordeste", "Vista Noroeste", "Vista Sudeste", "Vista Sudoeste",
+            "Sol da Manhã", "Sol da Tarde"
+        ]
+    },
+    {
         category: "Lazer e Bem-estar",
         features: [
             "Piscina", "Piscina Aquecida", "Piscina Infantil", "Piscina com Raia", "Piscina de Borda Infinita",
@@ -133,11 +148,15 @@ export const PROPERTY_FEATURES_CATEGORIZED = [
         category: "Conforto e Diferenciais (Interno)",
         features: [
             "Ar Condicionado", "Preparação para Ar Condicionado", "Aquecimento a Gás",
-            "Aquecimento Solar", "Lareira", "Mobiliado", "Semi-mobiliado", "Armários Planejados",
-            "Closet", "Home Office", "Varanda/Sacada", "Varanda Gourmet", "Cortina de Vidro",
+            "Aquecimento Solar", "Lareira", "Mobiliado", "Semi-mobiliado", "Sem Mobília",
+            "Ambientes Integrados", "Biblioteca", "Hall de Entrada", 
+            "Armários Planejados", "Closet", "Home Office", 
+            "Varanda/Sacada", "Varanda Gourmet", "Cortina de Vidro",
             "Cozinha Americana", "Despensa", "Lavabo", "Área de Serviço", "Lavanderia",
-            "Dependência de Empregada", "Banheiro de Empregada", "Depósito Privativo",
-            "Isolamento Acústico", "Automação Residencial", "Gás Individual", "Hidrômetro Individual"
+            "Dependência de Empregada", "Banheiro de Empregada", "Depósito Privativo", "Depósito",
+            "Isolamento Acústico", "Automação Residencial", "Gás Individual", "Hidrômetro Individual",
+            "Chuveiro a Gás", "Carpete",
+            "Pé Direito Alto", "Janelas Grandes"
         ]
     },
     {
@@ -145,9 +164,7 @@ export const PROPERTY_FEATURES_CATEGORIZED = [
         features: [
             "Piso Porcelanato", "Piso de Madeira/Laminado", "Piso Vinílico", "Piso Frio",
             "Teto Rebaixado (Gesso)", "Sanca de Gesso", "Iluminação em LED", "Box Blindex",
-            "Pé Direito Alto", "Janelas Grandes", "Vista Panorâmica", "Vista para o Mar",
-            "Vista para Montanha", "Sol da Manhã", "Sol da Tarde", "Andar Alto", "Andar Baixo",
-            "Frente para Rua", "Reformado Recentemente"
+            "Reformado Recentemente", "Andar Alto", "Andar Baixo", "Frente para Rua"
         ]
     },
     {
