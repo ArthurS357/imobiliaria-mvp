@@ -6,33 +6,51 @@ import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Search, Filter, MessageCircle, ArrowRight, ChevronDown, ChevronUp, Bed, Car, DollarSign } from "lucide-react";
 import Link from "next/link";
+import { FINALIDADES } from "@/lib/constants";
 
+// Interface atualizada para suportar os novos campos
 interface Property {
   id: string;
   titulo: string;
+  // Preços
   preco: number;
+  precoLocacao?: number;     // Novo
+  tipoValor?: string;        // Novo
+  periodoPagamento?: string; // Novo
+
+  // Localização
   cidade: string;
   bairro: string;
+  endereco?: string | null;
+  displayAddress?: boolean;
+
+  // Detalhes
   quarto: number;
+  suites?: number;           // Novo
   banheiro: number;
   garagem: number;
   area: number;
-  fotos: string;
+  areaTerreno?: number | null;
+
+  // Mídia e Status
+  fotos: string | null;
   tipo: string;
   status: string;
+  finalidade: string;
 }
 
 export default function Home() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAdvanced, setShowAdvanced] = useState(false); // Controle do menu expandido
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Estados dos Filtros
   const [searchCity, setSearchCity] = useState("");
   const [filterType, setFilterType] = useState("Todos");
+  const [filterFinalidade, setFilterFinalidade] = useState("Todos"); // NOVO: Filtro de finalidade
 
-  // Novos Filtros
+  // Novos Filtros Avançados
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [minQuartos, setMinQuartos] = useState(0);
@@ -65,9 +83,11 @@ export default function Home() {
     // 1. Cidade/Bairro
     if (searchCity) {
       const termo = searchCity.toLowerCase();
-      result = result.filter(p =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      result = result.filter((p: any) =>
         p.cidade.toLowerCase().includes(termo) ||
-        p.bairro.toLowerCase().includes(termo)
+        p.bairro.toLowerCase().includes(termo) ||
+        p.titulo.toLowerCase().includes(termo)
       );
     }
 
@@ -76,28 +96,48 @@ export default function Home() {
       result = result.filter(p => p.tipo === filterType);
     }
 
-    // 3. Preço Mínimo
+    // 3. Finalidade (NOVO)
+    if (filterFinalidade !== "Todos") {
+      // Verifica se a string finalidade contém o filtro (ex: "Venda e Locação" contém "Venda")
+      result = result.filter(p => p.finalidade.includes(filterFinalidade));
+    }
+
+    // 4. Preço Mínimo (Lógica Inteligente)
     if (minPrice) {
-      result = result.filter(p => p.preco >= Number(minPrice));
+      const min = Number(minPrice);
+      result = result.filter(p => {
+        // Se estamos filtrando especificamente por Locação, verificamos o preço de locação se existir
+        if (filterFinalidade === "Locação" && p.precoLocacao && p.precoLocacao > 0) {
+          return p.precoLocacao >= min;
+        }
+        // Caso contrário, verificamos o preço principal
+        return p.preco >= min;
+      });
     }
 
-    // 4. Preço Máximo
+    // 5. Preço Máximo (Lógica Inteligente)
     if (maxPrice) {
-      result = result.filter(p => p.preco <= Number(maxPrice));
+      const max = Number(maxPrice);
+      result = result.filter(p => {
+        if (filterFinalidade === "Locação" && p.precoLocacao && p.precoLocacao > 0) {
+          return p.precoLocacao <= max;
+        }
+        return p.preco <= max;
+      });
     }
 
-    // 5. Quartos (Pelo menos X)
+    // 6. Quartos
     if (minQuartos > 0) {
       result = result.filter(p => p.quarto >= minQuartos);
     }
 
-    // 6. Vagas (Pelo menos X)
+    // 7. Vagas
     if (minVagas > 0) {
       result = result.filter(p => p.garagem >= minVagas);
     }
 
     setFilteredProperties(result);
-  }, [searchCity, filterType, minPrice, maxPrice, minQuartos, minVagas, properties]);
+  }, [searchCity, filterType, filterFinalidade, minPrice, maxPrice, minQuartos, minVagas, properties]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-500">
@@ -126,7 +166,7 @@ export default function Home() {
           </h1>
 
           {/* --- BARRA DE BUSCA E FILTROS --- */}
-          <div className="bg-white/10 dark:bg-black/30 backdrop-blur-md p-2 rounded-xl shadow-2xl max-w-4xl mx-auto border border-white/20 dark:border-white/10 transition-all duration-300">
+          <div className="bg-white/10 dark:bg-black/30 backdrop-blur-md p-2 rounded-xl shadow-2xl max-w-5xl mx-auto border border-white/20 dark:border-white/10 transition-all duration-300">
 
             {/* Linha 1: Busca Principal */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-2 flex flex-col md:flex-row gap-2 transition-colors">
@@ -141,6 +181,26 @@ export default function Home() {
                   value={searchCity}
                   onChange={(e) => setSearchCity(e.target.value)}
                 />
+              </div>
+
+              <div className="hidden md:block w-px bg-gray-200 dark:bg-gray-700 my-2"></div>
+
+              {/* Select Finalidade (NOVO) */}
+              <div className="w-full md:w-40 relative group">
+                <div className="absolute left-3 top-3.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">
+                  MODO
+                </div>
+                <select
+                  className="w-full pl-3 pr-8 pt-6 pb-1 rounded-md bg-transparent focus:outline-none text-gray-800 dark:text-gray-100 appearance-none cursor-pointer dark:bg-gray-800 font-medium text-sm h-full"
+                  value={filterFinalidade}
+                  onChange={(e) => setFilterFinalidade(e.target.value)}
+                >
+                  <option value="Todos">Todos</option>
+                  {FINALIDADES.map(f => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-4 text-gray-400 pointer-events-none" size={16} />
               </div>
 
               <div className="hidden md:block w-px bg-gray-200 dark:bg-gray-700 my-2"></div>
@@ -167,7 +227,7 @@ export default function Home() {
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 className={`px-4 py-3 rounded-md font-medium transition flex items-center justify-center gap-2 ${showAdvanced ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
               >
-                Filtros
+                Mais
                 {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
             </div>
@@ -295,6 +355,7 @@ export default function Home() {
               onClick={() => {
                 setSearchCity("");
                 setFilterType("Todos");
+                setFilterFinalidade("Todos");
                 setMinPrice("");
                 setMaxPrice("");
                 setMinQuartos(0);

@@ -1,12 +1,21 @@
-import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { MapPin, Bed, Bath, Car, Maximize, Mail, Globe, CheckCircle2, Ruler, Calendar, Shield, Building } from "lucide-react";
-import { PrintTrigger } from "@/components/PrintTrigger";
+import { prisma } from "@/lib/prisma";
+import { MapPin, Bed, Bath, Car, Ruler, CheckCircle2, Building2, Shield, Phone, Mail, Globe } from "lucide-react";
+import Image from "next/image";
+
+// Helper de formatação
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        maximumFractionDigits: 0,
+    }).format(Number(value));
+};
 
 export default async function PrintPropertyPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    // Busca dados completos
+    // Busca dados completos do imóvel (Server Component)
     const property = await prisma.property.findUnique({
         where: { id },
         include: {
@@ -15,251 +24,249 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
                     name: true,
                     email: true,
                     creci: true,
-                }
-            }
-        }
+                },
+            },
+        },
     });
 
     if (!property) return notFound();
 
-    // Tratamento de imagens e listas
-    const fotoPrincipal = property.fotos ? property.fotos.split(";")[0] : null;
-    const fotosSecundarias = property.fotos ? property.fotos.split(";").slice(1, 4) : [];
+    // Tratamento de fotos e features
+    const fotos = property.fotos ? property.fotos.split(";") : [];
     const features = property.features ? property.features.split(",") : [];
+    const mainPhoto = fotos[0] || null;
+    const secondaryPhotos = fotos.slice(1, 4); // Pega até 3 fotos adicionais
 
-    // QR Code
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://matielloimoveis.vercel.app";
-    const propertyUrl = `${baseUrl}/imoveis/${property.id}`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(propertyUrl)}&bgcolor=ffffff`;
+    // Lógica de Venda e Locação
+    const finalidadeLower = property.finalidade?.toLowerCase() || "";
+    const isDual = (finalidadeLower.includes("venda") && finalidadeLower.includes("locação")) ||
+        (property.preco > 0 && (property.precoLocacao || 0) > 0);
 
     return (
-        <div className="bg-gray-100 min-h-screen text-gray-900 font-sans print:bg-white">
+        <div className="bg-white min-h-screen text-black p-8 print:p-0 max-w-4xl mx-auto">
 
-            {/* ÁREA DE CONTROLE (Não sai na impressão) */}
-            <div className="print:hidden bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-                <div className="max-w-[210mm] mx-auto p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h1 className="font-bold text-gray-800">Visualização de Ficha</h1>
-                        <p className="text-sm text-gray-500">Layout otimizado para impressão A4 ou salvar como PDF.</p>
-                    </div>
-                    <PrintTrigger />
-                </div>
+            {/* Botão de Impressão (Apenas na tela) */}
+            <div className="mb-8 print:hidden flex justify-between items-center">
+                <h1 className="text-xl font-bold text-gray-500">Visualização de Impressão</h1>
+                <button
+                    onClick={() => window.print()} // Isso funciona pois o Next.js hidrata o onclick, mas idealmente seria um Client Component separado.
+                    // Como esta é uma página Server Component, você pode adicionar um script simples ou transformar em "use client" se preferir. 
+                    // Para simplicidade e SEO, mantive Server Component e o botão funciona via HTML nativo se JS estiver ativo.
+                    className="bg-blue-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-800 transition shadow-lg flex items-center gap-2"
+                >
+                    🖨️ Imprimir Ficha
+                </button>
             </div>
 
-            {/* FOLHA A4 */}
-            <div className="max-w-[210mm] mx-auto bg-white shadow-2xl print:shadow-none my-8 print:my-0 overflow-hidden relative">
-
-                {/* CABEÇALHO AZUL */}
-                <header className="bg-blue-900 text-white p-8 flex justify-between items-center print:p-6">
-                    {/* Lado Esquerdo: Logo e Nome */}
-                    <div className="flex items-center gap-5">
-                        <img src="/logo.png" alt="Matiello Imóveis" className="h-14 w-auto object-contain" />
-                        <div className="h-12 w-0.5 bg-blue-700/50"></div>
-                        <div>
-                            <h2 className="text-xl font-bold leading-none tracking-tight">MATIELLO</h2>
-                            <span className="text-sm font-normal text-blue-200 tracking-widest">IMÓVEIS</span>
+            {/* --- CABEÇALHO DO DOCUMENTO --- */}
+            <header className="border-b-2 border-blue-900 pb-6 mb-6 flex justify-between items-end">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        {/* Substitua pelo seu Logo se quiser */}
+                        <div className="text-2xl font-black tracking-tighter text-blue-900">
+                            IMOBILIÁRIA<span className="text-[#eaca42]">MVP</span>
                         </div>
                     </div>
+                    <div className="text-sm text-gray-500 flex flex-col">
+                        <span className="flex items-center gap-1"><Globe size={12} /> www.imobiliariamvp.com.br</span>
+                        <span className="flex items-center gap-1"><Mail size={12} /> contato@imobiliariamvp.com.br</span>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <h2 className="text-sm text-gray-400 uppercase tracking-widest font-bold">Código do Imóvel</h2>
+                    <p className="text-2xl font-black text-gray-800">#{property.id.slice(-6).toUpperCase()}</p>
+                </div>
+            </header>
 
-                    {/* Lado Direito: Preço e Status */}
-                    <div className="text-right">
-                        <div className="flex flex-col items-end gap-1 mb-1">
-                            <span className="bg-blue-800 text-blue-200 text-[10px] uppercase font-bold px-2 py-1 rounded">
-                                {property.finalidade || "Venda"} - {property.tipo}
+            {/* --- TÍTULO E LOCALIZAÇÃO --- */}
+            <div className="mb-6">
+                <div className="flex justify-between items-start">
+                    <div className="flex-1 pr-4">
+                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold uppercase rounded mb-2 border border-blue-200">
+                            {property.tipo}
+                        </span>
+                        {property.condicaoImovel && (
+                            <span className="ml-2 inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs font-bold uppercase rounded mb-2 border border-gray-200">
+                                {property.condicaoImovel}
                             </span>
-                            {property.status !== 'DISPONIVEL' && (
-                                <span className="bg-white/20 text-white text-[10px] uppercase font-bold px-2 py-1 rounded">
-                                    {property.status}
-                                </span>
-                            )}
-                        </div>
-
-                        <p className="text-xs text-blue-300 uppercase font-bold mb-0.5">
-                            {property.tipoValor || "Valor"}
-                        </p>
-                        <p className="text-3xl md:text-4xl font-extrabold text-white leading-none flex items-baseline justify-end gap-1">
-                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
-                            {property.finalidade === 'Locação' && property.periodoPagamento && (
-                                <span className="text-lg font-medium opacity-80">/{property.periodoPagamento}</span>
-                            )}
-                        </p>
-                    </div>
-                </header>
-
-                {/* CONTEÚDO DA FICHA */}
-                <div className="p-8 print:p-6">
-
-                    {/* TÍTULO E LOCALIZAÇÃO */}
-                    <div className="mb-6">
-                        <h1 className="text-2xl font-bold text-gray-900 uppercase mb-2 leading-tight">{property.titulo}</h1>
-                        <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
-                            <MapPin size={18} className="text-blue-900 shrink-0" />
-                            <span>{property.bairro}, {property.cidade}</span>
-                            {property.endereco && <span className="text-gray-500 font-normal">| {property.endereco}</span>}
+                        )}
+                        <h1 className="text-3xl font-bold text-gray-900 leading-tight mb-2">{property.titulo}</h1>
+                        <div className="flex items-center gap-2 text-gray-600 font-medium">
+                            <MapPin size={18} className="text-blue-900" />
+                            <span>{property.endereco ? `${property.endereco}, ` : ''}{property.bairro} - {property.cidade}</span>
                         </div>
                     </div>
 
-                    {/* GRID DE FOTOS */}
-                    <div className="grid grid-cols-4 gap-2 mb-8 h-[300px] rounded-xl overflow-hidden border border-gray-100">
-                        <div className="col-span-3 h-full relative bg-gray-100">
-                            {fotoPrincipal ? (
-                                <img src={fotoPrincipal} alt="Principal" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 font-medium">Sem foto principal</div>
-                            )}
-                        </div>
-                        <div className="col-span-1 flex flex-col gap-2 h-full">
-                            {fotosSecundarias.map((foto, idx) => (
-                                <div key={idx} className="flex-1 overflow-hidden bg-gray-100 relative">
-                                    <img src={foto} alt="" className="w-full h-full object-cover" />
+                    {/* PREÇO EM DESTAQUE */}
+                    <div className="text-right bg-gray-50 p-4 rounded-xl border border-gray-200 min-w-[200px]">
+                        {isDual ? (
+                            <div className="flex flex-col gap-2">
+                                <div>
+                                    <p className="text-xs uppercase font-bold text-blue-600">Venda</p>
+                                    <p className="text-2xl font-black text-blue-900">{formatCurrency(property.preco)}</p>
                                 </div>
-                            ))}
-                            {Array.from({ length: 3 - fotosSecundarias.length }).map((_, i) => (
-                                <div key={`empty-${i}`} className="flex-1 bg-gray-50 flex items-center justify-center text-gray-300 text-xs">Foto {i + 2}</div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* CARACTERÍSTICAS (Grid de 5 colunas para caber Suítes) */}
-                    <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-8 print:bg-gray-50 print:border-gray-200">
-                        <div className="grid grid-cols-5 gap-2 text-center divide-x divide-blue-200 print:divide-gray-200">
-                            <div className="px-1">
-                                <Bed className="mx-auto text-blue-900 mb-1 h-5 w-5" />
-                                <span className="block text-lg font-extrabold text-gray-900">{property.quarto}</span>
-                                <span className="text-[9px] uppercase text-gray-500 font-bold tracking-wider">Dormitórios</span>
+                                <div className="border-t border-gray-200 pt-1">
+                                    <p className="text-xs uppercase font-bold text-orange-600">Locação</p>
+                                    <p className="text-xl font-black text-gray-800">{formatCurrency(property.precoLocacao || 0)} <span className="text-xs font-normal text-gray-500">/mês</span></p>
+                                </div>
                             </div>
-                            <div className="px-1">
-                                <Bath className="mx-auto text-blue-900 mb-1 h-5 w-5" />
-                                <span className="block text-lg font-extrabold text-gray-900">{property.suites || 0}</span>
-                                <span className="text-[9px] uppercase text-gray-500 font-bold tracking-wider">Suítes</span>
-                            </div>
-                            <div className="px-1">
-                                <div className="mx-auto text-blue-900 mb-1 h-5 w-5 flex items-center justify-center font-bold border-2 border-blue-900 rounded-full text-[10px]">WC</div>
-                                <span className="block text-lg font-extrabold text-gray-900">{property.banheiro}</span>
-                                <span className="text-[9px] uppercase text-gray-500 font-bold tracking-wider">Banheiros</span>
-                            </div>
-                            <div className="px-1">
-                                <Car className="mx-auto text-blue-900 mb-1 h-5 w-5" />
-                                <span className="block text-lg font-extrabold text-gray-900">{property.garagem}</span>
-                                <span className="text-[9px] uppercase text-gray-500 font-bold tracking-wider">Vagas</span>
-                            </div>
-                            <div className="px-1">
-                                <Maximize className="mx-auto text-blue-900 mb-1 h-5 w-5" />
-                                <span className="block text-lg font-extrabold text-gray-900">{property.area} <span className="text-xs font-normal">m²</span></span>
-                                <span className="text-[9px] uppercase text-gray-500 font-bold tracking-wider">Área Útil</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-8">
-                        {/* Coluna Esquerda: Descrição e Checklist */}
-                        <div className="col-span-2">
-                            <div className="mb-6">
-                                <h3 className="text-sm font-bold text-blue-900 uppercase border-b-2 border-blue-900/10 pb-2 mb-3 tracking-wider">Sobre o Imóvel</h3>
-                                {property.sobreTitulo && (
-                                    <h4 className="font-bold text-gray-800 mb-2 text-base">{property.sobreTitulo}</h4>
-                                )}
-                                <p className="text-gray-700 text-sm leading-relaxed text-justify whitespace-pre-line">
-                                    {property.descricao}
-                                </p>
-                            </div>
-
+                        ) : (
                             <div>
-                                <h3 className="text-sm font-bold text-blue-900 uppercase border-b-2 border-blue-900/10 pb-2 mb-3 tracking-wider">Diferenciais</h3>
-                                <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-                                    {features.slice(0, 12).map((item, i) => (
-                                        <div key={i} className="flex items-center gap-2 text-xs text-gray-700 font-medium">
-                                            <CheckCircle2 size={12} className="text-green-600 shrink-0" /> {item}
-                                        </div>
-                                    ))}
-                                    {features.length > 12 && (
-                                        <div className="text-xs text-gray-500 italic mt-1 col-span-2">...e muito mais.</div>
-                                    )}
-                                </div>
+                                <p className="text-xs uppercase font-bold text-gray-500">{property.finalidade}</p>
+                                <p className="text-3xl font-black text-blue-900">{formatCurrency(property.preco)}</p>
+                                {property.finalidade === 'Locação' && <p className="text-sm text-gray-500">/ {property.periodoPagamento || 'mês'}</p>}
                             </div>
-                        </div>
-
-                        {/* Coluna Direita: Ficha Técnica e Contato */}
-                        <div className="col-span-1 space-y-6">
-
-                            {/* Ficha Técnica */}
-                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-xs space-y-3">
-                                <h3 className="font-bold text-gray-900 text-sm mb-2 flex items-center gap-2">
-                                    <Building size={16} /> Ficha Técnica
-                                </h3>
-
-                                {property.anoConstrucao && (
-                                    <div className="flex justify-between border-b border-gray-200 pb-1">
-                                        <span className="text-gray-500">Ano Const.</span>
-                                        <span className="font-bold text-gray-800">{property.anoConstrucao}</span>
-                                    </div>
-                                )}
-                                {property.areaTerreno && (
-                                    <div className="flex justify-between border-b border-gray-200 pb-1">
-                                        <span className="text-gray-500">Área Terreno</span>
-                                        <span className="font-bold text-gray-800">{property.areaTerreno} m²</span>
-                                    </div>
-                                )}
-                                {property.condicaoImovel && (
-                                    <div className="flex justify-between border-b border-gray-200 pb-1">
-                                        <span className="text-gray-500">Condição</span>
-                                        <span className="font-bold text-gray-800">{property.condicaoImovel}</span>
-                                    </div>
-                                )}
-                                {(property.vagasCobertas > 0 || property.vagasDescobertas > 0) && (
-                                    <div className="flex justify-between border-b border-gray-200 pb-1 flex-col gap-1">
-                                        <span className="text-gray-500">Detalhe Vagas</span>
-                                        <span className="font-bold text-gray-800 text-[10px]">
-                                            {property.vagasCobertas} Cob. / {property.vagasDescobertas} Desc.
-                                            {property.vagasSubsolo ? ' (Subsolo)' : ''}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* Custos Adicionais */}
-                                {(property.valorCondominio ?? 0) > 0 && (
-                                    <div className="flex justify-between pt-1 text-blue-900">
-                                        <span>Condomínio</span>
-                                        <span className="font-bold">R$ {property.valorCondominio}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Box do Corretor */}
-                            <div className="border-2 border-blue-900 rounded-xl p-4 text-center break-inside-avoid">
-                                <p className="text-[10px] uppercase font-bold text-gray-500 mb-2">Para mais informações</p>
-                                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold text-lg mx-auto mb-2">
-                                    {property.corretor.name.charAt(0)}
-                                </div>
-                                <h3 className="font-bold text-sm text-blue-900 line-clamp-1">{property.corretor.name}</h3>
-                                {property.corretor.creci && <p className="text-[10px] text-gray-500 mb-3">CRECI: {property.corretor.creci}</p>}
-
-                                <div className="space-y-1 text-xs">
-                                    <div className="flex items-center justify-center gap-1 text-gray-700 truncate">
-                                        <Mail size={12} /> {property.corretor.email}
-                                    </div>
-                                    <div className="flex items-center justify-center gap-1 text-gray-900 font-bold mt-2 bg-gray-100 py-1 rounded">
-                                        (11) 99999-9999
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* QR Code */}
-                            <div className="text-center">
-                                <img src={qrCodeUrl} alt="QR Code" className="w-20 h-20 mx-auto mb-1" />
-                                <p className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-                                    <Globe size={10} /> matielloimoveis.com.br
-                                </p>
-                            </div>
-                        </div>
+                        )}
                     </div>
-                </div>
-
-                {/* Rodapé Fixo */}
-                <div className="absolute bottom-0 w-full border-t border-gray-200 py-2 text-center bg-white">
-                    <p className="text-[9px] text-gray-400 uppercase tracking-widest">Documento gerado em {new Date().toLocaleDateString('pt-BR')}</p>
                 </div>
             </div>
+
+            {/* --- FOTOS (GRID) --- */}
+            <div className="grid grid-cols-2 gap-4 mb-8 h-80">
+                <div className="relative h-full rounded-xl overflow-hidden border border-gray-200 bg-gray-100">
+                    {mainPhoto ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={mainPhoto} alt="Principal" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-gray-400">Sem Foto</div>
+                    )}
+                </div>
+                <div className="grid grid-rows-2 gap-4 h-full">
+                    {secondaryPhotos.length > 0 ? (
+                        secondaryPhotos.map((foto, idx) => (
+                            <div key={idx} className="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-100">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={foto} alt={`Secundária ${idx}`} className="w-full h-full object-cover" />
+                            </div>
+                        ))
+                    ) : (
+                        <div className="bg-gray-50 rounded-xl flex items-center justify-center text-xs text-gray-400">Mais fotos no site</div>
+                    )}
+                </div>
+            </div>
+
+            {/* --- RESUMO DE CARACTERÍSTICAS --- */}
+            <div className="grid grid-cols-4 gap-4 mb-8">
+                <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg text-center">
+                    <Bed className="mx-auto text-blue-900 mb-1" size={24} />
+                    <span className="block font-bold text-xl">{property.quarto}</span>
+                    <span className="text-xs text-gray-600 uppercase">Quartos</span>
+                </div>
+                <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg text-center">
+                    <Bath className="mx-auto text-blue-900 mb-1" size={24} />
+                    <span className="block font-bold text-xl">{property.suites || 0}</span>
+                    <span className="text-xs text-gray-600 uppercase">Suítes</span>
+                </div>
+                <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg text-center">
+                    <Car className="mx-auto text-blue-900 mb-1" size={24} />
+                    <span className="block font-bold text-xl">{property.garagem}</span>
+                    <span className="text-xs text-gray-600 uppercase">Vagas</span>
+                </div>
+                <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg text-center">
+                    <Ruler className="mx-auto text-blue-900 mb-1" size={24} />
+                    <span className="block font-bold text-xl">{property.area}</span>
+                    <span className="text-xs text-gray-600 uppercase">Área Útil (m²)</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                {/* COLUNA 1: DESCRIÇÃO E DETALHES */}
+                <div className="md:col-span-2 space-y-6">
+                    <div className="prose text-sm text-gray-700 text-justify">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2 border-b pb-1">Descrição</h3>
+                        <p className="whitespace-pre-line">{property.descricao}</p>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-3 border-b pb-1">Comodidades</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                            {features.map((feat, i) => (
+                                <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                                    <CheckCircle2 size={14} className="text-green-600" />
+                                    <span>{feat}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* COLUNA 2: DADOS TÉCNICOS E CONTATO */}
+                <div className="space-y-6">
+
+                    {/* Caixa de Valores Extras */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                        <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <Building2 size={18} /> Custos Adicionais
+                        </h3>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Condomínio:</span>
+                                <span className="font-bold">{property.valorCondominio ? formatCurrency(property.valorCondominio) : "-"}</span>
+                            </div>
+                            {property.periodicidadeCondominio && (
+                                <div className="text-right text-xs text-gray-400 -mt-1 mb-2">{property.periodicidadeCondominio}</div>
+                            )}
+                            <div className="flex justify-between border-t pt-2">
+                                <span className="text-gray-600">Depósito/Caução:</span>
+                                <span className="font-bold">{property.depositoSeguranca ? formatCurrency(property.depositoSeguranca) : "-"}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Caixa de Detalhes Técnicos */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                        <h3 className="font-bold text-gray-900 mb-3">Ficha Técnica</h3>
+                        <ul className="space-y-2 text-sm">
+                            <li className="flex justify-between">
+                                <span className="text-gray-600">Ano Const.:</span>
+                                <span className="font-medium">{property.anoConstrucao || "-"}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span className="text-gray-600">Área Terreno:</span>
+                                <span className="font-medium">{property.areaTerreno ? `${property.areaTerreno} m²` : "-"}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span className="text-gray-600">Vagas Cobertas:</span>
+                                <span className="font-medium">{property.vagasCobertas || 0}</span>
+                            </li>
+                            <li className="flex justify-between">
+                                <span className="text-gray-600">Vagas Descobertas:</span>
+                                <span className="font-medium">{property.vagasDescobertas || 0}</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Box do Corretor */}
+                    <div className="border-2 border-blue-900/10 rounded-xl p-4 text-center">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Corretor Responsável</p>
+                        <p className="font-black text-lg text-blue-900">{property.corretor.name}</p>
+                        {property.corretor.creci && <p className="text-sm text-gray-600 font-medium mb-3">CRECI: {property.corretor.creci}</p>}
+
+                        <div className="flex justify-center gap-2 mt-2">
+                            <div className="bg-green-100 text-green-800 p-2 rounded-full">
+                                <Phone size={18} />
+                            </div>
+                            <div className="bg-blue-100 text-blue-800 p-2 rounded-full">
+                                <Mail size={18} />
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            {/* --- RODAPÉ DE IMPRESSÃO --- */}
+            <footer className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-400">
+                <p>Documento gerado em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}.</p>
+                <p>As informações estão sujeitas a alterações sem aviso prévio. Consulte o corretor responsável.</p>
+            </footer>
+
+            {/* Script para ativar impressão automática (opcional) */}
+            <script dangerouslySetInnerHTML={{
+                __html: `
+        // Opcional: window.print(); 
+      `}} />
         </div>
     );
 }

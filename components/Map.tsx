@@ -16,14 +16,16 @@ const icon = L.icon({
     shadowSize: [41, 41],
 });
 
-// Interface atualizada para aceitar 'null' do banco de dados
+// Interface atualizada para aceitar 'null' do banco e novos campos
 interface Property {
     id: string;
     titulo: string;
     preco: number;
+    precoLocacao?: number | null; // NOVO
+    finalidade?: string;          // NOVO
     latitude?: number | null;
     longitude?: number | null;
-    fotos?: string | null; // Fotos também podem vir null do banco
+    fotos?: string | null;
 }
 
 interface MapProps {
@@ -31,8 +33,11 @@ interface MapProps {
 }
 
 export default function Map({ properties }: MapProps) {
-    // Filtra imóveis que têm coordenadas válidas (exclui null e undefined)
+    // Filtra imóveis que têm coordenadas válidas
     const pins = properties.filter(p => p.latitude && p.longitude);
+
+    // Helper de formatação
+    const formatMoney = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
 
     if (pins.length === 0) {
         return (
@@ -43,7 +48,6 @@ export default function Map({ properties }: MapProps) {
     }
 
     // Centraliza no primeiro imóvel encontrado
-    // O '!' força o TypeScript a entender que não é null, pois já filtramos acima
     const centerPosition: [number, number] = [pins[0].latitude!, pins[0].longitude!];
 
     return (
@@ -57,28 +61,53 @@ export default function Map({ properties }: MapProps) {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
 
-            {pins.map((property) => (
-                <Marker
-                    key={property.id}
-                    position={[property.latitude!, property.longitude!]}
-                    icon={icon}
-                >
-                    <Popup>
-                        <div className="text-center min-w-[150px]">
-                            <strong className="block text-sm mb-1 text-gray-900">{property.titulo}</strong>
-                            <span className="text-blue-900 font-bold block mb-3">
-                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
-                            </span>
-                            <Link
-                                href={`/imoveis/${property.id}`}
-                                className="inline-block text-xs bg-blue-900 text-white px-4 py-2 rounded-full hover:bg-blue-800 transition-colors"
-                            >
-                                Ver Detalhes
-                            </Link>
-                        </div>
-                    </Popup>
-                </Marker>
-            ))}
+            {pins.map((property) => {
+                // Lógica de exibição de preço (Venda/Locação/Ambos)
+                const isRent = property.finalidade === "Locação";
+                const isDual = property.finalidade?.includes("Venda") && property.finalidade?.includes("Locação") || ((property.precoLocacao || 0) > 0 && property.preco > 0);
+
+                return (
+                    <Marker
+                        key={property.id}
+                        position={[property.latitude!, property.longitude!]}
+                        icon={icon}
+                    >
+                        <Popup>
+                            <div className="text-center min-w-[160px] p-1">
+                                <strong className="block text-sm mb-2 text-gray-900 leading-tight">{property.titulo}</strong>
+
+                                <div className="mb-3 space-y-1">
+                                    {isDual ? (
+                                        <>
+                                            <div className="text-blue-900 font-bold text-xs flex justify-between gap-2">
+                                                <span>Venda:</span> {formatMoney(property.preco)}
+                                            </div>
+                                            <div className="text-orange-700 font-bold text-xs flex justify-between gap-2">
+                                                <span>Locação:</span> {formatMoney(property.precoLocacao || 0)}
+                                            </div>
+                                        </>
+                                    ) : isRent ? (
+                                        <span className="text-orange-700 font-bold block text-sm">
+                                            {formatMoney(property.preco)}/mês
+                                        </span>
+                                    ) : (
+                                        <span className="text-blue-900 font-bold block text-sm">
+                                            {formatMoney(property.preco)}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <Link
+                                    href={`/imoveis/${property.id}`}
+                                    className="inline-block text-xs bg-blue-900 text-white px-4 py-2 rounded-full hover:bg-blue-800 transition-colors w-full font-bold"
+                                >
+                                    Ver Detalhes
+                                </Link>
+                            </div>
+                        </Popup>
+                    </Marker>
+                );
+            })}
         </MapContainer>
     );
 }

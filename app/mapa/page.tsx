@@ -23,6 +23,8 @@ export default async function MapPage() {
             id: true,
             titulo: true,
             preco: true,
+            precoLocacao: true, // NOVO: Necessário para o popup
+            finalidade: true,   // NOVO: Necessário para lógica de exibição
             latitude: true,
             longitude: true,
             fotos: true
@@ -30,18 +32,19 @@ export default async function MapPage() {
     });
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-300">
             <Header />
 
             <main className="flex-grow flex flex-col h-[calc(100vh-80px)]">
-                <div className="bg-white p-4 shadow-sm z-10 flex justify-between items-center px-8">
-                    <h1 className="text-xl font-bold text-gray-800">Explorar no Mapa</h1>
-                    <p className="text-sm text-gray-500">{properties.length} imóveis encontrados</p>
+                <div className="bg-white dark:bg-gray-800 p-4 shadow-sm z-10 flex justify-between items-center px-8 border-b border-gray-200 dark:border-gray-700">
+                    <h1 className="text-xl font-bold text-gray-800 dark:text-white">Explorar no Mapa</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{properties.length} imóveis encontrados</p>
                 </div>
 
                 <div className="flex-grow p-4">
                     {/* O Mapa ocupa todo o espaço restante */}
-                    <div className="h-full w-full shadow-lg border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="h-full w-full shadow-lg border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden relative z-0">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         <Map properties={properties as any} />
                     </div>
                 </div>
