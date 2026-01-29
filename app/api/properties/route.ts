@@ -14,7 +14,7 @@ export async function GET(request: Request) {
         const maxPrice = searchParams.get("maxPrice");
         const quartos = searchParams.get("quartos");
         const garagem = searchParams.get("garagem");
-        const finalidade = searchParams.get("finalidade"); // Filtro novo opcional
+        const finalidade = searchParams.get("finalidade");
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
@@ -27,7 +27,6 @@ export async function GET(request: Request) {
             where.tipo = tipo;
         }
 
-        // Filtro de Finalidade (Venda / Locação)
         if (finalidade) {
             where.finalidade = finalidade;
         }
@@ -63,7 +62,7 @@ export async function GET(request: Request) {
     }
 }
 
-// POST: Cadastrar novo imóvel (COMPLETO)
+// POST: Cadastrar novo imóvel
 export async function POST(request: Request) {
     try {
         const session = await getServerSession(authOptions);
@@ -85,16 +84,17 @@ export async function POST(request: Request) {
                 sobreTitulo: data.sobreTitulo || "",
                 descricao: data.descricao,
                 tipo: data.tipo,
-                finalidade: data.finalidade || "Venda", // NOVO
+                finalidade: data.finalidade || "Venda",
 
                 // VALORES
                 preco: parseFloat(data.preco),
-                tipoValor: data.tipoValor, // NOVO
-                periodoPagamento: data.periodoPagamento, // NOVO (Locação)
-                depositoSeguranca: data.depositoSeguranca ? parseFloat(data.depositoSeguranca) : 0, // NOVO
+                precoLocacao: data.precoLocacao ? parseFloat(data.precoLocacao) : 0, 
+                tipoValor: data.tipoValor,
+                periodoPagamento: data.periodoPagamento,
+                depositoSeguranca: data.depositoSeguranca ? parseFloat(data.depositoSeguranca) : 0,
 
-                valorCondominio: data.valorCondominio ? parseFloat(data.valorCondominio) : 0, // NOVO
-                periodicidadeCondominio: data.periodicidadeCondominio, // NOVO
+                valorCondominio: data.valorCondominio ? parseFloat(data.valorCondominio) : 0,
+                periodicidadeCondominio: data.periodicidadeCondominio,
 
                 // ENDEREÇO
                 cidade: data.cidade,
@@ -105,24 +105,24 @@ export async function POST(request: Request) {
 
                 // DETALHES FÍSICOS
                 quarto: parseInt(data.quarto),
-                suites: data.suites ? parseInt(data.suites) : 0, // NOVO
+                suites: data.suites ? parseInt(data.suites) : 0,
                 banheiro: parseInt(data.banheiro),
 
                 // VAGAS
                 garagem: parseInt(data.garagem), // Total
-                vagasCobertas: data.vagasCobertas ? parseInt(data.vagasCobertas) : 0, // NOVO
-                vagasDescobertas: data.vagasDescobertas ? parseInt(data.vagasDescobertas) : 0, // NOVO
-                vagasSubsolo: data.vagasSubsolo ?? false, // NOVO
+                vagasCobertas: data.vagasCobertas ? parseInt(data.vagasCobertas) : 0,
+                vagasDescobertas: data.vagasDescobertas ? parseInt(data.vagasDescobertas) : 0,
+                vagasSubsolo: data.vagasSubsolo ?? false,
 
                 // ÁREAS
                 area: parseFloat(data.area),
                 areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : 0,
 
                 // DETALHES DE MERCADO
-                statusMercado: data.statusMercado, // NOVO
-                condicaoImovel: data.condicaoImovel, // NOVO
-                anoConstrucao: data.anoConstrucao ? parseInt(data.anoConstrucao) : null, // NOVO
-                tipoContrato: data.tipoContrato, // NOVO
+                statusMercado: data.statusMercado,
+                condicaoImovel: data.condicaoImovel,
+                anoConstrucao: data.anoConstrucao ? parseInt(data.anoConstrucao) : null,
+                tipoContrato: data.tipoContrato,
 
                 // MÍDIA E SISTEMA
                 fotos: fotosString,

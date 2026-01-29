@@ -86,6 +86,7 @@ export async function PUT(
 
                 // VALORES
                 preco: data.preco ? parseFloat(data.preco) : undefined,
+                precoLocacao: data.precoLocacao ? parseFloat(data.precoLocacao) : undefined, // <--- CAMPO ADICIONADO AQUI
                 tipoValor: data.tipoValor, // NOVO
                 periodoPagamento: data.periodoPagamento, // NOVO
                 depositoSeguranca: data.depositoSeguranca ? parseFloat(data.depositoSeguranca) : undefined, // NOVO

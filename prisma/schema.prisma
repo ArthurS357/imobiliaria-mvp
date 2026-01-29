@@ -15,22 +15,20 @@ model User {
   password  String   // Senha hash
   creci     String?  // Campo CRECI opcional
 
-  // SQLite não suporta Enum, então usamos String.
-  // Valores esperados: "ADMIN" ou "FUNCIONARIO"
+  // Valores esperados: "ADMIN", "FUNCIONARIO", "BROKER", "CORRETOR"
   role      String   @default("FUNCIONARIO")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relação: Imóveis cadastrados por este usuário
+  // Relações
   properties    Property[]
-
-  // Relação: Leads (Mensagens) atribuídos a este usuário
   assignedLeads Lead[]     @relation("AssignedLeads")
-
-  // Relação: Visitas atribuídas a este usuário
   assignedVisits Visit[]   @relation("AssignedVisits")
 
+  // Índices para buscas rápidas de equipe
+  @@index([email])
+  @@index([role])
   @@map("users")
 }
 
@@ -44,37 +42,38 @@ model Property {
   descricao   String
   tipo        String   // Casa, Apt, etc.
   
-  // FINALIDADE (NOVO)
-  finalidade  String   @default("Venda") // "Venda" ou "Locação"
+  // FINALIDADE
+  finalidade  String   @default("Venda") // "Venda", "Locação" ou "Venda e Locação" (controlado via app)
 
-  // PREÇOS E CONDIÇÕES (NOVOS)
+  // PREÇOS E CONDIÇÕES
   preco             Float    
-  tipoValor         String?  @default("Preço fixo") // "Aluguel mensal", "Consultar", "Negociável", etc.
+  precoLocacao      Float?   @default(0) // NOVO: Para casos de Venda + Locação
+  tipoValor         String?  @default("Preço fixo") 
   periodoPagamento  String?  // "Mensal", "Anual" (Para locação)
-  depositoSeguranca Float?   @default(0) // (Para locação)
+  depositoSeguranca Float?   @default(0) 
   
   valorCondominio         Float?   @default(0)
   periodicidadeCondominio String?  // "Mensal", "Anual"
 
-  // DETALHES FÍSICOS (NOVOS E ATUALIZADOS)
-  area        Float    // Área Útil / Construída
-  areaTerreno Float?   @default(0) // Área do Terreno
+  // DETALHES FÍSICOS
+  area        Float    // Área Útil
+  areaTerreno Float?   @default(0) 
   
-  quarto      Int      @default(0) // Dormitórios
-  suites      Int      @default(0) // NOVO: Suítes
+  quarto      Int      @default(0)
+  suites      Int      @default(0)
   banheiro    Int      @default(0)
   
-  // VAGAS DETALHADAS (NOVOS)
+  // VAGAS
   garagem          Int      @default(0) // Total
-  vagasCobertas    Int      @default(0) // NOVO
-  vagasDescobertas Int      @default(0) // NOVO
-  vagasSubsolo     Boolean  @default(false) // NOVO: Se as vagas são no subsolo
+  vagasCobertas    Int      @default(0) 
+  vagasDescobertas Int      @default(0) 
+  vagasSubsolo     Boolean  @default(false)
 
-  // DETALHES DE MERCADO E CONSTRUÇÃO (NOVOS)
-  statusMercado   String?  // "Ótimo preço", "Nova construção", etc.
-  anoConstrucao   Int?     // Ano (ex: 2024)
-  condicaoImovel  String?  // "Ótima", "Regular", etc.
-  tipoContrato    String?  @default("Sem Exclusividade") // "Com Exclusividade" / "Sem Exclusividade"
+  // DETALHES DE MERCADO
+  statusMercado   String?
+  anoConstrucao   Int?     
+  condicaoImovel  String?
+  tipoContrato    String?  @default("Sem Exclusividade")
 
   // LOCALIZAÇÃO
   cidade      String
@@ -85,13 +84,13 @@ model Property {
 
   // MIDIA E EXTRAS
   fotos           String?  @default("") 
-  features        String?  @default("") // Checklist completo
+  features        String?  @default("") 
   
   // SISTEMA E PRIVACIDADE
   status          String   @default("PENDENTE") // PENDENTE, DISPONIVEL, VENDIDO, RESERVADO
   destaque        Boolean  @default(false)
-  displayAddress  Boolean  @default(true) // Se false, esconde o endereço exato
-  displayDetails  Boolean  @default(true) // Se false, esconde detalhes específicos
+  displayAddress  Boolean  @default(true) 
+  displayDetails  Boolean  @default(true) 
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -101,10 +100,19 @@ model Property {
   visits      Visit[]
   leads       Lead[]
 
+  // OTIMIZAÇÃO: Índices para tornar as buscas e filtros do site instantâneos
+  @@index([status])           // Filtro principal (só mostrar disponíveis)
+  @@index([cidade, bairro])   // Busca por localização
+  @@index([preco])            // Filtro por faixa de preço
+  @@index([finalidade])       // Venda vs Locação
+  @@index([tipo])             // Casa vs Apartamento
+  @@index([destaque])         // Carregar destaques rápido
+  @@index([corretorId])       // Listar imóveis de um corretor
+  
   @@map("properties")
 }
 
-// Modelo de Leads (Contatos gerais do Site via formulário Fale Conosco)
+// Modelo de Leads
 model Lead {
   id        String   @id @default(cuid())
   name      String
@@ -113,21 +121,23 @@ model Lead {
   message   String
   createdAt DateTime @default(now())
   
-  // Status do atendimento (Novo, Em Andamento, Finalizado)
   status    String   @default("NOVO") 
 
-  // Campo para dizer quem é o corretor dono desse lead
   assignedToId  String?
   assignedTo    User?   @relation("AssignedLeads", fields: [assignedToId], references: [id])
 
-  // Relação com Imóvel (Opcional) - Permite saber qual imóvel gerou esse contato
   propertyId    String?
   property      Property? @relation(fields: [propertyId], references: [id])
+
+  // Otimização para painel de controle (Kanban)
+  @@index([status])
+  @@index([assignedToId])
+  @@index([createdAt])
 
   @@map("leads")
 }
 
-// Modelo de Agendamento de Visitas
+// Modelo de Visitas
 model Visit {
   id          String   @id @default(cuid())
   date        DateTime // Data da visita
@@ -135,16 +145,20 @@ model Visit {
   name        String
   email       String
   phone       String?
-  status      String   @default("PENDENTE") // PENDENTE, CONFIRMADA, CANCELADA
+  status      String   @default("PENDENTE")
 
   createdAt   DateTime @default(now())
   
   property    Property @relation(fields: [propertyId], references: [id])
   propertyId  String
 
-  // Quem é o corretor responsável por essa visita?
   assignedToId  String?
   assignedTo    User?   @relation("AssignedVisits", fields: [assignedToId], references: [id])
+
+  // Otimização para agenda
+  @@index([date])
+  @@index([status])
+  @@index([assignedToId])
 
   @@map("visits")
 }

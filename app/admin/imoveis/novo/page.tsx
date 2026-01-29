@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, Maximize, Eye, EyeOff, FileText, DollarSign, Calendar } from "lucide-react";
+import { Save, ArrowLeft, MapPin, Image as ImageIcon, Home, Loader2, FileText, DollarSign, Calendar, Tag, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { FeatureSelector } from "@/components/admin/FeatureSelector";
@@ -31,6 +31,7 @@ export default function NewPropertyPage() {
 
         // Valores e Contrato
         preco: "",
+        precoLocacao: "", // NOVO: Campo para segundo valor
         tipoValor: "Preço fixo",
         periodoPagamento: "Mensal", // Para locação
         depositoSeguranca: "",      // Para locação
@@ -51,7 +52,7 @@ export default function NewPropertyPage() {
         banheiro: "",
 
         // Vagas
-        garagem: "0", // Total (automático ou manual)
+        garagem: "0", // Total
         vagasCobertas: "",
         vagasDescobertas: "",
         vagasSubsolo: false,
@@ -90,9 +91,7 @@ export default function NewPropertyPage() {
             return;
         }
 
-        // Lógica para calcular o total de vagas se o usuário preencheu as parciais
-        // Se o usuário digitar manualmente no campo "Total", respeitamos o valor dele.
-        // Caso contrário, somamos as cobertas e descobertas.
+        // Lógica para calcular o total de vagas
         const vagasCalc = (Number(formData.vagasCobertas) || 0) + (Number(formData.vagasDescobertas) || 0);
         const finalGaragem = Number(formData.garagem) > 0 ? formData.garagem : vagasCalc.toString();
 
@@ -121,8 +120,10 @@ export default function NewPropertyPage() {
         }
     };
 
-    // Helper para verificar se é locação e exibir campos extras
+    // Helpers de exibição
     const isRent = formData.finalidade === "Locação";
+    const isDual = formData.finalidade === "Venda e Locação";
+    const showRentFields = isRent || isDual;
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
@@ -221,6 +222,24 @@ export default function NewPropertyPage() {
                                 <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-bold" placeholder="0,00" />
                             </div>
 
+                            {/* NOVO: Campo Valor de Locação (Apenas se "Venda e Locação") */}
+                            {isDual && (
+                                <div className="animate-in fade-in slide-in-from-top-2">
+                                    <label className="block text-sm font-semibold text-orange-600 dark:text-orange-400 mb-1.5">
+                                        Valor do Aluguel (R$) <span className="text-[#eaca42]">*</span>
+                                    </label>
+                                    <input
+                                        required={isDual}
+                                        type="number"
+                                        name="precoLocacao"
+                                        value={formData.precoLocacao}
+                                        onChange={handleChange}
+                                        className="w-full p-3 border border-orange-200 dark:border-orange-800 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-bold"
+                                        placeholder="0,00"
+                                    />
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Tipo de Valor
@@ -248,8 +267,8 @@ export default function NewPropertyPage() {
                                 </div>
                             </div>
 
-                            {/* CAMPOS EXTRAS PARA LOCAÇÃO */}
-                            {isRent && (
+                            {/* CAMPOS EXTRAS PARA LOCAÇÃO OU DUPLA FINALIDADE */}
+                            {showRentFields && (
                                 <>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
@@ -265,7 +284,7 @@ export default function NewPropertyPage() {
                                         </label>
                                         <input type="number" name="depositoSeguranca" value={formData.depositoSeguranca} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="0,00" />
                                     </div>
-                                    {/* Espaçador para grid */}
+                                    {/* Espaçador para grid em desktop */}
                                     <div className="hidden md:block"></div>
                                 </>
                             )}

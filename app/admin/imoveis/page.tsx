@@ -2,26 +2,28 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, MapPin, Edit, Eye, ArrowLeft, Printer, X, Bed, Car, Ruler, Bath } from "lucide-react";
+import { Plus, Search, MapPin, Edit, Eye, ArrowLeft, Printer, X, Bed, Car, Ruler } from "lucide-react";
 import { DeletePropertyButton } from "@/components/admin/DeletePropertyButton";
 import { CopySalesTextButton } from "@/components/admin/CopySalesTextButton";
 
-// INTERFACE ATUALIZADA: Com os novos campos para exibição no card
+// INTERFACE ATUALIZADA: Suporte aos novos campos
 interface Property {
   id: string;
   titulo: string;
   preco: number;
+  precoLocacao?: number; // NOVO: Campo para valor de locação
+  tipoValor?: string;    // NOVO
   cidade: string;
   bairro: string;
   status: string;
   fotos: string | null;
-  // Novos campos físicos
+  // Campos físicos
   quarto: number;
   suites: number;
   banheiro: number;
   garagem: number;
   area: number;
-  finalidade: string; // Venda ou Locação
+  finalidade: string;
 
   // Objeto do corretor
   corretor: {
@@ -29,11 +31,10 @@ interface Property {
     creci: string | null;
   };
 
-  // Campos opcionais que podem ser úteis para o botão de copiar texto
+  // Campos opcionais úteis para o copy
   vagasCobertas?: number;
   vagasDescobertas?: number;
   condicaoImovel?: string;
-  tipoValor?: string;
 }
 
 export default function AdminPropertiesPage() {
@@ -74,6 +75,9 @@ export default function AdminPropertiesPage() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Helper de Formatação
+  const formatMoney = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
@@ -175,116 +179,133 @@ export default function AdminPropertiesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {filteredProperties.map((property) => (
-                      <tr key={property.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition group">
+                    {filteredProperties.map((property) => {
+                      // Lógica local para saber se é Venda + Locação
+                      // Considera se a string finalidade tem ambos ou se ambos os preços existem
+                      const isDual = (property.finalidade?.includes("Venda") && property.finalidade?.includes("Locação")) ||
+                        ((property.precoLocacao || 0) > 0 && property.preco > 0);
 
-                        {/* Coluna 1: Foto, Título e Detalhes Rápidos */}
-                        <td className="p-4">
-                          <div className="flex items-start gap-4">
-                            <div className="h-16 w-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-600 relative group-hover:scale-105 transition-transform">
-                              {property.fotos ? (
-                                <img src={property.fotos.split(";")[0]} alt="" className="h-full w-full object-cover" />
-                              ) : (
-                                <div className="h-full w-full flex items-center justify-center text-gray-300 dark:text-gray-500 text-[10px] uppercase font-bold">Sem foto</div>
-                              )}
-                            </div>
-                            <div>
-                              <p className="font-bold text-gray-800 dark:text-gray-200 line-clamp-1 text-base">{property.titulo}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5 mb-2">
-                                <MapPin size={12} /> {property.bairro}, {property.cidade}
-                              </p>
+                      return (
+                        <tr key={property.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition group">
 
-                              {/* MELHORIA: Ícones de resumo */}
-                              <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
-                                <span className="flex items-center gap-1" title="Dormitórios">
-                                  <Bed size={14} className="text-blue-500" />
-                                  {property.quarto} {property.suites > 0 && <span className="text-[10px] opacity-70">({property.suites} st)</span>}
-                                </span>
-                                <span className="flex items-center gap-1" title="Vagas">
-                                  <Car size={14} className="text-blue-500" /> {property.garagem}
-                                </span>
-                                <span className="flex items-center gap-1" title="Área Útil">
-                                  <Ruler size={14} className="text-blue-500" /> {property.area}m²
-                                </span>
+                          {/* Coluna 1: Foto, Título e Detalhes */}
+                          <td className="p-4">
+                            <div className="flex items-start gap-4">
+                              <div className="h-16 w-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-600 relative group-hover:scale-105 transition-transform">
+                                {property.fotos ? (
+                                  <img src={property.fotos.split(";")[0]} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center text-gray-300 dark:text-gray-500 text-[10px] uppercase font-bold">Sem foto</div>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-bold text-gray-800 dark:text-gray-200 line-clamp-1 text-base">{property.titulo}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5 mb-2">
+                                  <MapPin size={12} /> {property.bairro}, {property.cidade}
+                                </p>
+
+                                <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                                  <span className="flex items-center gap-1" title="Dormitórios">
+                                    <Bed size={14} className="text-blue-500" />
+                                    {property.quarto} {property.suites > 0 && <span className="text-[10px] opacity-70">({property.suites} st)</span>}
+                                  </span>
+                                  <span className="flex items-center gap-1" title="Vagas">
+                                    <Car size={14} className="text-blue-500" /> {property.garagem}
+                                  </span>
+                                  <span className="flex items-center gap-1" title="Área Útil">
+                                    <Ruler size={14} className="text-blue-500" /> {property.area}m²
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* Coluna 2: Preço e Finalidade */}
-                        <td className="p-4 whitespace-nowrap">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
-                            </span>
-                            {/* MELHORIA: Badge de Finalidade */}
-                            <span className={`text-[10px] font-bold uppercase w-fit px-2 py-0.5 rounded mt-1
-                                ${property.finalidade === 'Locação'
-                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                              }`}>
-                              {property.finalidade}
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* Coluna 3: Status */}
-                        <td className="p-4">
-                          <span className={`text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide border
-                            ${property.status === 'DISPONIVEL' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' : ''}
-                            ${property.status === 'PENDENTE' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800' : ''}
-                            ${property.status === 'VENDIDO' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' : ''}
-                            ${property.status === 'RESERVADO' ? 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' : ''}
-                            `}>
-                            {property.status}
-                          </span>
-                        </td>
-
-                        {/* Coluna 4: Corretor */}
-                        <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center text-xs font-bold border border-blue-200 dark:border-blue-800">
-                              {property.corretor.name.charAt(0)}
-                            </div>
-                            <div>
-                              <span className="block font-medium line-clamp-1">{property.corretor.name}</span>
-                              {property.corretor.creci && (
-                                <span className="text-[10px] text-gray-400 dark:text-gray-500 block">
-                                  CRECI: {property.corretor.creci}
+                          {/* Coluna 2: Preço e Finalidade (MODIFICADO) */}
+                          <td className="p-4 whitespace-nowrap align-top pt-5">
+                            {isDual ? (
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] font-bold text-blue-600 bg-blue-100 dark:bg-blue-900/30 px-1.5 rounded">VEN</span>
+                                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{formatMoney(property.preco)}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] font-bold text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-1.5 rounded">LOC</span>
+                                  <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{formatMoney(property.precoLocacao || 0)}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                  {formatMoney(property.preco)}
                                 </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Coluna 5: Ações */}
-                        <td className="p-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {/* Passa o objeto property completo para o gerador de texto */}
-                            <CopySalesTextButton property={property} />
-
-                            <Link
-                              href={`/imoveis/${property.id}/print`}
-                              target="_blank"
-                              className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
-                              title="Imprimir Ficha (PDF)"
-                            >
-                              <Printer size={18} />
-                            </Link>
-                            {property.status === 'DISPONIVEL' && (
-                              <Link href={`/imoveis/${property.id}`} target="_blank" className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded" title="Ver Página">
-                                <Eye size={18} />
-                              </Link>
+                                <span className={`text-[10px] font-bold uppercase w-fit px-2 py-0.5 rounded mt-1
+                                  ${property.finalidade?.includes('Locação')
+                                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                  }`}>
+                                  {property.finalidade}
+                                </span>
+                              </div>
                             )}
-                            <Link href={`/admin/imoveis/editar/${property.id}`} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition" title="Editar">
-                              <Edit size={18} />
-                            </Link>
-                            <DeletePropertyButton id={property.id} />
-                          </div>
-                        </td>
+                          </td>
 
-                      </tr>
-                    ))}
+                          {/* Coluna 3: Status */}
+                          <td className="p-4">
+                            <span className={`text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide border
+                              ${property.status === 'DISPONIVEL' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' : ''}
+                              ${property.status === 'PENDENTE' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800' : ''}
+                              ${property.status === 'VENDIDO' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' : ''}
+                              ${property.status === 'RESERVADO' ? 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' : ''}
+                              `}>
+                              {property.status}
+                            </span>
+                          </td>
+
+                          {/* Coluna 4: Corretor */}
+                          <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center text-xs font-bold border border-blue-200 dark:border-blue-800">
+                                {property.corretor.name.charAt(0)}
+                              </div>
+                              <div>
+                                <span className="block font-medium line-clamp-1">{property.corretor.name}</span>
+                                {property.corretor.creci && (
+                                  <span className="text-[10px] text-gray-400 dark:text-gray-500 block">
+                                    CRECI: {property.corretor.creci}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Coluna 5: Ações */}
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <CopySalesTextButton property={property} />
+
+                              <Link
+                                href={`/imoveis/${property.id}/print`}
+                                target="_blank"
+                                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
+                                title="Imprimir Ficha (PDF)"
+                              >
+                                <Printer size={18} />
+                              </Link>
+                              {property.status === 'DISPONIVEL' && (
+                                <Link href={`/imoveis/${property.id}`} target="_blank" className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded" title="Ver Página">
+                                  <Eye size={18} />
+                                </Link>
+                              )}
+                              <Link href={`/admin/imoveis/editar/${property.id}`} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition" title="Editar">
+                                <Edit size={18} />
+                              </Link>
+                              <DeletePropertyButton id={property.id} />
+                            </div>
+                          </td>
+
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

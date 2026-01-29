@@ -1,20 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MapPin, Bed, Bath, Car, Maximize, ArrowRight, Heart, Building2, Ruler } from "lucide-react";
+import { MapPin, Bed, Bath, Car, Maximize, ArrowRight, Heart, Building2, Ruler, LockKeyhole } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
 interface PropertyProps {
   property: {
     id: string;
     titulo: string;
     preco: number;
+    precoLocacao?: number; // Campo opcional para o segundo valor
     cidade: string;
     bairro: string;
     endereco?: string | null;
     quarto: number;
-    suites?: number; // Novo
+    suites?: number;
     banheiro: number;
     garagem: number;
     area: number;
@@ -22,15 +24,22 @@ interface PropertyProps {
     fotos: string | null;
     tipo: string;
     status: string;
-    finalidade?: string; // Novo
-    tipoValor?: string;  // Novo
-    periodoPagamento?: string; // Novo
+    finalidade?: string;
+    tipoValor?: string;
+    periodoPagamento?: string;
     displayAddress?: boolean;
   };
 }
 
 export function PropertyCard({ property }: PropertyProps) {
+  const { data: session } = useSession();
   const [isFavorite, setIsFavorite] = useState(false);
+
+  // 1. Verifica permissão (Admin, Funcionário ou Corretor)
+  // Adicionado 'FUNCIONARIO' para bater com o padrão do Schema Prisma
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const userRole = (session?.user as any)?.role;
+  const isInternal = session?.user && ['ADMIN', 'FUNCIONARIO', 'BROKER', 'CORRETOR'].includes(userRole);
 
   // Verifica se já é favorito ao carregar
   useEffect(() => {
@@ -63,11 +72,24 @@ export function PropertyCard({ property }: PropertyProps) {
   // Trata as fotos
   const primeiraFoto = property.fotos ? property.fotos.split(";")[0] : null;
 
-  const precoFormatado = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 0,
-  }).format(Number(property.preco));
+  // Formatação de moeda
+  const formatMoney = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const precoVendaFormatado = formatMoney(Number(property.preco));
+  const precoLocacaoFormatado = property.precoLocacao ? formatMoney(Number(property.precoLocacao)) : null;
+
+  // 2. Lógica Inteligente para "Venda e Locação"
+  // Considera verdadeiro se a finalidade conter os dois termos OU se tivermos os dois preços cadastrados
+  const finalidadeLower = property.finalidade?.toLowerCase() || "";
+  const isDualPurpose =
+    (finalidadeLower.includes("venda") && finalidadeLower.includes("locação")) ||
+    (Number(property.preco) > 0 && Number(property.precoLocacao) > 0);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -106,32 +128,70 @@ export function PropertyCard({ property }: PropertyProps) {
             </div>
           )}
 
-          {/* Sombra Gradiente na base da foto para destacar preço */}
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/70 to-transparent"></div>
+          {/* Sombra Gradiente: Aumentada se houver dois preços para melhorar legibilidade */}
+          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-all ${isDualPurpose ? 'h-32' : 'h-24'}`}></div>
 
           {/* Badge Superior Esquerdo (Status/Tipo) */}
-          <div className="absolute top-4 left-4 z-10">
+          <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
             {getStatusBadge(property.status)}
+
+            {/* 3. TIPO DE VALOR - VISÍVEL APENAS PARA INTERNOS (ADMIN/CORRETOR) */}
+            {isInternal && property.tipoValor && (
+              <div className="flex items-center gap-1 bg-purple-600/90 backdrop-blur-sm text-white px-2 py-1 text-[10px] font-bold rounded shadow-sm border border-purple-400/30 w-fit animate-in fade-in zoom-in">
+                <LockKeyhole size={10} />
+                <span>{property.tipoValor}</span>
+              </div>
+            )}
           </div>
 
           {/* Badge Superior Direito (Finalidade) */}
           <div className={`absolute top-4 right-4 z-10 text-xs font-bold px-3 py-1 rounded uppercase tracking-wider shadow-sm 
-              ${property.finalidade === 'Locação' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'}`}>
+              ${property.finalidade?.includes('Locação') && !property.finalidade?.includes('Venda') ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'}`}>
             {property.finalidade || "Venda"}
           </div>
 
-          {/* Preço na Imagem (Estilo Moderno) */}
-          <div className="absolute bottom-4 left-4 z-10">
-            <p className="text-white font-bold text-xl drop-shadow-md flex items-baseline gap-1">
-              {precoFormatado}
-              {property.finalidade === 'Locação' && property.periodoPagamento && (
-                <span className="text-xs font-medium opacity-80">/{property.periodoPagamento}</span>
-              )}
-            </p>
+          {/* PREÇOS NA IMAGEM */}
+          <div className="absolute bottom-4 left-4 z-10 w-full pr-4">
+
+            {isDualPurpose ? (
+              // 4. MODO EMPILHADO (Venda + Locação)
+              // VENDA EM CIMA, LOCAÇÃO EM BAIXO
+              <div className="flex flex-col gap-1.5 animate-in slide-in-from-bottom-2 duration-500">
+
+                {/* Preço Venda (Topo) */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200 bg-blue-900/60 px-1.5 py-0.5 rounded backdrop-blur-md border border-blue-500/30">
+                    Venda
+                  </span>
+                  <span className="text-white font-bold text-lg drop-shadow-lg leading-none">
+                    {precoVendaFormatado}
+                  </span>
+                </div>
+
+                {/* Preço Locação (Baixo) */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-orange-200 bg-orange-900/60 px-1.5 py-0.5 rounded backdrop-blur-md border border-orange-500/30">
+                    Locação
+                  </span>
+                  <div className="flex items-baseline gap-1 text-white font-bold text-base drop-shadow-lg leading-none">
+                    {precoLocacaoFormatado}
+                    <span className="text-[10px] font-normal opacity-90">/mês</span>
+                  </div>
+                </div>
+
+              </div>
+            ) : (
+              // MODO PADRÃO (Apenas um valor)
+              <p className="text-white font-bold text-xl drop-shadow-md flex items-baseline gap-1">
+                {precoVendaFormatado}
+                {(property.finalidade?.includes('Locação') || property.finalidade === 'Aluguel') && property.periodoPagamento && (
+                  <span className="text-xs font-medium opacity-80">/{property.periodoPagamento}</span>
+                )}
+              </p>
+            )}
           </div>
 
           {/* BOTÃO DE FAVORITAR */}
-          {/* Posicionado um pouco abaixo do topo para não conflitar com badge */}
           <button
             onClick={toggleFavorite}
             className={`absolute top-14 right-4 z-20 p-2 rounded-full shadow-lg transition-all duration-300 ${isFavorite

@@ -28,56 +28,56 @@ export function Header() {
             : 'text-gray-300 hover:bg-gray-800'}
   `;
 
-    // LOGO FIXA
     const logoSrc = '/logo.png';
 
     return (
         <>
             {/* HEADER CONTAINER: Fundo sempre escuro */}
             <header className="sticky top-0 z-50 w-full bg-gray-900/95 backdrop-blur-md border-b border-gray-800 shadow-sm transition-colors duration-300">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    {/* Altura da barra h-24 (96px) */}
-                    <div className="flex justify-between items-center h-24">
+                {/* w-full para tocar as bordas da tela */}
+                <div className="w-full px-4 sm:px-8 lg:px-12">
 
-                        {/* LOGO */}
-                        <div className="flex-shrink-0 flex items-center z-50">
-                            <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                    {/* Container Flex com posição relativa para a Nav absoluta */}
+                    <div className="flex justify-between items-center h-24 relative">
 
-                                {/* --- Logo Desktop (AUMENTADA) --- */}
-                                {/* Aumentei container para w-96 e apliquei scale-125 */}
-                                <div className="hidden md:flex items-center justify-center relative h-24 w-96 overflow-visible">
+                        {/* --- LADO ESQUERDO: LOGO --- */}
+                        <div className="flex-shrink-0 z-50 flex items-center">
+                            <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
+
+                                {/* Logo Desktop (MANTIDO REDUZIDO) */}
+                                {/* 210x60 conforme referência */}
+                                <div className="hidden md:block">
                                     <Image
                                         src={logoSrc}
                                         alt="Logo Imobiliária"
-                                        fill
-                                        className="object-contain transform scale-125"
+                                        width={210}
+                                        height={60}
+                                        className="object-contain"
                                         priority
-                                        sizes="(max-width: 768px) 100vw, 384px"
                                         onError={(e) => {
                                             e.currentTarget.style.display = 'none';
                                             const parent = e.currentTarget.parentElement;
                                             if (parent) {
-                                                parent.innerHTML = '<span class="text-3xl font-extrabold text-white tracking-tight flex items-center gap-1"><svg class="text-[#eaca42]" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> IMOBILIÁRIA<span class="text-[#eaca42]">MVP</span></span>';
+                                                parent.innerHTML = '<span class="text-2xl font-extrabold text-white tracking-tight flex items-center gap-1"><svg class="text-[#eaca42]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> IMOBILIÁRIA<span class="text-[#eaca42]">MVP</span></span>';
                                             }
                                         }}
                                     />
                                 </div>
 
-                                {/* --- Logo Mobile (AUMENTADA) --- */}
-                                {/* Aumentei container para w-64 e apliquei scale-150 para destaque total */}
-                                <div className="md:hidden relative flex items-center justify-center h-20 w-64 overflow-visible">
+                                {/* Logo Mobile (AUMENTADO EM ~25-30%) */}
+                                {/* Aumentado de h-12 w-36 (48x144) para h-16 w-48 (64x192) */}
+                                <div className="md:hidden relative h-16 w-48">
                                     <Image
                                         src={logoSrc}
                                         alt="Logo"
                                         fill
-                                        className="object-contain transform scale-150"
-                                        sizes="(max-width: 768px) 256px, 0px"
+                                        className="object-contain object-left"
                                         onError={(e) => {
                                             e.currentTarget.style.display = 'none';
                                             const parent = e.currentTarget.parentElement;
                                             if (parent) {
                                                 parent.className = "flex items-center";
-                                                parent.innerHTML = '<span class="text-xl font-bold text-white">IMOB<span class="text-[#eaca42]">MVP</span></span>';
+                                                parent.innerHTML = '<span class="text-lg font-bold text-white">IMOB<span class="text-[#eaca42]">MVP</span></span>';
                                             }
                                         }}
                                     />
@@ -85,8 +85,9 @@ export function Header() {
                             </Link>
                         </div>
 
-                        {/* NAV DESKTOP */}
-                        <nav className="hidden md:flex items-center gap-8">
+                        {/* --- CENTRO: NAV --- */}
+                        {/* Posicionamento ABSOLUTO para centralização exata */}
+                        <nav className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
                             <Link href="/" className={navLinkClass('/')}>
                                 <Home size={18} /> Início
                             </Link>
@@ -101,9 +102,8 @@ export function Header() {
                             </Link>
                         </nav>
 
-                        {/* AÇÕES DIREITA */}
-                        <div className="hidden md:flex items-center gap-4">
-
+                        {/* --- LADO DIREITO: AÇÕES --- */}
+                        <div className="hidden md:flex items-center gap-4 z-50">
                             <ThemeToggle />
 
                             <Link
@@ -126,9 +126,8 @@ export function Header() {
                         </div>
 
                         {/* BOTÃO MENU MOBILE */}
-                        <div className="md:hidden flex items-center gap-4 z-50">
+                        <div className="md:hidden flex items-center gap-4 z-50 ml-auto">
                             <ThemeToggle />
-
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 className="p-2 text-gray-200 hover:bg-gray-800 rounded-lg focus:outline-none transition-colors"
@@ -141,36 +140,30 @@ export function Header() {
                 </div>
             </header>
 
-            {/* MENU MOBILE: Fundo sempre escuro */}
+            {/* MENU MOBILE */}
             {isMobileMenuOpen && (
                 <div className="fixed inset-0 top-20 z-40 bg-gray-900 md:hidden overflow-y-auto animate-fade-in pb-20 border-t border-gray-800">
                     <div className="p-4 space-y-2">
-
                         <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/")}>
                             <div className="bg-blue-900/50 p-2 rounded-full text-blue-400"><Home size={20} /></div>
                             Início
                         </Link>
-
                         <Link href="/imoveis" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/imoveis")}>
                             <div className="bg-blue-900/50 p-2 rounded-full text-blue-400"><Building2 size={20} /></div>
                             Buscar Imóveis
                         </Link>
-
                         <Link href="/favoritos" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/favoritos")}>
                             <div className="bg-red-900/30 p-2 rounded-full text-red-400"><Heart size={20} /></div>
                             Meus Favoritos
                         </Link>
-
                         <Link href="/sobre" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/sobre")}>
                             <div className="bg-blue-900/50 p-2 rounded-full text-blue-400"><Info size={20} /></div>
                             Quem Somos
                         </Link>
-
                         <Link href="/contato" onClick={() => setIsMobileMenuOpen(false)} className={mobileLinkClass("/contato")}>
                             <div className="bg-blue-900/50 p-2 rounded-full text-blue-400"><Phone size={20} /></div>
                             Fale Conosco
                         </Link>
-
                         <div className="pt-6 mt-6 border-t border-gray-800">
                             <Link
                                 href="/admin/login"

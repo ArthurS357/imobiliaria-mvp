@@ -36,6 +36,7 @@ export default function EditPropertyPage() {
 
         // Valores e Contrato
         preco: "",
+        precoLocacao: "", // NOVO: Campo para segundo valor
         tipoValor: "Preço fixo",
         periodoPagamento: "Mensal",
         depositoSeguranca: "",
@@ -97,6 +98,7 @@ export default function EditPropertyPage() {
                     finalidade: data.finalidade || "Venda",
 
                     preco: data.preco,
+                    precoLocacao: data.precoLocacao?.toString() || "", // NOVO: Carrega valor salvo
                     tipoValor: data.tipoValor || "Preço fixo",
                     periodoPagamento: data.periodoPagamento || "Mensal",
                     depositoSeguranca: data.depositoSeguranca?.toString() || "",
@@ -159,9 +161,7 @@ export default function EditPropertyPage() {
         e.preventDefault();
         setSaving(true);
 
-        // Recalcula total de vagas se necessário (igual ao cadastro novo)
         const vagasCalc = (Number(formData.vagasCobertas) || 0) + (Number(formData.vagasDescobertas) || 0);
-        // Se o valor manual for maior que a soma, usa o manual (para casos legados ou específicos), senão usa a soma
         const finalGaragem = Number(formData.garagem) > vagasCalc ? formData.garagem : vagasCalc.toString();
 
         const payload = {
@@ -200,7 +200,11 @@ export default function EditPropertyPage() {
     );
 
     const isAdmin = session?.user?.role === "ADMIN";
+
+    // Helpers de exibição
     const isRent = formData.finalidade === "Locação";
+    const isDual = formData.finalidade === "Venda e Locação"; // NOVO: Detecta dupla finalidade
+    const showRentFields = isRent || isDual;
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
@@ -221,7 +225,7 @@ export default function EditPropertyPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-8">
 
-                    {/* --- ÁREA ADMINISTRATIVA (STATUS & DESTAQUE) --- */}
+                    {/* --- ÁREA ADMINISTRATIVA --- */}
                     {isAdmin && (
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl shadow-sm border border-blue-100 dark:border-blue-900/30 overflow-hidden">
                             <div className="px-6 py-4 border-b border-blue-100 dark:border-blue-900/30 flex items-center gap-2">
@@ -308,7 +312,6 @@ export default function EditPropertyPage() {
                                 </select>
                             </div>
 
-                            {/* LINHA DE CONTRATO E FINALIDADE */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Finalidade <span className="text-[#eaca42]">*</span>
@@ -352,6 +355,24 @@ export default function EditPropertyPage() {
                                 <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-bold" placeholder="0,00" />
                             </div>
 
+                            {/* NOVO: Campo Valor de Locação (Apenas se "Venda e Locação") */}
+                            {isDual && (
+                                <div className="animate-in fade-in slide-in-from-top-2">
+                                    <label className="block text-sm font-semibold text-orange-600 dark:text-orange-400 mb-1.5">
+                                        Valor do Aluguel (R$) <span className="text-[#eaca42]">*</span>
+                                    </label>
+                                    <input
+                                        required={isDual}
+                                        type="number"
+                                        name="precoLocacao"
+                                        value={formData.precoLocacao}
+                                        onChange={handleChange}
+                                        className="w-full p-3 border border-orange-200 dark:border-orange-800 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-bold"
+                                        placeholder="0,00"
+                                    />
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Tipo de Valor
@@ -379,8 +400,8 @@ export default function EditPropertyPage() {
                                 </div>
                             </div>
 
-                            {/* CAMPOS EXTRAS PARA LOCAÇÃO */}
-                            {isRent && (
+                            {/* CAMPOS EXTRAS PARA LOCAÇÃO OU VENDA E LOCAÇÃO */}
+                            {showRentFields && (
                                 <>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
