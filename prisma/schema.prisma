@@ -3,8 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  // Alterado de "sqlite" para "postgresql" para compatibilidade com Vercel
+  provider = "postgresql"
+  // A Vercel (ou outro provider) fornecerá este URL
+  url      = env("DATABASE_URL")
 }
 
 // Modelo de Usuário
