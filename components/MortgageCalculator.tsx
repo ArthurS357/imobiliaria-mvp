@@ -12,7 +12,7 @@ export function MortgageCalculator({ propertyPrice }: CalculatorProps) {
     const [entrada, setEntrada] = useState(propertyPrice * 0.2);
     const [anos, setAnos] = useState(30);
     const [jurosAnuais, setJurosAnuais] = useState(10.5);
-    const [sistema, setSistema] = useState<"PRICE" | "SAC">("SAC"); // SAC é muito comum, deixei como padrão ou mude para PRICE
+    const [sistema, setSistema] = useState<"PRICE" | "SAC">("SAC");
 
     // Resultados
     const [resultado, setResultado] = useState({
@@ -22,6 +22,12 @@ export function MortgageCalculator({ propertyPrice }: CalculatorProps) {
     });
 
     useEffect(() => {
+        // Se o valor for muito baixo (ex: possível aluguel), não calcula ou reseta
+        if (propertyPrice < 10000) {
+            setResultado({ primeira: 0, ultima: 0, mensalidadeFixa: 0 });
+            return;
+        }
+
         const valorFinanciado = propertyPrice - entrada;
         const meses = anos * 12;
         const taxaMensal = jurosAnuais / 12 / 100;
@@ -59,6 +65,9 @@ export function MortgageCalculator({ propertyPrice }: CalculatorProps) {
             });
         }
     }, [propertyPrice, entrada, anos, jurosAnuais, sistema]);
+
+    // Oculta calculadora se o valor for irrelevante (ex: imóvel de locação barato)
+    if (propertyPrice < 1000) return null;
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mt-8 transition-colors duration-300">
@@ -124,7 +133,7 @@ export function MortgageCalculator({ propertyPrice }: CalculatorProps) {
                     </div>
                 </div>
 
-                {/* Seletor de Sistema (Novo) */}
+                {/* Seletor de Sistema */}
                 <div>
                     <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase transition-colors">Sistema de Amortização</label>
                     <div className="grid grid-cols-2 gap-2 mt-1">
