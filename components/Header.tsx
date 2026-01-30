@@ -41,11 +41,11 @@ export function Header() {
                     <div className="flex justify-between items-center h-24 relative">
 
                         {/* --- LADO ESQUERDO: LOGO --- */}
+                        {/* Adicionado 'flex-1' para garantir que ele ocupe espaço mas respeite os vizinhos */}
                         <div className="flex-shrink-0 z-50 flex items-center">
                             <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
 
-                                {/* Logo Desktop (MANTIDO REDUZIDO) */}
-                                {/* 210x60 conforme referência */}
+                                {/* --- LOGO DESKTOP (Telas Médias e Grandes) --- */}
                                 <div className="hidden md:block">
                                     <Image
                                         src={logoSrc}
@@ -58,26 +58,30 @@ export function Header() {
                                             e.currentTarget.style.display = 'none';
                                             const parent = e.currentTarget.parentElement;
                                             if (parent) {
-                                                parent.innerHTML = '<span class="text-2xl font-extrabold text-white tracking-tight flex items-center gap-1"><svg class="text-[#eaca42]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> IMOBILIÁRIA<span class="text-[#eaca42]">MVP</span></span>';
+                                                parent.innerHTML = '<span class="text-2xl font-extrabold text-white tracking-tight flex items-center gap-1"><svg class="text-[#eaca42]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> MATIELLO<span class="text-[#eaca42]">IMÓVEIS</span></span>';
                                             }
                                         }}
                                     />
                                 </div>
 
-                                {/* Logo Mobile (AUMENTADO EM ~25-30%) */}
-                                {/* Aumentado de h-12 w-36 (48x144) para h-16 w-48 (64x192) */}
-                                <div className="md:hidden relative h-16 w-48">
+                                {/* --- LOGO MOBILE (Telas Pequenas - AJUSTADA) --- */}
+                                {/* - h-28 w-80: Tamanho grande solicitado.
+                                    - ml-6: Afastado mais da borda esquerda.
+                                    - max-w-[70%]: Impede que a logo cresça tanto a ponto de empurrar o menu para fora da tela.
+                                */}
+                                <div className="md:hidden relative h-28 w-80 max-w-[70%] ml-6 flex items-center">
                                     <Image
                                         src={logoSrc}
                                         alt="Logo"
                                         fill
-                                        className="object-contain object-left"
+                                        className="object-contain object-left scale-150 origin-left" // Escala grande alinhada à esquerda
+                                        priority
                                         onError={(e) => {
                                             e.currentTarget.style.display = 'none';
                                             const parent = e.currentTarget.parentElement;
                                             if (parent) {
-                                                parent.className = "flex items-center";
-                                                parent.innerHTML = '<span class="text-lg font-bold text-white">IMOB<span class="text-[#eaca42]">MVP</span></span>';
+                                                parent.className = "flex items-center pl-6";
+                                                parent.innerHTML = '<span class="text-xl font-bold text-white">MATIELLO<span class="text-[#eaca42]">IMÓVEIS</span></span>';
                                             }
                                         }}
                                     />
@@ -85,8 +89,7 @@ export function Header() {
                             </Link>
                         </div>
 
-                        {/* --- CENTRO: NAV --- */}
-                        {/* Posicionamento ABSOLUTO para centralização exata */}
+                        {/* --- CENTRO: NAV (Desktop) --- */}
                         <nav className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
                             <Link href="/" className={navLinkClass('/')}>
                                 <Home size={18} /> Início
@@ -102,7 +105,7 @@ export function Header() {
                             </Link>
                         </nav>
 
-                        {/* --- LADO DIREITO: AÇÕES --- */}
+                        {/* --- LADO DIREITO: AÇÕES (Desktop) --- */}
                         <div className="hidden md:flex items-center gap-4 z-50">
                             <ThemeToggle />
 
@@ -125,8 +128,9 @@ export function Header() {
                             </Link>
                         </div>
 
-                        {/* BOTÃO MENU MOBILE */}
-                        <div className="md:hidden flex items-center gap-4 z-50 ml-auto">
+                        {/* --- BOTÃO MENU MOBILE (Hambúrguer) --- */}
+                        {/* ml-auto garante que ele vá para a direita, z-50 garante que fique sobrepondo se necessário */}
+                        <div className="md:hidden flex items-center gap-4 z-50 ml-auto pl-2">
                             <ThemeToggle />
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

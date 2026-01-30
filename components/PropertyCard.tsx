@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Bed, Car, Ruler, Bath } from "lucide-react";
+import { MapPin, Bed, Car, Ruler, Bath, Heart } from "lucide-react";
 import { getWatermarkedImage } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 interface PropertyCardProps {
   property: {
@@ -26,9 +27,35 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property }: PropertyCardProps) {
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // Verifica se já é favorito ao carregar (Lógica simples com localStorage)
+  useEffect(() => {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    if (favorites.includes(property.id)) {
+      setIsFavorite(true);
+    }
+  }, [property.id]);
+
+  const toggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault(); // Evita navegar ao clicar no coração
+    e.stopPropagation();
+
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    let newFavorites;
+
+    if (isFavorite) {
+      newFavorites = favorites.filter((id: string) => id !== property.id);
+    } else {
+      newFavorites = [...favorites, property.id];
+    }
+
+    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+    setIsFavorite(!isFavorite);
+  };
+
   const capaOriginal = property.fotos ? property.fotos.split(";")[0] : null;
   const capa = getWatermarkedImage(capaOriginal);
-
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -45,13 +72,9 @@ export function PropertyCard({ property }: PropertyCardProps) {
     (Number(property.preco) > 0 && Number(property.precoLocacao) > 0);
 
   return (
-    <div className="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full">
+    <div className="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full relative">
 
       {/* --- IMAGEM E BADGES --- */}
-      {/* CORREÇÃO: 
-         Removido 'h-56' e adicionado 'aspect-[4/3]'.
-         Assim o card fica perfeitamente quadrado/retangular na proporção da foto.
-      */}
       <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-200 dark:bg-gray-700">
         <Link href={`/imoveis/${property.id}`}>
           {capa ? (
@@ -70,7 +93,8 @@ export function PropertyCard({ property }: PropertyCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </Link>
 
-        <div className="absolute top-3 left-3 flex flex-col gap-2 items-start">
+        {/* Badge de Tipo e Status */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2 items-start z-10">
           <span className="bg-blue-900/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide shadow-sm">
             {property.tipo}
           </span>
@@ -84,7 +108,8 @@ export function PropertyCard({ property }: PropertyCardProps) {
           )}
         </div>
 
-        <div className="absolute top-3 right-3">
+        {/* Badge de Finalidade */}
+        <div className="absolute top-3 right-3 z-10">
           {isDual ? (
             <span className="bg-gradient-to-r from-blue-600 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm">
               Venda & Locação
@@ -97,6 +122,20 @@ export function PropertyCard({ property }: PropertyCardProps) {
             </span>
           )}
         </div>
+
+        {/* --- BOTÃO DE FAVORITO (NOVO) --- */}
+        <button
+          onClick={toggleFavorite}
+          className={`absolute bottom-3 right-3 p-2 rounded-full shadow-lg transition-all duration-300 z-20 hover:scale-110
+            ${isFavorite
+              ? 'bg-red-500 text-white hover:bg-red-600'
+              : 'bg-white/90 text-gray-400 hover:text-red-500 hover:bg-white'}
+          `}
+          title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+        >
+          <Heart size={18} className={isFavorite ? "fill-current" : ""} />
+        </button>
+
       </div>
 
       {/* --- CONTEÚDO --- */}
@@ -169,6 +208,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </div>
         </div>
 
+        {/* Botão de Ver Detalhes (Slide Up) */}
         <div className="absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-700">
           <Link
             href={`/imoveis/${property.id}`}

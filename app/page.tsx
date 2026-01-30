@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
-import { Search, Filter, MessageCircle, ArrowRight, ChevronDown, ChevronUp, Bed, Car, DollarSign } from "lucide-react";
+import { Search, Filter, MessageCircle, ArrowRight, ChevronDown, ChevronUp, Bed, Car, DollarSign, Key, Handshake, ShieldCheck, Mail, MapPin, Users, Award, TrendingUp, Home as HomeIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FINALIDADES } from "@/lib/constants";
+import { FINALIDADES, PROPERTY_TYPES_CATEGORIZED } from "@/lib/constants";
 
-// Interface atualizada
 interface Property {
   id: string;
   titulo: string;
@@ -39,6 +38,8 @@ export default function Home() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Começa com FALSE para a caixa iniciar fechada
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Estados dos Filtros
@@ -52,7 +53,6 @@ export default function Home() {
   const [minQuartos, setMinQuartos] = useState(0);
   const [minVagas, setMinVagas] = useState(0);
 
-  // FUNÇÃO DE BUSCA E REDIRECIONAMENTO (Leva para a página com todos os imóveis)
   const handleSearch = () => {
     const params = new URLSearchParams();
 
@@ -64,7 +64,6 @@ export default function Home() {
     if (minQuartos > 0) params.set("quartos", minQuartos.toString());
     if (minVagas > 0) params.set("vagas", minVagas.toString());
 
-    // Redireciona para a listagem completa
     router.push(`/imoveis?${params.toString()}`);
   };
 
@@ -74,7 +73,6 @@ export default function Home() {
     }
   };
 
-  // Busca inicial dos dados
   useEffect(() => {
     async function fetchProperties() {
       try {
@@ -95,13 +93,10 @@ export default function Home() {
     fetchProperties();
   }, []);
 
-  // Lógica de "Live Preview" na Home: RESTRITA AOS DESTAQUES
+  // Lógica de Filtragem (Preview restrito aos destaques na Home)
   useEffect(() => {
-    // 1. Começa SEMPRE filtrando apenas os DESTAQUES
-    // Isso impede que imóveis comuns apareçam na home, mesmo ao digitar
     let result = properties.filter(p => p.destaque === true);
 
-    // 2. Aplica os filtros do usuário DENTRO da lista de destaques
     if (searchCity) {
       const termo = searchCity.toLowerCase();
       result = result.filter((p) =>
@@ -116,7 +111,10 @@ export default function Home() {
     }
 
     if (filterFinalidade !== "Todos") {
-      result = result.filter(p => p.finalidade.includes(filterFinalidade));
+      // "Venda" encontra "Venda" e "Venda e Locação"
+      result = result.filter(p =>
+        p.finalidade.toLowerCase().includes(filterFinalidade.toLowerCase())
+      );
     }
 
     if (minPrice) {
@@ -149,6 +147,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-500">
       <Header />
 
+      {/* --- HERO SECTION --- */}
       <div className="relative bg-blue-900 py-32 md:py-48 px-4 sm:px-6 lg:px-8 flex items-center justify-center transition-colors">
         <div className="absolute inset-0 z-0 overflow-hidden">
           <img
@@ -168,6 +167,7 @@ export default function Home() {
             sua vida acontece.
           </h1>
 
+          {/* CAIXA DE FILTROS */}
           <div className="bg-white/10 dark:bg-black/30 backdrop-blur-md p-2 rounded-xl shadow-2xl max-w-5xl mx-auto border border-white/20 dark:border-white/10 transition-all duration-300">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-2 flex flex-col md:flex-row gap-2 transition-colors">
 
@@ -212,10 +212,14 @@ export default function Home() {
                   onChange={(e) => setFilterType(e.target.value)}
                 >
                   <option value="Todos">Todos os Tipos</option>
-                  <option value="Casa">Casa</option>
-                  <option value="Apartamento">Apartamento</option>
-                  <option value="Terreno">Terreno</option>
-                  <option value="Comercial">Comercial</option>
+                  {/* Mapeamento dos tipos categorizados */}
+                  {PROPERTY_TYPES_CATEGORIZED.map((group) => (
+                    <optgroup key={group.label} label={group.label} className="dark:bg-gray-800 font-bold text-gray-900 dark:text-gray-200">
+                      {group.types.map((type) => (
+                        <option key={type} value={type} className="font-normal">{type}</option>
+                      ))}
+                    </optgroup>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-4 top-4 text-gray-400 pointer-events-none" size={16} />
               </div>
@@ -236,6 +240,7 @@ export default function Home() {
               </button>
             </div>
 
+            {/* CAIXA DE FILTROS AVANÇADOS (Controlada por showAdvanced) */}
             {showAdvanced && (
               <div className="bg-gray-50 dark:bg-gray-900 mt-2 p-4 rounded-lg grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 animate-enter border border-gray-200 dark:border-gray-700">
                 <div>
@@ -308,6 +313,7 @@ export default function Home() {
         </div>
       </div>
 
+      {/* --- SEÇÃO 1: DESTAQUES --- */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
           <div>
@@ -362,6 +368,154 @@ export default function Home() {
         )}
       </main>
 
+      {/* --- SEÇÃO 2: POR QUE ESCOLHER A MATIELLO --- */}
+      <section className="bg-gray-50 dark:bg-gray-800/50 py-16 border-y border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">Por que escolher a <span className="text-blue-900 dark:text-blue-400">Matiello</span>?</h2>
+            <p className="mt-4 max-w-2xl text-lg text-gray-500 dark:text-gray-400 mx-auto">
+              Não somos apenas uma imobiliária. Somos seu parceiro estratégico para encontrar o imóvel perfeito.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mx-auto text-blue-600 dark:text-blue-300 mb-4">
+                <Users size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Atendimento Personalizado</h3>
+              <p className="text-gray-600 dark:text-gray-400">Entendemos suas necessidades únicas e trabalhamos para encontrar exatamente o que você procura.</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mx-auto text-green-600 dark:text-green-300 mb-4">
+                <Award size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Experiência de Mercado</h3>
+              <p className="text-gray-600 dark:text-gray-400">Anos de atuação na região, garantindo as melhores oportunidades e negociações seguras.</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center mx-auto text-orange-600 dark:text-orange-300 mb-4">
+                <TrendingUp size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Valorização Garantida</h3>
+              <p className="text-gray-600 dark:text-gray-400">Imóveis selecionados com alto potencial de valorização e qualidade construtiva.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SEÇÃO 3: NOSSOS DIFERENCIAIS (Grid) --- */}
+      <section className="bg-white dark:bg-gray-900 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-12">
+            <div className="lg:w-1/2 relative">
+              <div className="absolute -top-4 -left-4 w-24 h-24 bg-blue-100 dark:bg-blue-900 rounded-full blur-2xl opacity-50"></div>
+              <img
+                src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1073&q=80"
+                alt="Interior moderno"
+                className="relative rounded-2xl shadow-2xl w-full object-cover h-96 z-10 hover:scale-[1.02] transition-transform duration-500"
+              />
+            </div>
+            <div className="lg:w-1/2 space-y-8">
+              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white leading-tight">
+                Transformando a busca pelo imóvel ideal em uma experiência <span className="text-blue-600">simples e segura</span>.
+              </h2>
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-50 dark:bg-gray-800 flex items-center justify-center text-blue-600">
+                    <Key size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 dark:text-white text-lg">Chave na Mão</h4>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Processo desburocratizado para você pegar as chaves do seu novo lar o mais rápido possível.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-50 dark:bg-gray-800 flex items-center justify-center text-green-600">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 dark:text-white text-lg">Segurança Jurídica</h4>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Nossa equipe cuida de toda a documentação para garantir um negócio 100% seguro.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-orange-50 dark:bg-gray-800 flex items-center justify-center text-orange-600">
+                    <Handshake size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 dark:text-white text-lg">Transparência Total</h4>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Sem letras miúdas. Você acompanha cada etapa da negociação com clareza.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SEÇÃO 4: QUEM QUER VENDER (CTA) --- */}
+      <section className="relative py-20 bg-blue-900 overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <img src="https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&q=80&w=2000" alt="Background" className="w-full h-full object-cover" />
+        </div>
+        <div className="relative max-w-4xl mx-auto px-4 text-center space-y-6">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-white">Quer vender ou alugar seu imóvel?</h2>
+          <p className="text-blue-100 text-lg md:text-xl max-w-2xl mx-auto">
+            Confie seu patrimônio a quem entende do assunto. Avaliação justa, marketing profissional e carteira de clientes qualificada.
+          </p>
+          <div className="pt-4">
+            <a
+              href="https://wa.me/5511946009103"
+              target="_blank"
+              className="inline-flex items-center gap-2 bg-white text-blue-900 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 transition shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+            >
+              <HomeIcon size={20} />
+              Anunciar meu Imóvel
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SEÇÃO 5: FALE CONOSCO --- */}
+      <section className="bg-gray-100 dark:bg-gray-800/80 py-16 border-t border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Fale Conosco</h2>
+          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10">
+            Estamos prontos para atender você. Entre em contato por telefone, e-mail ou visite nosso escritório.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <MessageCircle className="text-green-600 dark:text-green-400" size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">WhatsApp</h3>
+              <p className="text-gray-500 mb-4">(11) 94600-9103</p>
+              <a href="https://wa.me/5511946009103" target="_blank" className="text-blue-600 font-bold hover:underline">Iniciar Conversa</a>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <Mail className="text-blue-600 dark:text-blue-400" size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">E-mail</h3>
+              <p className="text-gray-500 mb-4">contato@matielloimoveis.com.br</p>
+              <a href="mailto:contato@matielloimoveis.com.br" className="text-blue-600 font-bold hover:underline">Enviar E-mail</a>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <MapPin className="text-red-600 dark:text-red-400" size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Visite-nos</h3>
+              <p className="text-gray-500 mb-4">São Paulo, SP</p>
+              <Link href="/contato" className="text-blue-600 font-bold hover:underline">Ver no Mapa</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Botão Flutuante */}
       <a
         href="https://wa.me/5511946009103"
         target="_blank"

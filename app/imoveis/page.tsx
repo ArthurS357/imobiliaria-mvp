@@ -5,8 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
-// ADICIONADO 'X' NA IMPORTAÇÃO ABAIXO
-import { Search, Filter, Loader2, MapPin, Home, Car, BedDouble, X } from "lucide-react";
+import { Search, Filter, Loader2, MapPin, Home, Car, BedDouble, X, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
 import { PROPERTY_TYPES_CATEGORIZED, FINALIDADES } from "@/lib/constants";
 
 // Definição do tipo de propriedade
@@ -31,6 +30,7 @@ interface Property {
     tipo: string;
     status: string;
     finalidade: string;
+    destaque?: boolean;
 }
 
 function PropertiesContent() {
@@ -38,48 +38,98 @@ function PropertiesContent() {
     const router = useRouter();
 
     const [properties, setProperties] = useState<Property[]>([]);
+    const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Inicializa filtros com dados da URL
     const [filters, setFilters] = useState({
-        finalidade: searchParams.get("finalidade") || "",
-        tipo: searchParams.get("tipo") || "",
+        finalidade: searchParams.get("finalidade") || "Todos",
+        tipo: searchParams.get("tipo") || "Todos",
         cidade: searchParams.get("search") || searchParams.get("cidade") || "",
         minPrice: searchParams.get("minPrice") || "",
         maxPrice: searchParams.get("maxPrice") || "",
-        quartos: searchParams.get("quartos") || "",
-        garagem: searchParams.get("garagem") || searchParams.get("vagas") || ""
+        quartos: searchParams.get("quartos") || 0,
+        garagem: searchParams.get("vagas") || searchParams.get("garagem") || 0
     });
 
-    const fetchProperties = useCallback(async () => {
+    // Função de Busca Principal
+    const fetchAndFilterProperties = useCallback(async () => {
         setLoading(true);
         try {
-            const params = new URLSearchParams();
-            params.append("status", "DISPONIVEL");
+            // 1. Busca TODOS os imóveis disponíveis na API
+            const res = await fetch(`/api/properties?status=DISPONIVEL`);
 
-            if (filters.finalidade && filters.finalidade !== "Todos") params.append("finalidade", filters.finalidade);
-            if (filters.tipo && filters.tipo !== "Todos") params.append("tipo", filters.tipo);
-            if (filters.minPrice) params.append("minPrice", filters.minPrice);
-            if (filters.maxPrice) params.append("maxPrice", filters.maxPrice);
-            if (filters.quartos) params.append("quartos", filters.quartos);
-            if (filters.garagem) params.append("garagem", filters.garagem);
-
-            const res = await fetch(`/api/properties?${params.toString()}`);
             if (!res.ok) throw new Error("Falha ao buscar imóveis");
 
-            let data = await res.json();
+            const allProperties: Property[] = await res.json();
+            setProperties(allProperties);
 
-            // Filtragem Client-Side de texto
+            // 2. Aplica Filtragem Local
+            let result = allProperties;
+
+            // Filtro: Cidade/Bairro (Texto)
             if (filters.cidade) {
-                const searchLower = filters.cidade.toLowerCase();
-                data = data.filter((p: Property) =>
-                    p.cidade.toLowerCase().includes(searchLower) ||
-                    p.bairro.toLowerCase().includes(searchLower) ||
-                    p.titulo.toLowerCase().includes(searchLower)
+                const termo = filters.cidade.toLowerCase();
+                result = result.filter(p =>
+                    p.cidade.toLowerCase().includes(termo) ||
+                    p.bairro.toLowerCase().includes(termo) ||
+                    p.titulo.toLowerCase().includes(termo)
                 );
             }
 
-            setProperties(data);
+            // Filtro: Tipo de Imóvel
+            if (filters.tipo && filters.tipo !== "Todos") {
+                result = result.filter(p => p.tipo === filters.tipo);
+            }
+
+            // Filtro: Finalidade (Lógica Complexa)
+            if (filters.finalidade && filters.finalidade !== "Todos") {
+                const termoFinalidade = filters.finalidade.toLowerCase();
+
+                result = result.filter(p => {
+                    const pFinalidade = p.finalidade ? p.finalidade.toLowerCase() : "";
+
+                    if (termoFinalidade === 'venda') {
+                        return pFinalidade.includes('venda');
+                    }
+                    if (termoFinalidade === 'locação' || termoFinalidade === 'locacao') {
+                        return pFinalidade.includes('locação') || pFinalidade.includes('locacao');
+                    }
+                    return pFinalidade.includes(termoFinalidade);
+                });
+            }
+
+            // Filtro: Preço
+            const minP = Number(filters.minPrice);
+            const maxP = Number(filters.maxPrice);
+
+            if (filters.minPrice) {
+                result = result.filter(p => {
+                    const targetPrice = filters.finalidade.includes("Locação") && p.precoLocacao ? p.precoLocacao : p.preco;
+                    return targetPrice >= minP;
+                });
+            }
+
+            if (filters.maxPrice) {
+                result = result.filter(p => {
+                    const targetPrice = filters.finalidade.includes("Locação") && p.precoLocacao ? p.precoLocacao : p.preco;
+                    return targetPrice <= maxP;
+                });
+            }
+
+            // CORREÇÃO AQUI: Converter para Number() antes da comparação
+            if (Number(filters.quartos) > 0) {
+                result = result.filter(p => p.quarto >= Number(filters.quartos));
+            }
+
+            // CORREÇÃO AQUI: Converter para Number() antes da comparação
+            if (Number(filters.garagem) > 0) {
+                result = result.filter(p => p.garagem >= Number(filters.garagem));
+            }
+
+            setFilteredProperties(result);
+
         } catch (error) {
             console.error("Erro:", error);
         } finally {
@@ -87,10 +137,10 @@ function PropertiesContent() {
         }
     }, [filters]);
 
+    // Dispara a busca quando os filtros mudam
     useEffect(() => {
-        fetchProperties();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        fetchAndFilterProperties();
+    }, [fetchAndFilterProperties]);
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -100,34 +150,38 @@ function PropertiesContent() {
     const handleSearchClick = () => {
         const params = new URLSearchParams();
         if (filters.cidade) params.set("search", filters.cidade);
-        if (filters.finalidade) params.set("finalidade", filters.finalidade);
-        if (filters.tipo) params.set("tipo", filters.tipo);
-        if (filters.minPrice) params.set("minPrice", filters.minPrice);
-        if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
-        if (filters.quartos) params.set("quartos", filters.quartos);
-        if (filters.garagem) params.set("garagem", filters.garagem);
+        if (filters.finalidade && filters.finalidade !== "Todos") params.set("finalidade", filters.finalidade);
+        if (filters.tipo && filters.tipo !== "Todos") params.set("tipo", filters.tipo);
+        if (filters.minPrice) params.set("minPrice", filters.minPrice.toString());
+        if (filters.maxPrice) params.set("maxPrice", filters.maxPrice.toString());
+        if (Number(filters.quartos) > 0) params.set("quartos", filters.quartos.toString());
+        if (Number(filters.garagem) > 0) params.set("vagas", filters.garagem.toString());
 
         router.replace(`/imoveis?${params.toString()}`, { scroll: false });
-        fetchProperties();
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            handleSearchClick();
+        }
     };
 
     const clearFilters = () => {
         setFilters({
-            finalidade: "",
-            tipo: "",
+            finalidade: "Todos",
+            tipo: "Todos",
             cidade: "",
             minPrice: "",
             maxPrice: "",
-            quartos: "",
-            garagem: ""
+            quartos: 0,
+            garagem: 0
         });
-        // Opcional: buscar automaticamente ao limpar
-        // fetchProperties(); 
+        router.replace("/imoveis");
     };
 
     return (
         <div className="flex flex-col gap-8">
-            {/* --- BARRA DE FILTROS SUPERIOR (Estilo Homepage) --- */}
+            {/* --- BARRA DE FILTROS SUPERIOR --- */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-top-4">
                 <div className="flex items-center gap-2 mb-4 text-gray-800 dark:text-white font-bold border-b border-gray-100 dark:border-gray-700 pb-2">
                     <Filter size={20} className="text-[#eaca42]" />
@@ -145,6 +199,7 @@ function PropertiesContent() {
                                 name="cidade"
                                 value={filters.cidade}
                                 onChange={handleFilterChange}
+                                onKeyDown={handleKeyDown}
                                 placeholder="Cidade, Bairro ou Código..."
                                 className="w-full pl-10 pr-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none transition-all text-sm"
                             />
@@ -152,7 +207,7 @@ function PropertiesContent() {
                         </div>
                     </div>
 
-                    {/* 2. Tipo de Imóvel */}
+                    {/* 2. Tipo de Imóvel (Categorizado) */}
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Tipo</label>
                         <div className="relative">
@@ -160,117 +215,147 @@ function PropertiesContent() {
                                 name="tipo"
                                 value={filters.tipo}
                                 onChange={handleFilterChange}
-                                className="w-full pl-10 pr-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none appearance-none text-sm cursor-pointer"
+                                className="w-full pl-10 pr-8 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none appearance-none text-sm cursor-pointer"
                             >
-                                <option value="">Todos os Tipos</option>
+                                <option value="Todos">Todos os Tipos</option>
                                 {PROPERTY_TYPES_CATEGORIZED.map((group) => (
-                                    <optgroup key={group.label} label={group.label} className="dark:bg-gray-700 text-black dark:text-white">
-                                        {group.types.map(t => <option key={t} value={t}>{t}</option>)}
+                                    <optgroup key={group.label} label={group.label} className="dark:bg-gray-800 text-black dark:text-white font-bold">
+                                        {group.types.map(t => <option key={t} value={t} className="font-normal">{t}</option>)}
                                     </optgroup>
                                 ))}
                             </select>
                             <Home size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                            <ChevronDown className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={16} />
                         </div>
                     </div>
 
                     {/* 3. Finalidade */}
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Finalidade</label>
-                        <select
-                            name="finalidade"
-                            value={filters.finalidade}
-                            onChange={handleFilterChange}
-                            className="w-full px-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none text-sm cursor-pointer"
-                        >
-                            <option value="">Todas</option>
-                            {FINALIDADES.map(f => <option key={f} value={f}>{f}</option>)}
-                        </select>
-                    </div>
-
-                    {/* 4. Faixa de Preço */}
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Preço (R$)</label>
-                        <div className="flex gap-2">
-                            <input
-                                type="number"
-                                name="minPrice"
-                                value={filters.minPrice}
-                                onChange={handleFilterChange}
-                                placeholder="Mín"
-                                className="w-1/2 px-3 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none text-sm"
-                            />
-                            <input
-                                type="number"
-                                name="maxPrice"
-                                value={filters.maxPrice}
-                                onChange={handleFilterChange}
-                                placeholder="Máx"
-                                className="w-1/2 px-3 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none text-sm"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Linha 2 de Filtros */}
-
-                    {/* 5. Quartos */}
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Quartos</label>
                         <div className="relative">
                             <select
-                                name="quartos"
-                                value={filters.quartos}
+                                name="finalidade"
+                                value={filters.finalidade}
                                 onChange={handleFilterChange}
-                                className="w-full pl-10 pr-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none appearance-none text-sm cursor-pointer"
+                                className="w-full px-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none text-sm cursor-pointer appearance-none"
                             >
-                                <option value="">Indiferente</option>
-                                <option value="1">1+</option>
-                                <option value="2">2+</option>
-                                <option value="3">3+</option>
-                                <option value="4">4+</option>
+                                <option value="Todos">Todas</option>
+                                {FINALIDADES.map(f => <option key={f} value={f}>{f}</option>)}
                             </select>
-                            <BedDouble size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                            <ChevronDown className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={16} />
                         </div>
                     </div>
 
-                    {/* 6. Vagas */}
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Vagas</label>
-                        <div className="relative">
-                            <select
-                                name="garagem"
-                                value={filters.garagem}
-                                onChange={handleFilterChange}
-                                className="w-full pl-10 pr-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none appearance-none text-sm cursor-pointer"
-                            >
-                                <option value="">Indiferente</option>
-                                <option value="1">1+</option>
-                                <option value="2">2+</option>
-                                <option value="3">3+</option>
-                                <option value="4">4+</option>
-                            </select>
-                            <Car size={18} className="absolute left-3 top-3.5 text-gray-400" />
-                        </div>
-                    </div>
-
-                    {/* Botões de Ação (Buscar / Limpar) */}
-                    <div className="col-span-1 sm:col-span-2 flex gap-3">
+                    {/* Botões de Ação */}
+                    <div className="flex gap-2">
                         <button
                             onClick={handleSearchClick}
-                            className="flex-grow bg-blue-900 hover:bg-blue-800 text-white py-3 px-6 rounded-lg font-bold shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow-md flex-grow"
                         >
-                            <Search size={18} /> <span className="hidden sm:inline">Buscar Imóveis</span> <span className="sm:hidden">Buscar</span>
+                            <Search size={18} />
+                            Buscar
                         </button>
 
                         <button
-                            onClick={clearFilters}
-                            className="px-4 py-3 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200 rounded-lg transition-colors font-semibold"
-                            title="Limpar Filtros"
+                            onClick={() => setShowAdvanced(!showAdvanced)}
+                            className={`px-3 py-3 rounded-lg font-medium transition flex items-center justify-center gap-1 border ${showAdvanced ? 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400' : 'bg-gray-50 border-gray-200 text-gray-600 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100'}`}
+                            title="Filtros Avançados"
                         >
-                            <span className="hidden sm:inline">Limpar</span> <X size={20} className="sm:hidden" />
+                            {showAdvanced ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                         </button>
                     </div>
 
                 </div>
+
+                {/* FILTROS AVANÇADOS (Expandable) */}
+                {showAdvanced && (
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
+                        {/* Preço Mín */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Preço Mín.</label>
+                            <div className="relative">
+                                <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
+                                <input
+                                    type="number"
+                                    name="minPrice"
+                                    placeholder="0"
+                                    value={filters.minPrice}
+                                    onChange={handleFilterChange}
+                                    onKeyDown={handleKeyDown}
+                                    className="w-full pl-8 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Preço Máx */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Preço Máx.</label>
+                            <div className="relative">
+                                <DollarSign size={14} className="absolute left-3 top-3 text-gray-400" />
+                                <input
+                                    type="number"
+                                    name="maxPrice"
+                                    placeholder="Sem limite"
+                                    value={filters.maxPrice}
+                                    onChange={handleFilterChange}
+                                    onKeyDown={handleKeyDown}
+                                    className="w-full pl-8 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Quartos */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Quartos (Mín)</label>
+                            <div className="relative">
+                                <BedDouble size={16} className="absolute left-3 top-2.5 text-gray-400" />
+                                <select
+                                    name="quartos"
+                                    value={filters.quartos}
+                                    onChange={handleFilterChange}
+                                    className="w-full pl-9 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none text-sm appearance-none"
+                                >
+                                    <option value="0">Qualquer</option>
+                                    <option value="1">1+</option>
+                                    <option value="2">2+</option>
+                                    <option value="3">3+</option>
+                                    <option value="4">4+</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Vagas */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Vagas (Mín)</label>
+                            <div className="relative">
+                                <Car size={16} className="absolute left-3 top-2.5 text-gray-400" />
+                                <select
+                                    name="garagem"
+                                    value={filters.garagem}
+                                    onChange={handleFilterChange}
+                                    className="w-full pl-9 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none text-sm appearance-none"
+                                >
+                                    <option value="0">Qualquer</option>
+                                    <option value="1">1+</option>
+                                    <option value="2">2+</option>
+                                    <option value="3">3+</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Botão Limpar Filtros (só aparece se houver filtros ativos) */}
+                {(filters.cidade || filters.tipo !== 'Todos' || filters.finalidade !== 'Todos' || filters.minPrice || filters.maxPrice || Number(filters.quartos) > 0 || Number(filters.garagem) > 0) && (
+                    <div className="mt-4 pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+                        <button
+                            onClick={clearFilters}
+                            className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1"
+                        >
+                            <X size={14} /> Limpar Filtros
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* --- LISTAGEM DE IMÓVEIS --- */}
@@ -280,9 +365,9 @@ function PropertiesContent() {
                         <Loader2 size={40} className="animate-spin mb-4 text-blue-600" />
                         <p>Buscando imóveis...</p>
                     </div>
-                ) : properties.length > 0 ? (
+                ) : filteredProperties.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {properties.map((property) => (
+                        {filteredProperties.map((property) => (
                             <PropertyCard key={property.id} property={property} />
                         ))}
                     </div>

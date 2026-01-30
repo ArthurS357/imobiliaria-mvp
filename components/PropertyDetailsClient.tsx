@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { PropertyCard } from "@/components/PropertyCard";
 import { MortgageCalculator } from "@/components/MortgageCalculator";
@@ -8,7 +8,7 @@ import { VisitScheduler } from "@/components/VisitScheduler";
 import {
     MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar,
     ArrowRight, CheckCircle2, Ruler, Building, Shield, Tag, LockKeyhole,
-    ChevronLeft, ChevronRight
+    ChevronLeft, ChevronRight, Heart
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -57,6 +57,33 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
     const rawImage = fotos[currentImageIndex] || "";
     const displayImage = getWatermarkedImage(rawImage) || rawImage;
 
+    // --- LÓGICA DE FAVORITOS (NOVO) ---
+    const [isFavorite, setIsFavorite] = useState(false);
+
+    useEffect(() => {
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        if (favorites.includes(property.id)) {
+            setIsFavorite(true);
+        }
+    }, [property.id]);
+
+    const toggleFavorite = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        let newFavorites;
+
+        if (isFavorite) {
+            newFavorites = favorites.filter((id: string) => id !== property.id);
+        } else {
+            newFavorites = [...favorites, property.id];
+        }
+
+        localStorage.setItem('favorites', JSON.stringify(newFavorites));
+        setIsFavorite(!isFavorite);
+    };
+
     // 1. Verificação de Permissão
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userRole = (session?.user as any)?.role;
@@ -93,6 +120,20 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
 
                         {/* ÁREA DA FOTO PRINCIPAL */}
                         <div className="w-full aspect-[4/3] bg-gray-200 dark:bg-gray-700 relative group">
+
+                            {/* --- BOTÃO DE FAVORITO (POSICIONADO SOBRE A FOTO) --- */}
+                            <button
+                                onClick={toggleFavorite}
+                                className={`absolute top-4 right-4 p-3 rounded-full shadow-lg transition-all duration-300 z-30 hover:scale-110
+                                    ${isFavorite
+                                        ? 'bg-red-500 text-white hover:bg-red-600'
+                                        : 'bg-white/90 text-gray-400 hover:text-red-500 hover:bg-white'}
+                                `}
+                                title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                            >
+                                <Heart size={24} className={isFavorite ? "fill-current" : ""} />
+                            </button>
+
                             {displayImage ? (
                                 <img
                                     src={displayImage}
@@ -128,23 +169,6 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                     </div>
                                 </>
                             )}
-
-                            {/* Badges na Foto */}
-                            <div className="absolute top-4 left-4 flex flex-col gap-2 items-start pointer-events-none">
-                                <span className="bg-[#eaca42] text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-wide shadow-sm">
-                                    {property.tipo}
-                                </span>
-                                {property.status === 'VENDIDO' && (
-                                    <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-wide shadow-sm">
-                                        Vendido
-                                    </span>
-                                )}
-                                {property.status === 'RESERVADO' && (
-                                    <span className="bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-wide shadow-sm">
-                                        Reservado
-                                    </span>
-                                )}
-                            </div>
                         </div>
 
                         {/* Miniaturas */}
