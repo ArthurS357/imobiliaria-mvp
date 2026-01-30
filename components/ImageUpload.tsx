@@ -12,13 +12,21 @@ interface ImageUploadProps {
 export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
     const [isUploading, setIsUploading] = useState(false);
 
-    // CONFIGURAÇÃO DO CLOUDINARY (Substitua pelos seus dados se quiser, ou use variáveis de ambiente)
-    const CLOUD_NAME = "dv6poqrr7"; // ⚠️ TROQUE "demo" PELO SEU CLOUD NAME
-    const UPLOAD_PRESET = "Matiello"; // ⚠️ TROQUE PELO SEU UPLOAD PRESET (Modo Unsigned)
+    // ATUALIZADO: Busca das variáveis de ambiente para maior segurança
+    // Certifique-se de definir NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME e PRESET no seu .env e na Vercel
+    const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET;
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Validação de segurança para garantir que as variáveis existem
+        if (!CLOUD_NAME || !UPLOAD_PRESET) {
+            alert("Erro de configuração: Variáveis do Cloudinary não encontradas.");
+            console.error("Verifique se NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME e NEXT_PUBLIC_CLOUDINARY_PRESET estão definidas.");
+            return;
+        }
 
         setIsUploading(true);
 
@@ -35,11 +43,11 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
             const data = await res.json();
 
             if (data.secure_url) {
-                // Adiciona a nova URL à lista existente
+                // Adiciona a nova URL à lista existente mantendo as anteriores
                 onChange([...value, data.secure_url]);
             } else {
                 alert("Erro no upload. Verifique o console.");
-                console.error(data);
+                console.error("Erro Cloudinary:", data);
             }
         } catch (error) {
             console.error("Erro ao enviar imagem:", error);
@@ -64,6 +72,8 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
                                 <X size={12} />
                             </button>
                         </div>
+                        {/* O comentário abaixo desativa o aviso do Next.js sobre usar <img> em vez de <Image> */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={url} alt="Foto do imóvel" className="object-cover w-full h-full" />
                     </div>
                 ))}
@@ -72,7 +82,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
             {/* Botão de Upload */}
             <div className="flex items-center gap-4">
                 <label className={`
-          flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200 transition border border-gray-300
+          flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-300 dark:border-gray-600
           ${isUploading ? "opacity-50 cursor-not-allowed" : ""}
         `}>
                     {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
