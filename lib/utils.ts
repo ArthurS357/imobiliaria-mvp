@@ -1,18 +1,27 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+// Função utilitária para combinar classes do Tailwind (necessária para componentes modernos)
+export function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
+
+// Função de Marca D'água (Versão Corrigida: Proporcional)
 export function getWatermarkedImage(url: string | null) {
     if (!url) return null;
     if (!url.includes("cloudinary.com")) return url;
 
-    // SUBSTITUA PELO ID QUE VOCÊ DEFINIU NO CLOUDINARY
+    // ID da sua logo no Cloudinary
     const logoId = "logo_e7vocq";
 
-    // Explicação dos parâmetros:
-    // l_ -> define o ID da camada (sua logo)
-    // w_300 -> define a largura da logo (ajuste para 400 ou 500 se ficar pequena)
-    // o_20 -> opacidade 20% (bem discreta, como pediu)
-    // g_center -> centraliza a logo na imagem
+    // --- EXPLICAÇÃO DA TRANSFORMAÇÃO ---
+    // l_{logoId}  -> Adiciona a camada da logo
+    // w_0.5       -> Define a largura como 50% (0.5) da imagem base (Proporcional)
+    // fl_relative -> Garante que o 'w' seja relativo ao tamanho da foto, não fixo
+    // o_20        -> Opacidade 20% (bem discreta)
+    // g_center    -> Centraliza a logo
+    const transformation = `l_${logoId},w_0.5,fl_relative,o_20,g_center`;
 
-    const transformation = `l_${logoId},w_1700,o_20,g_center`;
-
-    // Injeta a transformação na URL
+    // Injeta a transformação na URL do Cloudinary logo após "/upload/"
     return url.replace("/upload/", `/upload/${transformation}/`);
 }
