@@ -117,8 +117,7 @@ export default function ContactPage() {
                                     <div>
                                         <h3 className="font-bold text-gray-900 dark:text-white">Endereço</h3>
                                         <p className="text-gray-600 dark:text-gray-300">
-                                            Av. Principal da Cidade, 1000<br />
-                                            Centro - Arujá/SP
+                                            Centro - Arujá/SP<br />
                                         </p>
                                     </div>
                                 </div>
