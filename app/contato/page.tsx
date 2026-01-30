@@ -105,7 +105,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-gray-900 dark:text-white">E-mail</h3>
-                                        <p className="text-gray-600 dark:text-gray-300 break-all">brenomatiello@gmail.com</p>
+                                        <p className="text-gray-600 dark:text-gray-300 break-all">contato@matielloimoveis.com.br</p>
                                     </div>
                                 </div>
 

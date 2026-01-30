@@ -105,8 +105,7 @@ export default function AboutPage() {
                         <div className="flex items-start gap-3 text-blue-100">
                             <MapPin className="mt-1 flex-shrink-0" />
                             <p className="text-lg">
-                                Av. Principal da Cidade, 1000 - Centro <br />
-                                Edifício Business Tower, Sala 402
+                               Arujá - São Paulo <br />
                             </p>
                         </div>
                     </div>
