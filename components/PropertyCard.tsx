@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { MapPin, Bed, Car, Ruler, Bath } from "lucide-react";
+import { getWatermarkedImage } from "@/lib/utils";
 
 interface PropertyCardProps {
   property: {
@@ -25,7 +26,9 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property }: PropertyCardProps) {
-  const capa = property.fotos ? property.fotos.split(";")[0] : null;
+  const capaOriginal = property.fotos ? property.fotos.split(";")[0] : null;
+  const capa = getWatermarkedImage(capaOriginal);
+
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

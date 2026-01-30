@@ -5,10 +5,15 @@ import dynamic from "next/dynamic";
 import { PropertyCard } from "@/components/PropertyCard";
 import { MortgageCalculator } from "@/components/MortgageCalculator";
 import { VisitScheduler } from "@/components/VisitScheduler";
-import { MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar, ArrowRight, CheckCircle2, Ruler, Building, Shield, Tag, LockKeyhole } from "lucide-react";
+import {
+    MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar,
+    ArrowRight, CheckCircle2, Ruler, Building, Shield, Tag, LockKeyhole,
+    ChevronLeft, ChevronRight
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { getWatermarkedImage } from "@/lib/utils";
 
 // Carregamento dinâmico do Mapa para performance
 const MapClient = dynamic(() => import("@/components/Map"), {
@@ -31,18 +36,33 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
     const router = useRouter();
     const { data: session } = useSession();
 
-    const [selectedImage, setSelectedImage] = useState<string>(
-        property.fotos ? property.fotos.split(";")[0] : ""
-    );
+    // ARRAY DE FOTOS
+    const fotos = property.fotos ? property.fotos.split(";") : [];
 
-    // 1. Verificação de Permissão (Admin/Corretor/Funcionário)
+    // ESTADO: Controla o índice da foto (0, 1, 2...) em vez da string url
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    // FUNÇÕES DE NAVEGAÇÃO
+    const handleNextImage = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setCurrentImageIndex((prev) => (prev === fotos.length - 1 ? 0 : prev + 1));
+    };
+
+    const handlePrevImage = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setCurrentImageIndex((prev) => (prev === 0 ? fotos.length - 1 : prev - 1));
+    };
+
+    // Pega a URL da imagem atual baseada no índice e aplica a marca d'água
+    const rawImage = fotos[currentImageIndex] || "";
+    const displayImage = getWatermarkedImage(rawImage) || rawImage;
+
+    // 1. Verificação de Permissão
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userRole = (session?.user as any)?.role;
     const isInternal = session?.user && ['ADMIN', 'FUNCIONARIO', 'BROKER', 'CORRETOR'].includes(userRole);
 
-    const fotos = property.fotos ? property.fotos.split(";") : [];
     const featuresList = property.features ? property.features.split(",") : [];
-
     const mensagemZap = encodeURIComponent(`Olá! Vi o imóvel "${property.titulo}" no site e gostaria de mais informações.`);
 
     // Só mostra o mapa se tiver coordenadas E se a privacidade de endereço permitir
@@ -69,19 +89,48 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                 <div className="lg:col-span-2 space-y-8">
 
                     {/* Galeria de Fotos */}
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
-                        {/* ATUALIZAÇÃO: Substituído 'h-96' por 'w-full aspect-[4/3]'.
-                            Isso força o container a respeitar a proporção da foto original (4:3)
-                        */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700 select-none">
+
+                        {/* ÁREA DA FOTO PRINCIPAL */}
                         <div className="w-full aspect-[4/3] bg-gray-200 dark:bg-gray-700 relative group">
-                            {selectedImage ? (
-                                <img src={selectedImage} alt={property.titulo} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                            {displayImage ? (
+                                <img
+                                    src={displayImage}
+                                    alt={property.titulo}
+                                    className="w-full h-full object-cover transition-transform duration-500"
+                                />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-400">Sem foto</div>
                             )}
 
+                            {/* SETAS DE NAVEGAÇÃO (Só exibe se tiver mais de 1 foto) */}
+                            {fotos.length > 1 && (
+                                <>
+                                    <button
+                                        onClick={handlePrevImage}
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                        aria-label="Imagem Anterior"
+                                    >
+                                        <ChevronLeft size={32} />
+                                    </button>
+
+                                    <button
+                                        onClick={handleNextImage}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                        aria-label="Próxima Imagem"
+                                    >
+                                        <ChevronRight size={32} />
+                                    </button>
+
+                                    {/* Indicador de quantidade (Ex: 1/15) */}
+                                    <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md">
+                                        {currentImageIndex + 1} / {fotos.length}
+                                    </div>
+                                </>
+                            )}
+
                             {/* Badges na Foto */}
-                            <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
+                            <div className="absolute top-4 left-4 flex flex-col gap-2 items-start pointer-events-none">
                                 <span className="bg-[#eaca42] text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-wide shadow-sm">
                                     {property.tipo}
                                 </span>
@@ -104,11 +153,18 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                 {fotos.map((foto: string, index: number) => (
                                     <button
                                         key={index}
-                                        onClick={() => setSelectedImage(foto)}
-                                        // ATUALIZAÇÃO: Miniaturas também usam aspect-[4/3]
-                                        className={`w-24 aspect-[4/3] flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === foto ? 'border-[#eaca42] opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                        onClick={() => setCurrentImageIndex(index)}
+                                        className={`w-24 aspect-[4/3] flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all 
+                                            ${currentImageIndex === index
+                                                ? 'border-[#eaca42] opacity-100 scale-105'
+                                                : 'border-transparent opacity-60 hover:opacity-100'
+                                            }`}
                                     >
-                                        <img src={foto} alt={`Foto ${index}`} className="w-full h-full object-cover" />
+                                        <img
+                                            src={getWatermarkedImage(foto) || foto}
+                                            alt={`Foto ${index}`}
+                                            className="w-full h-full object-cover"
+                                        />
                                     </button>
                                 ))}
                             </div>

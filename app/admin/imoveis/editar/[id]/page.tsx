@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Save, ArrowLeft, Info, MapPin, Image as ImageIcon, Home, Loader2, ShieldCheck, AlertTriangle, Maximize, Eye, EyeOff, FileText, DollarSign, Calendar } from "lucide-react";
+import { Save, ArrowLeft, MapPin, Image as ImageIcon, Home, Loader2, ShieldCheck, AlertTriangle, FileText, DollarSign, Search } from "lucide-react";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useSession } from "next-auth/react";
@@ -25,6 +25,7 @@ export default function EditPropertyPage() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [loadingCep, setLoadingCep] = useState(false);
 
     const [formData, setFormData] = useState({
         // Dados Básicos
@@ -36,7 +37,7 @@ export default function EditPropertyPage() {
 
         // Valores e Contrato
         preco: "",
-        precoLocacao: "", // NOVO: Campo para segundo valor
+        precoLocacao: "",
         tipoValor: "Preço fixo",
         periodoPagamento: "Mensal",
         depositoSeguranca: "",
@@ -45,6 +46,7 @@ export default function EditPropertyPage() {
         tipoContrato: "Sem Exclusividade",
 
         // Localização
+        cep: "",
         cidade: "",
         bairro: "",
         endereco: "",
@@ -98,7 +100,7 @@ export default function EditPropertyPage() {
                     finalidade: data.finalidade || "Venda",
 
                     preco: data.preco,
-                    precoLocacao: data.precoLocacao?.toString() || "", // NOVO: Carrega valor salvo
+                    precoLocacao: data.precoLocacao?.toString() || "",
                     tipoValor: data.tipoValor || "Preço fixo",
                     periodoPagamento: data.periodoPagamento || "Mensal",
                     depositoSeguranca: data.depositoSeguranca?.toString() || "",
@@ -106,6 +108,7 @@ export default function EditPropertyPage() {
                     periodicidadeCondominio: data.periodicidadeCondominio || "Mensal",
                     tipoContrato: data.tipoContrato || "Sem Exclusividade",
 
+                    cep: data.cep || "", // Carrega o CEP
                     cidade: data.cidade,
                     bairro: data.bairro,
                     endereco: data.endereco || "",
@@ -157,6 +160,79 @@ export default function EditPropertyPage() {
         }
     };
 
+    // --- FUNÇÃO DE BUSCA DE CEP MELHORADA (Mesma lógica do "Novo Imóvel") ---
+    const handleBlurCep = async () => {
+        const cep = formData.cep.replace(/\D/g, '');
+        if (cep.length !== 8) return;
+
+        setLoadingCep(true);
+        try {
+            // 1. Busca Endereço (ViaCEP)
+            const resEnd = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            const endData = await resEnd.json();
+
+            if (!endData.erro) {
+                const newAddressData = {
+                    endereco: endData.logradouro || "",
+                    bairro: endData.bairro || "",
+                    cidade: endData.localidade || "",
+                };
+
+                // Atualiza campos de texto
+                setFormData(prev => ({ ...prev, ...newAddressData }));
+
+                // 2. Busca Coordenadas (Nominatim) - Lógica de Cascata
+                let lat = "";
+                let lon = "";
+
+                // Tentativa 1: Endereço Completo
+                if (endData.logradouro) {
+                    const fullQuery = `${endData.logradouro}, ${endData.localidade}, ${endData.uf}, Brazil`;
+                    try {
+                        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}&limit=1`);
+                        const geoData = await resGeo.json();
+                        if (geoData && geoData.length > 0) {
+                            lat = geoData[0].lat;
+                            lon = geoData[0].lon;
+                        }
+                    } catch (e) {
+                        console.warn("Falha na busca exata", e);
+                    }
+                }
+
+                // Tentativa 2: Fallback (Cidade) se falhou
+                if (!lat) {
+                    const cityQuery = `${endData.localidade}, ${endData.uf}, Brazil`;
+                    try {
+                        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityQuery)}&limit=1`);
+                        const geoData = await resGeo.json();
+                        if (geoData && geoData.length > 0) {
+                            lat = geoData[0].lat;
+                            lon = geoData[0].lon;
+                        }
+                    } catch (e) {
+                        console.warn("Falha na busca genérica", e);
+                    }
+                }
+
+                if (lat && lon) {
+                    setFormData(prev => ({
+                        ...prev,
+                        latitude: lat,
+                        longitude: lon
+                    }));
+                }
+
+            } else {
+                alert("CEP não encontrado.");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar CEP", error);
+        } finally {
+            setLoadingCep(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -200,10 +276,8 @@ export default function EditPropertyPage() {
     );
 
     const isAdmin = session?.user?.role === "ADMIN";
-
-    // Helpers de exibição
     const isRent = formData.finalidade === "Locação";
-    const isDual = formData.finalidade === "Venda e Locação"; // NOVO: Detecta dupla finalidade
+    const isDual = formData.finalidade === "Venda e Locação";
     const showRentFields = isRent || isDual;
 
     return (
@@ -312,6 +386,7 @@ export default function EditPropertyPage() {
                                 </select>
                             </div>
 
+                            {/* LINHA DE CONTRATO E FINALIDADE */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Finalidade <span className="text-[#eaca42]">*</span>
@@ -347,7 +422,6 @@ export default function EditPropertyPage() {
                         </div>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                            {/* Preço Principal */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     {isRent ? "Valor do Aluguel (R$)" : "Valor de Venda (R$)"} <span className="text-[#eaca42]">*</span>
@@ -355,7 +429,6 @@ export default function EditPropertyPage() {
                                 <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-bold" placeholder="0,00" />
                             </div>
 
-                            {/* NOVO: Campo Valor de Locação (Apenas se "Venda e Locação") */}
                             {isDual && (
                                 <div className="animate-in fade-in slide-in-from-top-2">
                                     <label className="block text-sm font-semibold text-orange-600 dark:text-orange-400 mb-1.5">
@@ -382,7 +455,6 @@ export default function EditPropertyPage() {
                                 </select>
                             </div>
 
-                            {/* Condomínio */}
                             <div className="flex gap-2">
                                 <div className="w-2/3">
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
@@ -400,7 +472,6 @@ export default function EditPropertyPage() {
                                 </div>
                             </div>
 
-                            {/* CAMPOS EXTRAS PARA LOCAÇÃO OU VENDA E LOCAÇÃO */}
                             {showRentFields && (
                                 <>
                                     <div>
@@ -417,7 +488,6 @@ export default function EditPropertyPage() {
                                         </label>
                                         <input type="number" name="depositoSeguranca" value={formData.depositoSeguranca} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="0,00" />
                                     </div>
-                                    {/* Espaçador para grid */}
                                     <div className="hidden md:block"></div>
                                 </>
                             )}
@@ -432,7 +502,6 @@ export default function EditPropertyPage() {
                         </div>
 
                         <div className="p-6">
-                            {/* Quartos, Suítes, Banheiros, Ano */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Dormitórios</label>
@@ -452,7 +521,7 @@ export default function EditPropertyPage() {
                                 </div>
                             </div>
 
-                            {/* LINHA DE VAGAS DETALHADA */}
+                            {/* ÁREA DE VAGAS DETALHADA */}
                             <div className="bg-gray-50 dark:bg-gray-700/20 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-6">
                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Detalhamento de Vagas de Garagem</label>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
@@ -479,7 +548,6 @@ export default function EditPropertyPage() {
                                 </div>
                             </div>
 
-                            {/* Áreas e Condição */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
@@ -505,10 +573,9 @@ export default function EditPropertyPage() {
                         </div>
                     </div>
 
-                    {/* --- GRUPO 4: DESCRIÇÃO, CHECKLIST E LOCALIZAÇÃO --- */}
+                    {/* --- GRUPO 4: DESCRIÇÃO, FEATURE E LOCALIZAÇÃO --- */}
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                         <div className="p-6">
-                            {/* Sobre o Imóvel */}
                             <div className="mb-8">
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Título da Secção "Sobre" (Opcional)
@@ -527,7 +594,6 @@ export default function EditPropertyPage() {
                                 <textarea required name="descricao" value={formData.descricao} rows={6} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-y" />
                             </div>
 
-                            {/* Checklist */}
                             <div className="mb-8">
                                 <FeatureSelector
                                     selectedFeatures={formData.features}
@@ -535,12 +601,31 @@ export default function EditPropertyPage() {
                                 />
                             </div>
 
-                            {/* Localização Simplificada */}
                             <div className="border-t border-gray-100 dark:border-gray-700 pt-8">
                                 <div className="flex items-center gap-2 mb-4">
                                     <MapPin className="text-blue-600 dark:text-blue-400" size={20} />
                                     <h2 className="font-bold text-gray-800 dark:text-white">Endereço e Mapa</h2>
                                 </div>
+
+                                {/* --- CAMPO CEP (NOVO) --- */}
+                                <div className="mb-6">
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">CEP</label>
+                                    <div className="relative max-w-xs">
+                                        <input
+                                            name="cep"
+                                            value={formData.cep}
+                                            onChange={handleChange}
+                                            onBlur={handleBlurCep}
+                                            placeholder="00000-000"
+                                            className="w-full p-3 pl-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                        <div className="absolute right-3 top-3 text-gray-400">
+                                            {loadingCep ? <Loader2 size={20} className="animate-spin text-blue-600" /> : <Search size={20} />}
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">Digite e saia do campo para buscar o endereço automaticamente.</p>
+                                </div>
+
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Cidade <span className="text-[#eaca42]">*</span></label>

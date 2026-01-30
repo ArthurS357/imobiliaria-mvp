@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, ArrowLeft, MapPin, Image as ImageIcon, Home, Loader2, FileText, DollarSign, Calendar, Tag, CheckCircle2 } from "lucide-react";
+import { Save, ArrowLeft, MapPin, Image as ImageIcon, Home, Loader2, FileText, DollarSign, Search } from "lucide-react";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { FeatureSelector } from "@/components/admin/FeatureSelector";
@@ -20,6 +20,7 @@ import {
 export default function NewPropertyPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [loadingCep, setLoadingCep] = useState(false);
 
     const [formData, setFormData] = useState({
         // Dados Básicos
@@ -27,19 +28,20 @@ export default function NewPropertyPage() {
         sobreTitulo: "",
         descricao: "",
         tipo: PROPERTY_TYPES[0],
-        finalidade: "Venda", // Padrão
+        finalidade: "Venda",
 
         // Valores e Contrato
         preco: "",
-        precoLocacao: "", // NOVO: Campo para segundo valor
+        precoLocacao: "",
         tipoValor: "Preço fixo",
-        periodoPagamento: "Mensal", // Para locação
-        depositoSeguranca: "",      // Para locação
+        periodoPagamento: "Mensal",
+        depositoSeguranca: "",
         valorCondominio: "",
         periodicidadeCondominio: "Mensal",
         tipoContrato: "Sem Exclusividade",
 
         // Localização
+        cep: "",
         cidade: "",
         bairro: "",
         endereco: "",
@@ -47,18 +49,18 @@ export default function NewPropertyPage() {
         longitude: "",
 
         // Detalhes Físicos
-        quarto: "", // Dormitórios
-        suites: "", // Novo
+        quarto: "",
+        suites: "",
         banheiro: "",
 
         // Vagas
-        garagem: "0", // Total
+        garagem: "0",
         vagasCobertas: "",
         vagasDescobertas: "",
         vagasSubsolo: false,
 
         // Áreas e Construção
-        area: "",       // Área Útil
+        area: "",
         areaTerreno: "",
         anoConstrucao: "",
         statusMercado: "Padrão",
@@ -81,6 +83,83 @@ export default function NewPropertyPage() {
         }
     };
 
+    // --- FUNÇÃO DE BUSCA DE CEP MELHORADA ---
+    const handleBlurCep = async () => {
+        const cep = formData.cep.replace(/\D/g, '');
+        if (cep.length !== 8) return;
+
+        setLoadingCep(true);
+        try {
+            // 1. Busca Endereço (ViaCEP)
+            const resEnd = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            const endData = await resEnd.json();
+
+            if (!endData.erro) {
+                // Prepara os dados de texto
+                const newAddressData = {
+                    endereco: endData.logradouro || "",
+                    bairro: endData.bairro || "",
+                    cidade: endData.localidade || "",
+                };
+
+                // Atualiza visualmente os campos de texto primeiro
+                setFormData(prev => ({ ...prev, ...newAddressData }));
+
+                // 2. Busca Coordenadas (Nominatim - OpenStreetMap)
+                // Estratégia de Cascata: Tenta endereço completo -> Se falhar, tenta só cidade
+                let lat = "";
+                let lon = "";
+
+                // Tentativa 1: Endereço Completo (Se tiver logradouro)
+                if (endData.logradouro) {
+                    const fullQuery = `${endData.logradouro}, ${endData.localidade}, ${endData.uf}, Brazil`;
+                    try {
+                        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}&limit=1`);
+                        const geoData = await resGeo.json();
+                        if (geoData && geoData.length > 0) {
+                            lat = geoData[0].lat;
+                            lon = geoData[0].lon;
+                        }
+                    } catch (e) {
+                        console.warn("Falha na busca exata de coordenadas", e);
+                    }
+                }
+
+                // Tentativa 2: Fallback (Apenas Cidade/UF) se a Tentativa 1 falhou ou não tinha rua
+                if (!lat) {
+                    const cityQuery = `${endData.localidade}, ${endData.uf}, Brazil`;
+                    try {
+                        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityQuery)}&limit=1`);
+                        const geoData = await resGeo.json();
+                        if (geoData && geoData.length > 0) {
+                            lat = geoData[0].lat;
+                            lon = geoData[0].lon;
+                        }
+                    } catch (e) {
+                        console.warn("Falha na busca genérica de coordenadas", e);
+                    }
+                }
+
+                // Atualiza o estado final com as coordenadas (se encontradas)
+                if (lat && lon) {
+                    setFormData(prev => ({
+                        ...prev,
+                        latitude: lat,
+                        longitude: lon
+                    }));
+                }
+
+            } else {
+                alert("CEP não encontrado.");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar CEP", error);
+            alert("Erro ao buscar informações do CEP.");
+        } finally {
+            setLoadingCep(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -91,7 +170,6 @@ export default function NewPropertyPage() {
             return;
         }
 
-        // Lógica para calcular o total de vagas
         const vagasCalc = (Number(formData.vagasCobertas) || 0) + (Number(formData.vagasDescobertas) || 0);
         const finalGaragem = Number(formData.garagem) > 0 ? formData.garagem : vagasCalc.toString();
 
@@ -120,7 +198,6 @@ export default function NewPropertyPage() {
         }
     };
 
-    // Helpers de exibição
     const isRent = formData.finalidade === "Locação";
     const isDual = formData.finalidade === "Venda e Locação";
     const showRentFields = isRent || isDual;
@@ -222,7 +299,7 @@ export default function NewPropertyPage() {
                                 <input required type="number" name="preco" value={formData.preco} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-bold" placeholder="0,00" />
                             </div>
 
-                            {/* NOVO: Campo Valor de Locação (Apenas se "Venda e Locação") */}
+                            {/* Campo Valor de Locação (Apenas se "Venda e Locação") */}
                             {isDual && (
                                 <div className="animate-in fade-in slide-in-from-top-2">
                                     <label className="block text-sm font-semibold text-orange-600 dark:text-orange-400 mb-1.5">
@@ -267,7 +344,7 @@ export default function NewPropertyPage() {
                                 </div>
                             </div>
 
-                            {/* CAMPOS EXTRAS PARA LOCAÇÃO OU DUPLA FINALIDADE */}
+                            {/* CAMPOS EXTRAS */}
                             {showRentFields && (
                                 <>
                                     <div>
@@ -284,7 +361,6 @@ export default function NewPropertyPage() {
                                         </label>
                                         <input type="number" name="depositoSeguranca" value={formData.depositoSeguranca} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="0,00" />
                                     </div>
-                                    {/* Espaçador para grid em desktop */}
                                     <div className="hidden md:block"></div>
                                 </>
                             )}
@@ -299,7 +375,6 @@ export default function NewPropertyPage() {
                         </div>
 
                         <div className="p-6">
-                            {/* Quartos, Suítes, Banheiros, Ano */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Dormitórios</label>
@@ -346,7 +421,6 @@ export default function NewPropertyPage() {
                                 </div>
                             </div>
 
-                            {/* Áreas e Condição */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
@@ -375,7 +449,6 @@ export default function NewPropertyPage() {
                     {/* GRUPO 4: DESCRIÇÃO, FEATURE E LOCALIZAÇÃO */}
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                         <div className="p-6">
-                            {/* Sobre o Imóvel */}
                             <div className="mb-8">
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                                     Título da Secção "Sobre" (Opcional)
@@ -394,7 +467,6 @@ export default function NewPropertyPage() {
                                 <textarea required name="descricao" value={formData.descricao} rows={6} onChange={handleChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-y" />
                             </div>
 
-                            {/* Checklist */}
                             <div className="mb-8">
                                 <FeatureSelector
                                     selectedFeatures={formData.features}
@@ -402,12 +474,31 @@ export default function NewPropertyPage() {
                                 />
                             </div>
 
-                            {/* Localização Simplificada */}
                             <div className="border-t border-gray-100 dark:border-gray-700 pt-8">
                                 <div className="flex items-center gap-2 mb-4">
                                     <MapPin className="text-blue-600 dark:text-blue-400" size={20} />
                                     <h2 className="font-bold text-gray-800 dark:text-white">Endereço e Mapa</h2>
                                 </div>
+
+                                {/* --- CAMPO CEP (NOVO) --- */}
+                                <div className="mb-6">
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">CEP</label>
+                                    <div className="relative max-w-xs">
+                                        <input
+                                            name="cep"
+                                            value={formData.cep}
+                                            onChange={handleChange}
+                                            onBlur={handleBlurCep}
+                                            placeholder="00000-000"
+                                            className="w-full p-3 pl-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
+                                        <div className="absolute right-3 top-3 text-gray-400">
+                                            {loadingCep ? <Loader2 size={20} className="animate-spin text-blue-600" /> : <Search size={20} />}
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">Digite e saia do campo para buscar o endereço automaticamente.</p>
+                                </div>
+
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Cidade <span className="text-[#eaca42]">*</span></label>

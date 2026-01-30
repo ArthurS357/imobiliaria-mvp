@@ -1,71 +1,64 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
-import { Search, Filter, X, Loader2 } from "lucide-react";
+// ADICIONADO 'X' NA IMPORTAÇÃO ABAIXO
+import { Search, Filter, Loader2, MapPin, Home, Car, BedDouble, X } from "lucide-react";
 import { PROPERTY_TYPES_CATEGORIZED, FINALIDADES } from "@/lib/constants";
 
-// Definição do tipo de propriedade atualizada com os novos campos de negócio
+// Definição do tipo de propriedade
 interface Property {
     id: string;
     titulo: string;
-    // Preços
     preco: number;
-    precoLocacao?: number;     // Novo: Suporte a aluguel
-    tipoValor?: string;        // Novo: "Preço Fixo", etc
-    periodoPagamento?: string; // Novo: "Mensal", "Anual"
-
-    // Localização
+    precoLocacao?: number;
+    tipoValor?: string;
+    periodoPagamento?: string;
     cidade: string;
     bairro: string;
     endereco?: string | null;
     displayAddress?: boolean;
-
-    // Detalhes
     quarto: number;
     suites?: number;
     banheiro: number;
     garagem: number;
     area: number;
     areaTerreno?: number | null;
-
-    // Mídia e Status
     fotos: string | null;
     tipo: string;
     status: string;
     finalidade: string;
 }
 
-export default function PropertiesPage() {
+function PropertiesContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-    // Estados dos Filtros
+    // Inicializa filtros com dados da URL
     const [filters, setFilters] = useState({
-        finalidade: "",
-        tipo: "",
-        cidade: "",
-        minPrice: "",
-        maxPrice: "",
-        quartos: "",
-        garagem: ""
+        finalidade: searchParams.get("finalidade") || "",
+        tipo: searchParams.get("tipo") || "",
+        cidade: searchParams.get("search") || searchParams.get("cidade") || "",
+        minPrice: searchParams.get("minPrice") || "",
+        maxPrice: searchParams.get("maxPrice") || "",
+        quartos: searchParams.get("quartos") || "",
+        garagem: searchParams.get("garagem") || searchParams.get("vagas") || ""
     });
 
-    // Função de busca com Debounce manual para evitar chamadas excessivas
     const fetchProperties = useCallback(async () => {
         setLoading(true);
         try {
-            // Constrói a URL com os parâmetros de busca
             const params = new URLSearchParams();
-
-            // Regra de Negócio: Mostrar apenas imóveis DISPONÍVEIS para o público
             params.append("status", "DISPONIVEL");
 
-            if (filters.finalidade) params.append("finalidade", filters.finalidade);
-            if (filters.tipo) params.append("tipo", filters.tipo);
+            if (filters.finalidade && filters.finalidade !== "Todos") params.append("finalidade", filters.finalidade);
+            if (filters.tipo && filters.tipo !== "Todos") params.append("tipo", filters.tipo);
             if (filters.minPrice) params.append("minPrice", filters.minPrice);
             if (filters.maxPrice) params.append("maxPrice", filters.maxPrice);
             if (filters.quartos) params.append("quartos", filters.quartos);
@@ -76,8 +69,7 @@ export default function PropertiesPage() {
 
             let data = await res.json();
 
-            // Filtragem Client-Side para busca textual (Cidade, Bairro, Título)
-            // Isso permite uma busca mais flexível "tipo Google" na localização
+            // Filtragem Client-Side de texto
             if (filters.cidade) {
                 const searchLower = filters.cidade.toLowerCase();
                 data = data.filter((p: Property) =>
@@ -89,23 +81,34 @@ export default function PropertiesPage() {
 
             setProperties(data);
         } catch (error) {
-            console.error("Erro ao carregar imóveis:", error);
+            console.error("Erro:", error);
         } finally {
             setLoading(false);
         }
     }, [filters]);
 
-    // Effect para disparar a busca quando os filtros mudam
     useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchProperties();
-        }, 500); // Delay de 500ms para debounce
-        return () => clearTimeout(timer);
-    }, [fetchProperties]);
+        fetchProperties();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSearchClick = () => {
+        const params = new URLSearchParams();
+        if (filters.cidade) params.set("search", filters.cidade);
+        if (filters.finalidade) params.set("finalidade", filters.finalidade);
+        if (filters.tipo) params.set("tipo", filters.tipo);
+        if (filters.minPrice) params.set("minPrice", filters.minPrice);
+        if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
+        if (filters.quartos) params.set("quartos", filters.quartos);
+        if (filters.garagem) params.set("garagem", filters.garagem);
+
+        router.replace(`/imoveis?${params.toString()}`, { scroll: false });
+        fetchProperties();
     };
 
     const clearFilters = () => {
@@ -118,208 +121,203 @@ export default function PropertiesPage() {
             quartos: "",
             garagem: ""
         });
+        // Opcional: buscar automaticamente ao limpar
+        // fetchProperties(); 
     };
 
     return (
+        <div className="flex flex-col gap-8">
+            {/* --- BARRA DE FILTROS SUPERIOR (Estilo Homepage) --- */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-top-4">
+                <div className="flex items-center gap-2 mb-4 text-gray-800 dark:text-white font-bold border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <Filter size={20} className="text-[#eaca42]" />
+                    <span>Filtrar Imóveis</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+
+                    {/* 1. Localização */}
+                    <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Localização</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                name="cidade"
+                                value={filters.cidade}
+                                onChange={handleFilterChange}
+                                placeholder="Cidade, Bairro ou Código..."
+                                className="w-full pl-10 pr-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none transition-all text-sm"
+                            />
+                            <MapPin size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                        </div>
+                    </div>
+
+                    {/* 2. Tipo de Imóvel */}
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Tipo</label>
+                        <div className="relative">
+                            <select
+                                name="tipo"
+                                value={filters.tipo}
+                                onChange={handleFilterChange}
+                                className="w-full pl-10 pr-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none appearance-none text-sm cursor-pointer"
+                            >
+                                <option value="">Todos os Tipos</option>
+                                {PROPERTY_TYPES_CATEGORIZED.map((group) => (
+                                    <optgroup key={group.label} label={group.label} className="dark:bg-gray-700 text-black dark:text-white">
+                                        {group.types.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </optgroup>
+                                ))}
+                            </select>
+                            <Home size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                        </div>
+                    </div>
+
+                    {/* 3. Finalidade */}
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Finalidade</label>
+                        <select
+                            name="finalidade"
+                            value={filters.finalidade}
+                            onChange={handleFilterChange}
+                            className="w-full px-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none text-sm cursor-pointer"
+                        >
+                            <option value="">Todas</option>
+                            {FINALIDADES.map(f => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                    </div>
+
+                    {/* 4. Faixa de Preço */}
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Preço (R$)</label>
+                        <div className="flex gap-2">
+                            <input
+                                type="number"
+                                name="minPrice"
+                                value={filters.minPrice}
+                                onChange={handleFilterChange}
+                                placeholder="Mín"
+                                className="w-1/2 px-3 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none text-sm"
+                            />
+                            <input
+                                type="number"
+                                name="maxPrice"
+                                value={filters.maxPrice}
+                                onChange={handleFilterChange}
+                                placeholder="Máx"
+                                className="w-1/2 px-3 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Linha 2 de Filtros */}
+
+                    {/* 5. Quartos */}
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Quartos</label>
+                        <div className="relative">
+                            <select
+                                name="quartos"
+                                value={filters.quartos}
+                                onChange={handleFilterChange}
+                                className="w-full pl-10 pr-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none appearance-none text-sm cursor-pointer"
+                            >
+                                <option value="">Indiferente</option>
+                                <option value="1">1+</option>
+                                <option value="2">2+</option>
+                                <option value="3">3+</option>
+                                <option value="4">4+</option>
+                            </select>
+                            <BedDouble size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                        </div>
+                    </div>
+
+                    {/* 6. Vagas */}
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 ml-1 block">Vagas</label>
+                        <div className="relative">
+                            <select
+                                name="garagem"
+                                value={filters.garagem}
+                                onChange={handleFilterChange}
+                                className="w-full pl-10 pr-4 py-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-900 outline-none appearance-none text-sm cursor-pointer"
+                            >
+                                <option value="">Indiferente</option>
+                                <option value="1">1+</option>
+                                <option value="2">2+</option>
+                                <option value="3">3+</option>
+                                <option value="4">4+</option>
+                            </select>
+                            <Car size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                        </div>
+                    </div>
+
+                    {/* Botões de Ação (Buscar / Limpar) */}
+                    <div className="col-span-1 sm:col-span-2 flex gap-3">
+                        <button
+                            onClick={handleSearchClick}
+                            className="flex-grow bg-blue-900 hover:bg-blue-800 text-white py-3 px-6 rounded-lg font-bold shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <Search size={18} /> <span className="hidden sm:inline">Buscar Imóveis</span> <span className="sm:hidden">Buscar</span>
+                        </button>
+
+                        <button
+                            onClick={clearFilters}
+                            className="px-4 py-3 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200 rounded-lg transition-colors font-semibold"
+                            title="Limpar Filtros"
+                        >
+                            <span className="hidden sm:inline">Limpar</span> <X size={20} className="sm:hidden" />
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            {/* --- LISTAGEM DE IMÓVEIS --- */}
+            <div className="flex-grow">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                        <Loader2 size={40} className="animate-spin mb-4 text-blue-600" />
+                        <p>Buscando imóveis...</p>
+                    </div>
+                ) : properties.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {properties.map((property) => (
+                            <PropertyCard key={property.id} property={property} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                        <h3 className="text-xl font-bold text-gray-800 dark:text-white">Nenhum imóvel encontrado</h3>
+                        <p className="text-gray-500 dark:text-gray-400 mt-2">Tente ajustar seus filtros para ver mais resultados.</p>
+                        <button onClick={clearFilters} className="mt-6 text-blue-600 font-semibold hover:underline">Limpar todos os filtros</button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function PropertiesPage() {
+    return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
             <Header />
-
-            {/* HEADER DA PÁGINA */}
-            <div className="bg-blue-900 dark:bg-gray-800 text-white py-8 md:py-12 transition-colors">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-3xl md:text-4xl font-bold mb-4">Encontre seu Imóvel Ideal</h1>
-                    <p className="text-blue-100 dark:text-gray-400 max-w-2xl text-lg">
-                        Explore nossa seleção exclusiva de casas, apartamentos e terrenos.
+            {/* Header da Página */}
+            <div className="bg-blue-900 dark:bg-gray-800 text-white py-8 md:py-10 shadow-md">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left">
+                    <h1 className="text-3xl md:text-4xl font-bold mb-2">Encontre seu Imóvel Ideal</h1>
+                    <p className="text-blue-100 dark:text-gray-400 max-w-2xl text-lg hidden md:block">
+                        Explore nossa seleção exclusiva com os filtros abaixo.
                     </p>
-
-                    {/* Botão Mobile para abrir filtros */}
-                    <button
-                        onClick={() => setShowMobileFilters(!showMobileFilters)}
-                        className="mt-6 md:hidden flex items-center gap-2 bg-white text-blue-900 px-4 py-3 rounded-xl font-bold w-full justify-center shadow-lg hover:bg-gray-100 transition"
-                    >
-                        <Filter size={20} /> Filtrar Imóveis
-                    </button>
                 </div>
             </div>
 
             <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-                <div className="flex flex-col md:flex-row gap-8">
-
-                    {/* --- SIDEBAR DE FILTROS (Desktop & Mobile Modal) --- */}
-                    <aside className={`md:w-72 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 h-fit sticky top-24 transition-colors
-                        ${showMobileFilters ? "fixed inset-0 z-50 w-full h-full overflow-y-auto m-0 rounded-none" : "hidden md:block"}`}>
-
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="font-bold text-xl text-gray-900 dark:text-white flex items-center gap-2">
-                                <Filter size={20} className="text-[#eaca42]" /> Filtros
-                            </h2>
-                            {showMobileFilters && (
-                                <button onClick={() => setShowMobileFilters(false)} className="md:hidden p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                                    <X size={24} />
-                                </button>
-                            )}
-                        </div>
-
-                        <div className="space-y-6">
-                            {/* Busca Textual */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Localização ou Código</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        name="cidade"
-                                        value={filters.cidade}
-                                        onChange={handleFilterChange}
-                                        placeholder="Cidade, Bairro..."
-                                        className="w-full pl-10 pr-4 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
-                                    />
-                                    <Search size={18} className="absolute left-3 top-3 text-gray-400" />
-                                </div>
-                            </div>
-
-                            {/* Finalidade */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Finalidade</label>
-                                <select
-                                    name="finalidade"
-                                    value={filters.finalidade}
-                                    onChange={handleFilterChange}
-                                    className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-                                >
-                                    <option value="">Todos</option>
-                                    {FINALIDADES.map(f => (
-                                        <option key={f} value={f}>{f}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Tipo de Imóvel */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Tipo de Imóvel</label>
-                                <select
-                                    name="tipo"
-                                    value={filters.tipo}
-                                    onChange={handleFilterChange}
-                                    className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-                                >
-                                    <option value="">Todos</option>
-                                    {PROPERTY_TYPES_CATEGORIZED.map((group) => (
-                                        <optgroup key={group.label} label={group.label} className="dark:bg-gray-700 font-bold text-gray-900 dark:text-white">
-                                            {group.types.map(t => (
-                                                <option key={t} value={t} className="font-normal">{t}</option>
-                                            ))}
-                                        </optgroup>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Faixa de Preço */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Faixa de Preço (R$)</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="number"
-                                        name="minPrice"
-                                        value={filters.minPrice}
-                                        onChange={handleFilterChange}
-                                        placeholder="Mín"
-                                        className="w-1/2 p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-                                    />
-                                    <input
-                                        type="number"
-                                        name="maxPrice"
-                                        value={filters.maxPrice}
-                                        onChange={handleFilterChange}
-                                        placeholder="Máx"
-                                        className="w-1/2 p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Filtros Numéricos (Quartos/Vagas) */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Quartos</label>
-                                    <select
-                                        name="quartos"
-                                        value={filters.quartos}
-                                        onChange={handleFilterChange}
-                                        className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-                                    >
-                                        <option value="">Qtd</option>
-                                        <option value="1">1+</option>
-                                        <option value="2">2+</option>
-                                        <option value="3">3+</option>
-                                        <option value="4">4+</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Vagas</label>
-                                    <select
-                                        name="garagem"
-                                        value={filters.garagem}
-                                        onChange={handleFilterChange}
-                                        className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-                                    >
-                                        <option value="">Qtd</option>
-                                        <option value="1">1+</option>
-                                        <option value="2">2+</option>
-                                        <option value="3">3+</option>
-                                        <option value="4">4+</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={clearFilters}
-                                className="w-full py-2.5 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 underline transition font-medium"
-                            >
-                                Limpar Todos os Filtros
-                            </button>
-
-                            {/* Botão Mobile "Ver Resultados" */}
-                            <button
-                                onClick={() => setShowMobileFilters(false)}
-                                className="md:hidden w-full bg-blue-900 text-white py-3 rounded-xl font-bold mt-4 shadow-lg active:scale-95 transition-transform"
-                            >
-                                Ver Resultados
-                            </button>
-                        </div>
-                    </aside>
-
-                    {/* --- LISTAGEM DE IMÓVEIS --- */}
-                    <div className="flex-grow">
-                        {loading ? (
-                            <div className="flex flex-col items-center justify-center h-64 text-gray-400 animate-in fade-in">
-                                <Loader2 size={40} className="animate-spin mb-4 text-blue-600" />
-                                <p>Buscando as melhores opções...</p>
-                            </div>
-                        ) : properties.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                {properties.map((property) => (
-                                    <PropertyCard key={property.id} property={property} />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 animate-in fade-in zoom-in duration-300">
-                                <Search size={48} className="mx-auto text-gray-300 mb-4" />
-                                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Nenhum imóvel encontrado</h3>
-                                <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-                                    Não encontramos imóveis com esses critérios. Tente limpar os filtros ou buscar por outra região.
-                                </p>
-                                <button
-                                    onClick={clearFilters}
-                                    className="mt-6 px-6 py-2.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg font-bold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition"
-                                >
-                                    Limpar Filtros
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                </div>
+                {/* Suspense para carregar parâmetros de URL */}
+                <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="animate-spin" /></div>}>
+                    <PropertiesContent />
+                </Suspense>
             </main>
-
             <Footer />
         </div>
     );
