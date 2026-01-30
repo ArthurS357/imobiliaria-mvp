@@ -1,10 +1,7 @@
-import dynamic from "next/dynamic";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { prisma } from "@/lib/prisma";
-
-// Importa o Map de forma dinâmica (desativa SSR para evitar erro "window is not defined")
-const Map = dynamic(() => import("@/components/Map"), { ssr: false });
+import { MapWrapper } from "@/components/MapWrapper"; // Importa o wrapper que já é um Client Component
 
 export const metadata = {
     title: "Mapa de Imóveis | Imobiliária MVP",
@@ -23,8 +20,8 @@ export default async function MapPage() {
             id: true,
             titulo: true,
             preco: true,
-            precoLocacao: true, // NOVO: Necessário para o popup
-            finalidade: true,   // NOVO: Necessário para lógica de exibição
+            precoLocacao: true,
+            finalidade: true,
             latitude: true,
             longitude: true,
             fotos: true
@@ -44,8 +41,9 @@ export default async function MapPage() {
                 <div className="flex-grow p-4">
                     {/* O Mapa ocupa todo o espaço restante */}
                     <div className="h-full w-full shadow-lg border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden relative z-0">
+                        {/* Passamos os dados para o MapWrapper, que cuidará do carregamento dinâmico no cliente */}
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        <Map properties={properties as any} />
+                        <MapWrapper properties={properties as any} />
                     </div>
                 </div>
             </main>
