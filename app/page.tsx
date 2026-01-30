@@ -6,10 +6,10 @@ import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Search, Filter, MessageCircle, ArrowRight, ChevronDown, ChevronUp, Bed, Car, DollarSign } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Importado para redirecionamento
+import { useRouter } from "next/navigation";
 import { FINALIDADES } from "@/lib/constants";
 
-// Interface atualizada para suportar os novos campos
+// Interface atualizada
 interface Property {
   id: string;
   titulo: string;
@@ -31,10 +31,11 @@ interface Property {
   tipo: string;
   status: string;
   finalidade: string;
+  destaque?: boolean;
 }
 
 export default function Home() {
-  const router = useRouter(); // Inicialização do roteador
+  const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +52,7 @@ export default function Home() {
   const [minQuartos, setMinQuartos] = useState(0);
   const [minVagas, setMinVagas] = useState(0);
 
-  // FUNÇÃO DE BUSCA E REDIRECIONAMENTO
+  // FUNÇÃO DE BUSCA E REDIRECIONAMENTO (Leva para a página com todos os imóveis)
   const handleSearch = () => {
     const params = new URLSearchParams();
 
@@ -63,18 +64,17 @@ export default function Home() {
     if (minQuartos > 0) params.set("quartos", minQuartos.toString());
     if (minVagas > 0) params.set("vagas", minVagas.toString());
 
-    // Redireciona para a página de imóveis com os parâmetros na URL
+    // Redireciona para a listagem completa
     router.push(`/imoveis?${params.toString()}`);
   };
 
-  // Detecta a tecla Enter nos inputs
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleSearch();
     }
   };
 
-  // Busca inicial
+  // Busca inicial dos dados
   useEffect(() => {
     async function fetchProperties() {
       try {
@@ -83,7 +83,8 @@ export default function Home() {
 
         if (Array.isArray(data)) {
           setProperties(data);
-          setFilteredProperties(data);
+          // Inicializa mostrando APENAS os destaques
+          setFilteredProperties(data.filter((p: Property) => p.destaque === true));
         }
       } catch (error) {
         console.error("Erro ao buscar imóveis:", error);
@@ -94,10 +95,13 @@ export default function Home() {
     fetchProperties();
   }, []);
 
-  // Filtragem Instantânea (Preview na Home)
+  // Lógica de "Live Preview" na Home: RESTRITA AOS DESTAQUES
   useEffect(() => {
-    let result = properties;
+    // 1. Começa SEMPRE filtrando apenas os DESTAQUES
+    // Isso impede que imóveis comuns apareçam na home, mesmo ao digitar
+    let result = properties.filter(p => p.destaque === true);
 
+    // 2. Aplica os filtros do usuário DENTRO da lista de destaques
     if (searchCity) {
       const termo = searchCity.toLowerCase();
       result = result.filter((p) =>
@@ -175,7 +179,7 @@ export default function Home() {
                   className="w-full pl-12 pr-4 py-3 rounded-md bg-transparent focus:outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                   value={searchCity}
                   onChange={(e) => setSearchCity(e.target.value)}
-                  onKeyDown={handleKeyDown} // Trigger para o Enter
+                  onKeyDown={handleKeyDown}
                 />
               </div>
 
@@ -217,7 +221,7 @@ export default function Home() {
               </div>
 
               <button
-                onClick={handleSearch} // Clique no botão também redireciona
+                onClick={handleSearch}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-bold transition flex items-center justify-center gap-2 shadow-lg"
               >
                 <Search size={18} />
@@ -313,7 +317,9 @@ export default function Home() {
                 {filteredProperties.length}
               </span>
             </h2>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">As melhores oportunidades selecionadas para você.</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
+              As melhores oportunidades selecionadas para você.
+            </p>
           </div>
 
           <Link href="/imoveis" className="text-blue-900 dark:text-blue-400 font-bold hover:underline flex items-center gap-1 group">
@@ -342,21 +348,15 @@ export default function Home() {
             <div className="inline-flex bg-gray-50 dark:bg-gray-700 p-6 rounded-full mb-4">
               <Search size={40} className="text-gray-300 dark:text-gray-500" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Nenhum imóvel encontrado</h3>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">Tente ajustar seus filtros de preço ou localização.</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Nenhum imóvel em destaque encontrado</h3>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">
+              Clique em "Buscar" para ver todas as opções disponíveis.
+            </p>
             <button
-              onClick={() => {
-                setSearchCity("");
-                setFilterType("Todos");
-                setFilterFinalidade("Todos");
-                setMinPrice("");
-                setMaxPrice("");
-                setMinQuartos(0);
-                setMinVagas(0);
-              }}
+              onClick={handleSearch}
               className="mt-4 text-blue-600 dark:text-blue-400 font-bold hover:underline"
             >
-              Limpar todos os filtros
+              Ver todos os imóveis
             </button>
           </div>
         )}
