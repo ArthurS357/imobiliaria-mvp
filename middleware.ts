@@ -18,8 +18,9 @@ export default withAuth(
       authorized: ({ req, token }) => {
         const path = req.nextUrl.pathname;
 
-        // 1. Se for a página de login, PERMITIR acesso sempre (evita loop infinito)
-        if (path === "/admin/login") {
+        // 1. Se for a página de login, PERMITIR acesso sempre
+        // Usamos startsWith para garantir que /admin/login/ não quebre
+        if (path.startsWith("/admin/login")) {
           return true;
         }
 
@@ -28,17 +29,16 @@ export default withAuth(
       },
     },
     pages: {
-      signIn: "/admin/login", // Define a página de login customizada
+      signIn: "/admin/login",
     },
   }
 );
 
 export const config = {
   matcher: [
-    // Protege todo o painel administrativo (incluindo sub-rotas)
+    // Protege todo o painel administrativo
     "/admin/:path*",
-    
-    // Protege também as rotas de API administrativas para evitar acesso direto
+    // Protege rotas de API admin
     "/api/admin/:path*",
   ],
 };
