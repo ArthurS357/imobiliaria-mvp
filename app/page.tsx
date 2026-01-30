@@ -6,33 +6,27 @@ import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Search, Filter, MessageCircle, ArrowRight, ChevronDown, ChevronUp, Bed, Car, DollarSign } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // Importado para redirecionamento
 import { FINALIDADES } from "@/lib/constants";
 
 // Interface atualizada para suportar os novos campos
 interface Property {
   id: string;
   titulo: string;
-  // Preços
   preco: number;
-  precoLocacao?: number;     // Novo
-  tipoValor?: string;        // Novo
-  periodoPagamento?: string; // Novo
-
-  // Localização
+  precoLocacao?: number;
+  tipoValor?: string;
+  periodoPagamento?: string;
   cidade: string;
   bairro: string;
   endereco?: string | null;
   displayAddress?: boolean;
-
-  // Detalhes
   quarto: number;
-  suites?: number;           // Novo
+  suites?: number;
   banheiro: number;
   garagem: number;
   area: number;
   areaTerreno?: number | null;
-
-  // Mídia e Status
   fotos: string | null;
   tipo: string;
   status: string;
@@ -40,6 +34,7 @@ interface Property {
 }
 
 export default function Home() {
+  const router = useRouter(); // Inicialização do roteador
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +43,7 @@ export default function Home() {
   // Estados dos Filtros
   const [searchCity, setSearchCity] = useState("");
   const [filterType, setFilterType] = useState("Todos");
-  const [filterFinalidade, setFilterFinalidade] = useState("Todos"); // NOVO: Filtro de finalidade
+  const [filterFinalidade, setFilterFinalidade] = useState("Todos");
 
   // Novos Filtros Avançados
   const [minPrice, setMinPrice] = useState("");
@@ -56,7 +51,30 @@ export default function Home() {
   const [minQuartos, setMinQuartos] = useState(0);
   const [minVagas, setMinVagas] = useState(0);
 
-  // Busca inicial (Traz tudo que está DISPONÍVEL)
+  // FUNÇÃO DE BUSCA E REDIRECIONAMENTO
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+
+    if (searchCity) params.set("search", searchCity);
+    if (filterType !== "Todos") params.set("tipo", filterType);
+    if (filterFinalidade !== "Todos") params.set("finalidade", filterFinalidade);
+    if (minPrice) params.set("minPrice", minPrice);
+    if (maxPrice) params.set("maxPrice", maxPrice);
+    if (minQuartos > 0) params.set("quartos", minQuartos.toString());
+    if (minVagas > 0) params.set("vagas", minVagas.toString());
+
+    // Redireciona para a página de imóveis com os parâmetros na URL
+    router.push(`/imoveis?${params.toString()}`);
+  };
+
+  // Detecta a tecla Enter nos inputs
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  // Busca inicial
   useEffect(() => {
     async function fetchProperties() {
       try {
@@ -76,46 +94,37 @@ export default function Home() {
     fetchProperties();
   }, []);
 
-  // Lógica de Filtragem Instantânea
+  // Filtragem Instantânea (Preview na Home)
   useEffect(() => {
     let result = properties;
 
-    // 1. Cidade/Bairro
     if (searchCity) {
       const termo = searchCity.toLowerCase();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      result = result.filter((p: any) =>
+      result = result.filter((p) =>
         p.cidade.toLowerCase().includes(termo) ||
         p.bairro.toLowerCase().includes(termo) ||
         p.titulo.toLowerCase().includes(termo)
       );
     }
 
-    // 2. Tipo
     if (filterType !== "Todos") {
       result = result.filter(p => p.tipo === filterType);
     }
 
-    // 3. Finalidade (NOVO)
     if (filterFinalidade !== "Todos") {
-      // Verifica se a string finalidade contém o filtro (ex: "Venda e Locação" contém "Venda")
       result = result.filter(p => p.finalidade.includes(filterFinalidade));
     }
 
-    // 4. Preço Mínimo (Lógica Inteligente)
     if (minPrice) {
       const min = Number(minPrice);
       result = result.filter(p => {
-        // Se estamos filtrando especificamente por Locação, verificamos o preço de locação se existir
         if (filterFinalidade === "Locação" && p.precoLocacao && p.precoLocacao > 0) {
           return p.precoLocacao >= min;
         }
-        // Caso contrário, verificamos o preço principal
         return p.preco >= min;
       });
     }
 
-    // 5. Preço Máximo (Lógica Inteligente)
     if (maxPrice) {
       const max = Number(maxPrice);
       result = result.filter(p => {
@@ -126,15 +135,8 @@ export default function Home() {
       });
     }
 
-    // 6. Quartos
-    if (minQuartos > 0) {
-      result = result.filter(p => p.quarto >= minQuartos);
-    }
-
-    // 7. Vagas
-    if (minVagas > 0) {
-      result = result.filter(p => p.garagem >= minVagas);
-    }
+    if (minQuartos > 0) result = result.filter(p => p.quarto >= minQuartos);
+    if (minVagas > 0) result = result.filter(p => p.garagem >= minVagas);
 
     setFilteredProperties(result);
   }, [searchCity, filterType, filterFinalidade, minPrice, maxPrice, minQuartos, minVagas, properties]);
@@ -143,10 +145,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-500">
       <Header />
 
-      {/* --- HERO SECTION --- */}
       <div className="relative bg-blue-900 py-32 md:py-48 px-4 sm:px-6 lg:px-8 flex items-center justify-center transition-colors">
-
-        {/* Imagem de Fundo */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop"
@@ -165,13 +164,9 @@ export default function Home() {
             sua vida acontece.
           </h1>
 
-          {/* --- BARRA DE BUSCA E FILTROS --- */}
           <div className="bg-white/10 dark:bg-black/30 backdrop-blur-md p-2 rounded-xl shadow-2xl max-w-5xl mx-auto border border-white/20 dark:border-white/10 transition-all duration-300">
-
-            {/* Linha 1: Busca Principal */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-2 flex flex-col md:flex-row gap-2 transition-colors">
 
-              {/* Input Texto */}
               <div className="flex-1 relative group">
                 <Search className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition" size={20} />
                 <input
@@ -180,12 +175,12 @@ export default function Home() {
                   className="w-full pl-12 pr-4 py-3 rounded-md bg-transparent focus:outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                   value={searchCity}
                   onChange={(e) => setSearchCity(e.target.value)}
+                  onKeyDown={handleKeyDown} // Trigger para o Enter
                 />
               </div>
 
               <div className="hidden md:block w-px bg-gray-200 dark:bg-gray-700 my-2"></div>
 
-              {/* Select Finalidade (NOVO) */}
               <div className="w-full md:w-40 relative group">
                 <div className="absolute left-3 top-3.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">
                   MODO
@@ -205,7 +200,6 @@ export default function Home() {
 
               <div className="hidden md:block w-px bg-gray-200 dark:bg-gray-700 my-2"></div>
 
-              {/* Select Tipo */}
               <div className="w-full md:w-48 relative group">
                 <Filter className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition" size={20} />
                 <select
@@ -222,21 +216,24 @@ export default function Home() {
                 <ChevronDown className="absolute right-4 top-4 text-gray-400 pointer-events-none" size={16} />
               </div>
 
-              {/* Botão Toggle Avançado */}
+              <button
+                onClick={handleSearch} // Clique no botão também redireciona
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-bold transition flex items-center justify-center gap-2 shadow-lg"
+              >
+                <Search size={18} />
+                Buscar
+              </button>
+
               <button
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 className={`px-4 py-3 rounded-md font-medium transition flex items-center justify-center gap-2 ${showAdvanced ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
               >
-                Mais
                 {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
             </div>
 
-            {/* Linha 2: Filtros Avançados (Expandível) */}
             {showAdvanced && (
               <div className="bg-gray-50 dark:bg-gray-900 mt-2 p-4 rounded-lg grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 animate-enter border border-gray-200 dark:border-gray-700">
-
-                {/* Preço Mín */}
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Preço Mín.</label>
                   <div className="relative">
@@ -246,12 +243,12 @@ export default function Home() {
                       placeholder="0"
                       value={minPrice}
                       onChange={(e) => setMinPrice(e.target.value)}
+                      onKeyDown={handleKeyDown}
                       className="w-full pl-8 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none text-sm"
                     />
                   </div>
                 </div>
 
-                {/* Preço Máx */}
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Preço Máx.</label>
                   <div className="relative">
@@ -261,12 +258,12 @@ export default function Home() {
                       placeholder="Sem limite"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(e.target.value)}
+                      onKeyDown={handleKeyDown}
                       className="w-full pl-8 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none text-sm"
                     />
                   </div>
                 </div>
 
-                {/* Quartos */}
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Quartos (Mín)</label>
                   <div className="relative">
@@ -285,7 +282,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Vagas */}
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 block">Vagas (Mín)</label>
                   <div className="relative">
@@ -304,14 +300,11 @@ export default function Home() {
                 </div>
               </div>
             )}
-
           </div>
         </div>
       </div>
 
-      {/* --- LISTAGEM DE IMÓVEIS --- */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-16">
-
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">

@@ -220,28 +220,36 @@ export default function AdminPropertiesPage() {
                             </div>
                           </td>
 
-                          {/* Coluna 2: Preço e Finalidade (MODIFICADO) */}
+                          {/* Coluna 2: Preço e Finalidade (AJUSTADO PARA CONTRASTE) */}
                           <td className="p-4 whitespace-nowrap align-top pt-5">
                             {isDual ? (
                               <div className="flex flex-col gap-1">
+                                {/* Venda */}
                                 <div className="flex items-center gap-1">
-                                  <span className="text-[10px] font-bold text-blue-600 bg-blue-100 dark:bg-blue-900/30 px-1.5 rounded">VEN</span>
-                                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{formatMoney(property.preco)}</span>
+                                  <span className="text-[10px] font-bold text-blue-700 bg-blue-100 dark:bg-blue-900/40 px-1.5 rounded">VEN</span>
+                                  <span className="text-sm font-bold text-gray-900 dark:text-white transition-colors group-hover:text-blue-900 dark:group-hover:text-blue-300">
+                                    {formatMoney(property.preco)}
+                                  </span>
                                 </div>
+                                {/* Locação */}
                                 <div className="flex items-center gap-1">
-                                  <span className="text-[10px] font-bold text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-1.5 rounded">LOC</span>
-                                  <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{formatMoney(property.precoLocacao || 0)}</span>
+                                  <span className="text-[10px] font-bold text-orange-700 bg-orange-100 dark:bg-orange-900/40 px-1.5 rounded">LOC</span>
+                                  <span className="text-sm font-bold text-gray-900 dark:text-white transition-colors group-hover:text-orange-900 dark:group-hover:text-orange-300">
+                                    {formatMoney(property.precoLocacao || 0)}
+                                  </span>
                                 </div>
                               </div>
                             ) : (
                               <div className="flex flex-col">
-                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                {/* Valor Único */}
+                                <span className="text-sm font-bold text-gray-900 dark:text-white transition-colors group-hover:text-blue-900 dark:group-hover:text-blue-300">
                                   {formatMoney(property.preco)}
                                 </span>
-                                <span className={`text-[10px] font-bold uppercase w-fit px-2 py-0.5 rounded mt-1
-                                  ${property.finalidade?.includes('Locação')
-                                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                {/* Finalidade Badge */}
+                                <span className={`text-[10px] font-bold uppercase w-fit px-2 py-0.5 rounded mt-1 border transition-all
+        ${property.finalidade?.includes('Locação')
+                                    ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800'
+                                    : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
                                   }`}>
                                   {property.finalidade}
                                 </span>
