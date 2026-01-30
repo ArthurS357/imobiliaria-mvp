@@ -52,7 +52,6 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
     const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(Number(value));
 
     // 2. Lógica Inteligente para "Venda e Locação"
-    // Considera verdadeiro se a finalidade conter os dois termos OU se tivermos os dois preços cadastrados e maiores que zero
     const finalidadeLower = property.finalidade?.toLowerCase() || "";
     const isDualPurpose =
         (finalidadeLower.includes("venda") && finalidadeLower.includes("locação")) ||
@@ -71,7 +70,10 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
 
                     {/* Galeria de Fotos */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
-                        <div className="h-96 w-full bg-gray-200 dark:bg-gray-700 relative group">
+                        {/* ATUALIZAÇÃO: Substituído 'h-96' por 'w-full aspect-[4/3]'.
+                            Isso força o container a respeitar a proporção da foto original (4:3)
+                        */}
+                        <div className="w-full aspect-[4/3] bg-gray-200 dark:bg-gray-700 relative group">
                             {selectedImage ? (
                                 <img src={selectedImage} alt={property.titulo} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                             ) : (
@@ -103,7 +105,8 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                     <button
                                         key={index}
                                         onClick={() => setSelectedImage(foto)}
-                                        className={`w-24 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === foto ? 'border-[#eaca42] opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                        // ATUALIZAÇÃO: Miniaturas também usam aspect-[4/3]
+                                        className={`w-24 aspect-[4/3] flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${selectedImage === foto ? 'border-[#eaca42] opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
                                     >
                                         <img src={foto} alt={`Foto ${index}`} className="w-full h-full object-cover" />
                                     </button>
