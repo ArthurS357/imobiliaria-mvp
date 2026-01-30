@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { MapPin, Bed, Bath, Car, Ruler, CheckCircle2, Building2, Shield, Phone, Mail, Globe } from "lucide-react";
-import Image from "next/image";
+import {
+    MapPin, Bed, Bath, Car, Ruler, CheckCircle2,
+    Building2, Phone, Mail, Globe
+} from "lucide-react";
+import { PrintTrigger } from "@/components/PrintTrigger"; // Importação do componente Client
 
 // Helper de formatação
 const formatCurrency = (value: number) => {
@@ -15,7 +18,7 @@ const formatCurrency = (value: number) => {
 export default async function PrintPropertyPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    // Busca dados completos do imóvel (Server Component)
+    // Busca dados completos do imóvel no banco de dados
     const property = await prisma.property.findUnique({
         where: { id },
         include: {
@@ -35,9 +38,9 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
     const fotos = property.fotos ? property.fotos.split(";") : [];
     const features = property.features ? property.features.split(",") : [];
     const mainPhoto = fotos[0] || null;
-    const secondaryPhotos = fotos.slice(1, 4); // Pega até 3 fotos adicionais
+    const secondaryPhotos = fotos.slice(1, 4);
 
-    // Lógica de Venda e Locação
+    // Lógica de Venda e Locação (Dual Mode)
     const finalidadeLower = property.finalidade?.toLowerCase() || "";
     const isDual = (finalidadeLower.includes("venda") && finalidadeLower.includes("locação")) ||
         (property.preco > 0 && (property.precoLocacao || 0) > 0);
@@ -45,24 +48,18 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
     return (
         <div className="bg-white min-h-screen text-black p-8 print:p-0 max-w-4xl mx-auto">
 
-            {/* Botão de Impressão (Apenas na tela) */}
-            <div className="mb-8 print:hidden flex justify-between items-center">
+            {/* --- CONTROLES DE IMPRESSÃO --- */}
+            {/* O componente PrintTrigger é "use client", permitindo o uso de onClick e window.print() */}
+            <div className="mb-8 print:hidden flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-200">
                 <h1 className="text-xl font-bold text-gray-500">Visualização de Impressão</h1>
-                <button
-                    onClick={() => window.print()} // Isso funciona pois o Next.js hidrata o onclick, mas idealmente seria um Client Component separado.
-                    // Como esta é uma página Server Component, você pode adicionar um script simples ou transformar em "use client" se preferir. 
-                    // Para simplicidade e SEO, mantive Server Component e o botão funciona via HTML nativo se JS estiver ativo.
-                    className="bg-blue-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-800 transition shadow-lg flex items-center gap-2"
-                >
-                    🖨️ Imprimir Ficha
-                </button>
+                <PrintTrigger />
             </div>
 
             {/* --- CABEÇALHO DO DOCUMENTO --- */}
             <header className="border-b-2 border-blue-900 pb-6 mb-6 flex justify-between items-end">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
-                        {/* Substitua pelo seu Logo se quiser */}
+                        {/* Logo Texto */}
                         <div className="text-2xl font-black tracking-tighter text-blue-900">
                             IMOBILIÁRIA<span className="text-[#eaca42]">MVP</span>
                         </div>
@@ -261,12 +258,6 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
                 <p>Documento gerado em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}.</p>
                 <p>As informações estão sujeitas a alterações sem aviso prévio. Consulte o corretor responsável.</p>
             </footer>
-
-            {/* Script para ativar impressão automática (opcional) */}
-            <script dangerouslySetInnerHTML={{
-                __html: `
-        // Opcional: window.print(); 
-      `}} />
         </div>
     );
 }
