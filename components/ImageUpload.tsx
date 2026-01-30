@@ -13,8 +13,8 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
     const [isUploading, setIsUploading] = useState(false);
 
     // CONFIGURAÇÃO DO CLOUDINARY (Substitua pelos seus dados se quiser, ou use variáveis de ambiente)
-    const CLOUD_NAME = "dfztxjmb2"; // ⚠️ TROQUE "demo" PELO SEU CLOUD NAME
-    const UPLOAD_PRESET = "imobiliaria_preset"; // ⚠️ TROQUE PELO SEU UPLOAD PRESET (Modo Unsigned)
+    const CLOUD_NAME = "dv6poqrr7"; // ⚠️ TROQUE "demo" PELO SEU CLOUD NAME
+    const UPLOAD_PRESET = "Matiello"; // ⚠️ TROQUE PELO SEU UPLOAD PRESET (Modo Unsigned)
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
