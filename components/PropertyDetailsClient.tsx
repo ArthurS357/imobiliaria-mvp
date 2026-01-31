@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image"; // OTIMIZAÇÃO: Importação do componente Image
 import { PropertyCard } from "@/components/PropertyCard";
 import { MortgageCalculator } from "@/components/MortgageCalculator";
 import { VisitScheduler } from "@/components/VisitScheduler";
@@ -15,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getWatermarkedImage } from "@/lib/utils";
 
-// Ícone do WhatsApp Inline Otimizado (SVG) - Consistente com Home e Contato
+// Ícone do WhatsApp Inline Otimizado (SVG)
 const WhatsAppIcon = ({ size = 24, className = "" }: { size?: number, className?: string }) => (
     <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -58,16 +59,16 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
     // ESTADO: Controla o índice da foto (0, 1, 2...)
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-    // FUNÇÕES DE NAVEGAÇÃO
-    const handleNextImage = (e?: React.MouseEvent) => {
+    // FUNÇÕES DE NAVEGAÇÃO (Memoizadas para evitar recriação desnecessária)
+    const handleNextImage = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
         setCurrentImageIndex((prev) => (prev === fotos.length - 1 ? 0 : prev + 1));
-    };
+    }, [fotos.length]);
 
-    const handlePrevImage = (e?: React.MouseEvent) => {
+    const handlePrevImage = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
         setCurrentImageIndex((prev) => (prev === 0 ? fotos.length - 1 : prev - 1));
-    };
+    }, [fotos.length]);
 
     // Pega a URL da imagem atual baseada no índice e aplica a marca d'água
     const rawImage = fotos[currentImageIndex] || "";
@@ -151,10 +152,17 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                             </button>
 
                             {displayImage ? (
-                                <img
+                                // OTIMIZAÇÃO: Substituição de <img> por <Image /> com priority
+                                // 'priority' garante carregamento imediato (LCP)
+                                // 'fill' faz ocupar o container pai
+                                // 'sizes' otimiza o download para diferentes larguras de tela
+                                <Image
                                     src={displayImage}
                                     alt={property.titulo}
-                                    className="w-full h-full object-cover transition-transform duration-500"
+                                    fill
+                                    priority
+                                    sizes="(max-width: 1024px) 100vw, 66vw"
+                                    className="object-cover transition-transform duration-500"
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-400">Sem foto</div>
@@ -165,7 +173,7 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                 <>
                                     <button
                                         onClick={handlePrevImage}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 z-20"
                                         aria-label="Imagem Anterior"
                                     >
                                         <ChevronLeft size={32} />
@@ -173,14 +181,14 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
 
                                     <button
                                         onClick={handleNextImage}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 z-20"
                                         aria-label="Próxima Imagem"
                                     >
                                         <ChevronRight size={32} />
                                     </button>
 
                                     {/* Indicador de quantidade (Ex: 1/15) */}
-                                    <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md">
+                                    <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md z-20">
                                         {currentImageIndex + 1} / {fotos.length}
                                     </div>
                                 </>
@@ -194,16 +202,20 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
                                     <button
                                         key={index}
                                         onClick={() => setCurrentImageIndex(index)}
-                                        className={`w-24 aspect-[4/3] flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all 
+                                        // OTIMIZAÇÃO: 'relative' necessário para o 'fill' do Next.js Image funcionar dentro do botão
+                                        className={`relative w-24 aspect-[4/3] flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all 
                                             ${currentImageIndex === index
                                                 ? 'border-[#eaca42] opacity-100 scale-105'
                                                 : 'border-transparent opacity-60 hover:opacity-100'
                                             }`}
                                     >
-                                        <img
+                                        {/* OTIMIZAÇÃO: Thumbnails com Next/Image (Lazy Load automático) */}
+                                        <Image
                                             src={getWatermarkedImage(foto) || foto}
-                                            alt={`Foto ${index}`}
-                                            className="w-full h-full object-cover"
+                                            alt={`Foto ${index + 1}`}
+                                            fill
+                                            sizes="100px" // Miniatura pequena, não precisa carregar grande
+                                            className="object-cover"
                                         />
                                     </button>
                                 ))}

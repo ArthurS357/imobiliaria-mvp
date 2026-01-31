@@ -4,16 +4,31 @@ import { prisma } from "@/lib/prisma";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyDetailsClient } from "@/components/PropertyDetailsClient";
+import { cache } from "react"; // OTIMIZAÇÃO: Importação do cache
 
-// Gera os metadados para SEO (Título da aba, descrição Google, imagem de compartilhamento)
+// OTIMIZAÇÃO: Cache da requisição para evitar duplicidade de query (Metadata + Page)
+// O Next.js deduplica automaticamente chamadas com a mesma entrada dentro do ciclo de renderização
+const getProperty = cache(async (id: string) => {
+    return await prisma.property.findUnique({
+        where: { id },
+        include: {
+            corretor: {
+                select: {
+                    name: true,
+                    email: true,
+                    creci: true
+                },
+            },
+        },
+    });
+});
+
+// Gera os metadados para SEO
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
     const { id } = await params;
 
-    const property = await prisma.property.findUnique({
-        where: { id },
-        // Selecionamos apenas o necessário para o SEO
-        select: { titulo: true, descricao: true, fotos: true, preco: true, cidade: true }
-    });
+    // Usa a função cacheada (se a página já chamou, aqui pega do cache instantaneamente)
+    const property = await getProperty(id);
 
     if (!property) return { title: "Imóvel não encontrado" };
 
@@ -34,21 +49,31 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    // 1. Busca o imóvel com TODOS os dados (incluindo novos campos como precoLocacao, suites, etc)
-    const property = await prisma.property.findUnique({
-        where: { id },
-        include: {
-            corretor: {
-                select: {
-                    name: true,
-                    email: true,
-                    creci: true // Importante para exibir no card do corretor
-                },
-            },
-        },
-    });
+    // 1. Busca o imóvel com TODOS os dados (usando cache)
+    const property = await getProperty(id);
 
     if (!property) return notFound();
+
+    // Campos necessários para renderizar o card de relacionados (Payload menor)
+    const cardSelect = {
+        id: true,
+        titulo: true,
+        preco: true,
+        precoLocacao: true,
+        tipoValor: true,
+        cidade: true,
+        bairro: true,
+        tipo: true,
+        quarto: true,
+        suites: true,
+        banheiro: true,
+        garagem: true,
+        area: true,
+        fotos: true,
+        status: true,
+        finalidade: true,
+        destaque: true
+    };
 
     // 2. Busca imóveis relacionados (prioridade: mesma cidade E mesmo tipo)
     let relatedProperties = await prisma.property.findMany({
@@ -62,6 +87,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         },
         take: 3, // Limita a 3 sugestões
         orderBy: { createdAt: "desc" },
+        select: cardSelect, // OTIMIZAÇÃO: Traz apenas campos necessários
     });
 
     // Fallback: Se não encontrar nada na mesma cidade, busca apenas pelo mesmo tipo em qualquer lugar
@@ -74,11 +100,11 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
             },
             take: 3,
             orderBy: { createdAt: "desc" },
+            select: cardSelect, // OTIMIZAÇÃO: Traz apenas campos necessários
         });
     }
 
     // 3. Serialização: O Prisma retorna objetos Date e Decimal que o Next.js (Client Component) não aceita diretamente.
-    // O JSON.parse(JSON.stringify) converte tudo para string/number simples.
     const serializedProperty = JSON.parse(JSON.stringify(property));
     const serializedRelated = JSON.parse(JSON.stringify(relatedProperties));
 
@@ -87,10 +113,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
             <Header />
 
             <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Passamos os dados completos para o Client Component.
-                   É lá no 'PropertyDetailsClient' que vamos renderizar o Checklist, 
-                   a Área do Terreno e aplicar a lógica de privacidade.
-                */}
+                {/* Passamos os dados completos para o Client Component */}
                 <PropertyDetailsClient
                     property={serializedProperty}
                     relatedProperties={serializedRelated}

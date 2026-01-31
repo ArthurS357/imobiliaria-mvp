@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -38,7 +38,6 @@ function PropertiesContent() {
     const router = useRouter();
 
     const [properties, setProperties] = useState<Property[]>([]);
-    const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -53,94 +52,75 @@ function PropertiesContent() {
         garagem: searchParams.get("vagas") || searchParams.get("garagem") || 0
     });
 
-    // Função de Busca Principal
-    const fetchAndFilterProperties = useCallback(async () => {
-        setLoading(true);
-        try {
-            // 1. Busca TODOS os imóveis disponíveis na API
-            const res = await fetch(`/api/properties?status=DISPONIVEL`);
+    // 1. Busca os dados apenas UMA VEZ ao montar o componente
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true);
+            try {
+                const res = await fetch(`/api/properties?status=DISPONIVEL`);
+                if (!res.ok) throw new Error("Falha ao buscar imóveis");
 
-            if (!res.ok) throw new Error("Falha ao buscar imóveis");
+                const allProperties: Property[] = await res.json();
+                setProperties(allProperties);
+            } catch (error) {
+                console.error("Erro ao carregar imóveis:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadData();
+    }, []);
 
-            const allProperties: Property[] = await res.json();
-            setProperties(allProperties);
-
-            // 2. Aplica Filtragem Local
-            let result = allProperties;
-
+    // 2. OTIMIZAÇÃO: Filtra os imóveis em memória usando useMemo
+    // Isso evita re-renderizações pesadas e lags na interface
+    const filteredProperties = useMemo(() => {
+        return properties.filter(p => {
             // Filtro: Cidade/Bairro (Texto)
             if (filters.cidade) {
                 const termo = filters.cidade.toLowerCase();
-                result = result.filter(p =>
-                    p.cidade.toLowerCase().includes(termo) ||
+                const matchTexto = p.cidade.toLowerCase().includes(termo) ||
                     p.bairro.toLowerCase().includes(termo) ||
-                    p.titulo.toLowerCase().includes(termo)
-                );
+                    p.titulo.toLowerCase().includes(termo);
+                if (!matchTexto) return false;
             }
 
             // Filtro: Tipo de Imóvel
             if (filters.tipo && filters.tipo !== "Todos") {
-                result = result.filter(p => p.tipo === filters.tipo);
+                if (p.tipo !== filters.tipo) return false;
             }
 
-            // Filtro: Finalidade (Lógica Complexa)
+            // Filtro: Finalidade (Lógica Complexa de Venda/Locação)
             if (filters.finalidade && filters.finalidade !== "Todos") {
                 const termoFinalidade = filters.finalidade.toLowerCase();
+                const pFinalidade = p.finalidade ? p.finalidade.toLowerCase() : "";
 
-                result = result.filter(p => {
-                    const pFinalidade = p.finalidade ? p.finalidade.toLowerCase() : "";
-
-                    if (termoFinalidade === 'venda') {
-                        return pFinalidade.includes('venda');
-                    }
-                    if (termoFinalidade === 'locação' || termoFinalidade === 'locacao') {
-                        return pFinalidade.includes('locação') || pFinalidade.includes('locacao');
-                    }
-                    return pFinalidade.includes(termoFinalidade);
-                });
+                if (termoFinalidade === 'venda') {
+                    if (!pFinalidade.includes('venda')) return false;
+                } else if (termoFinalidade === 'locação' || termoFinalidade === 'locacao') {
+                    if (!(pFinalidade.includes('locação') || pFinalidade.includes('locacao'))) return false;
+                } else {
+                    if (!pFinalidade.includes(termoFinalidade)) return false;
+                }
             }
 
-            // Filtro: Preço
-            const minP = Number(filters.minPrice);
-            const maxP = Number(filters.maxPrice);
+            // Definição do Preço Alvo (Venda ou Locação)
+            const targetPrice = (filters.finalidade.includes("Locação") && p.precoLocacao) ? p.precoLocacao : p.preco;
 
-            if (filters.minPrice) {
-                result = result.filter(p => {
-                    const targetPrice = filters.finalidade.includes("Locação") && p.precoLocacao ? p.precoLocacao : p.preco;
-                    return targetPrice >= minP;
-                });
-            }
+            // Filtro: Preço Mínimo
+            if (filters.minPrice && targetPrice < Number(filters.minPrice)) return false;
 
-            if (filters.maxPrice) {
-                result = result.filter(p => {
-                    const targetPrice = filters.finalidade.includes("Locação") && p.precoLocacao ? p.precoLocacao : p.preco;
-                    return targetPrice <= maxP;
-                });
-            }
+            // Filtro: Preço Máximo
+            if (filters.maxPrice && targetPrice > Number(filters.maxPrice)) return false;
 
-            // CORREÇÃO AQUI: Converter para Number() antes da comparação
-            if (Number(filters.quartos) > 0) {
-                result = result.filter(p => p.quarto >= Number(filters.quartos));
-            }
+            // Filtro: Quartos
+            if (Number(filters.quartos) > 0 && p.quarto < Number(filters.quartos)) return false;
 
-            // CORREÇÃO AQUI: Converter para Number() antes da comparação
-            if (Number(filters.garagem) > 0) {
-                result = result.filter(p => p.garagem >= Number(filters.garagem));
-            }
+            // Filtro: Vagas
+            if (Number(filters.garagem) > 0 && p.garagem < Number(filters.garagem)) return false;
 
-            setFilteredProperties(result);
-
-        } catch (error) {
-            console.error("Erro:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [filters]);
-
-    // Dispara a busca quando os filtros mudam
-    useEffect(() => {
-        fetchAndFilterProperties();
-    }, [fetchAndFilterProperties]);
+            return true;
+        });
+    }, [properties, filters]);
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
@@ -52,7 +52,6 @@ interface Property {
 export default function Home() {
   const router = useRouter();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Começa com FALSE para a caixa iniciar fechada
@@ -60,14 +59,29 @@ export default function Home() {
 
   // Estados dos Filtros
   const [searchCity, setSearchCity] = useState("");
+  // OTIMIZAÇÃO: Estado para armazenar o valor da busca com atraso (debounce)
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [filterType, setFilterType] = useState("Todos");
   const [filterFinalidade, setFilterFinalidade] = useState("Todos");
 
-  // Novos Filtros Avançados
+  // Filtros Avançados
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [minQuartos, setMinQuartos] = useState(0);
   const [minVagas, setMinVagas] = useState(0);
+
+  // OTIMIZAÇÃO: Efeito de Debounce
+  // Atualiza 'debouncedSearch' apenas após 300ms que o usuário parou de digitar
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchCity);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchCity]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -97,8 +111,6 @@ export default function Home() {
 
         if (Array.isArray(data)) {
           setProperties(data);
-          // Inicializa mostrando APENAS os destaques
-          setFilteredProperties(data.filter((p: Property) => p.destaque === true));
         }
       } catch (error) {
         console.error("Erro ao buscar imóveis:", error);
@@ -109,12 +121,15 @@ export default function Home() {
     fetchProperties();
   }, []);
 
-  // Lógica de Filtragem (Preview restrito aos destaques na Home)
-  useEffect(() => {
+  // OTIMIZAÇÃO: useMemo para Filtragem
+  // Substitui o useEffect anterior. Calcula 'filteredProperties' apenas quando necessário.
+  const filteredProperties = useMemo(() => {
+    // Filtra apenas destaques para a Home
     let result = properties.filter(p => p.destaque === true);
 
-    if (searchCity) {
-      const termo = searchCity.toLowerCase();
+    // Usa 'debouncedSearch' em vez de 'searchCity' para evitar travamentos
+    if (debouncedSearch) {
+      const termo = debouncedSearch.toLowerCase();
       result = result.filter((p) =>
         p.cidade.toLowerCase().includes(termo) ||
         p.bairro.toLowerCase().includes(termo) ||
@@ -155,17 +170,17 @@ export default function Home() {
     if (minQuartos > 0) result = result.filter(p => p.quarto >= minQuartos);
     if (minVagas > 0) result = result.filter(p => p.garagem >= minVagas);
 
-    setFilteredProperties(result);
-  }, [searchCity, filterType, filterFinalidade, minPrice, maxPrice, minQuartos, minVagas, properties]);
+    return result;
+  }, [properties, debouncedSearch, filterType, filterFinalidade, minPrice, maxPrice, minQuartos, minVagas]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-500">
       <Header />
 
       {/* --- HERO SECTION --- */}
-      {/* AJUSTE MOBILE: pt-20 pb-10 (reduz espaço) vs md:py-48 */}
       <div className="relative bg-blue-900 pt-20 pb-10 md:py-48 px-4 sm:px-6 lg:px-8 flex items-center justify-center transition-colors">
         <div className="absolute inset-0 z-0 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop"
             alt="Casa moderna"
@@ -178,7 +193,6 @@ export default function Home() {
           <span className="inline-block py-1 px-3 rounded-full bg-blue-800/50 border border-blue-400/30 text-blue-200 text-sm font-semibold mb-4 md:mb-6 backdrop-blur-sm">
             Excelência em Mercado Imobiliário
           </span>
-          {/* AJUSTE MOBILE: mb-4 para aproximar a busca */}
           <h1 className="text-3xl md:text-6xl font-extrabold text-white mb-4 md:mb-8 tracking-tight leading-tight drop-shadow-lg">
             Encontre o lugar onde <br className="hidden md:block" />
             sua vida acontece.
@@ -211,7 +225,7 @@ export default function Home() {
                   value={filterFinalidade}
                   onChange={(e) => setFilterFinalidade(e.target.value)}
                 >
-                  <option value="Todos">Todos</option>
+                  <option value="Todos">Pretensão</option>
                   {FINALIDADES.map(f => (
                     <option key={f} value={f}>{f}</option>
                   ))}
@@ -237,7 +251,7 @@ export default function Home() {
                     </optgroup>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-4 top-4 text-gray-400 pointer-events-none" size={16} />
+                <ChevronDown className="absolute right-1.5 top-4 text-gray-400 pointer-events-none" size={16} />
               </div>
 
               <button
@@ -493,7 +507,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- SEÇÃO 6: FALE CONOSCO (Completo) --- */}
+      {/* --- SEÇÃO 5: FALE CONOSCO (Completo) --- */}
       <section className="bg-gray-100 dark:bg-gray-800/80 py-16 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Fale Conosco</h2>

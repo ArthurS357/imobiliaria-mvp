@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image"; // OTIMIZAÇÃO: Importação do componente Image
 import { MapPin, Bed, Car, Ruler, Bath, Heart } from "lucide-react";
 import { getWatermarkedImage } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -76,13 +77,17 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
       {/* --- IMAGEM E BADGES --- */}
       <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-200 dark:bg-gray-700">
-        <Link href={`/imoveis/${property.id}`}>
+        <Link href={`/imoveis/${property.id}`} className="block w-full h-full relative">
           {capa ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            // OTIMIZAÇÃO: Uso de next/image com 'fill' para cobrir o container pai
+            // O 'sizes' ajuda o navegador a baixar a imagem no tamanho correto para cada dispositivo
+            <Image
               src={capa}
               alt={property.titulo}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              priority={false} // Lazy loading é o padrão, mas deixamos explícito
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -90,11 +95,12 @@ export function PropertyCard({ property }: PropertyCardProps) {
             </div>
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
         </Link>
 
         {/* Badge de Tipo e Status */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2 items-start z-10">
+        {/* Adicionado z-20 e pointer-events-none para não bloquear o clique na imagem se necessário, exceto o badge */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2 items-start z-20 pointer-events-none">
           <span className="bg-blue-900/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide shadow-sm">
             {property.tipo}
           </span>
@@ -109,7 +115,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </div>
 
         {/* Badge de Finalidade */}
-        <div className="absolute top-3 right-3 z-10">
+        <div className="absolute top-3 right-3 z-20 pointer-events-none">
           {isDual ? (
             <span className="bg-gradient-to-r from-blue-600 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm">
               Venda & Locação
@@ -123,15 +129,16 @@ export function PropertyCard({ property }: PropertyCardProps) {
           )}
         </div>
 
-        {/* --- BOTÃO DE FAVORITO (NOVO) --- */}
+        {/* --- BOTÃO DE FAVORITO --- */}
         <button
           onClick={toggleFavorite}
-          className={`absolute bottom-3 right-3 p-2 rounded-full shadow-lg transition-all duration-300 z-20 hover:scale-110
+          className={`absolute bottom-3 right-3 p-2 rounded-full shadow-lg transition-all duration-300 z-30 hover:scale-110
             ${isFavorite
               ? 'bg-red-500 text-white hover:bg-red-600'
               : 'bg-white/90 text-gray-400 hover:text-red-500 hover:bg-white'}
           `}
           title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
         >
           <Heart size={18} className={isFavorite ? "fill-current" : ""} />
         </button>
@@ -139,7 +146,8 @@ export function PropertyCard({ property }: PropertyCardProps) {
       </div>
 
       {/* --- CONTEÚDO --- */}
-      <div className="p-5 flex flex-col flex-grow">
+      {/* Adicionado relative e z-0 para garantir contexto de empilhamento */}
+      <div className="p-5 flex flex-col flex-grow relative z-0">
         <div className="mb-4">
           <Link href={`/imoveis/${property.id}`} className="block">
             <h3 className="text-lg font-bold text-gray-800 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -209,7 +217,8 @@ export function PropertyCard({ property }: PropertyCardProps) {
         </div>
 
         {/* Botão de Ver Detalhes (Slide Up) */}
-        <div className="absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-700">
+        {/* Adicionado z-30 para garantir que sobreponha tudo ao aparecer */}
+        <div className="absolute bottom-0 left-0 w-full p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-700 z-30">
           <Link
             href={`/imoveis/${property.id}`}
             className="block w-full py-2.5 bg-blue-900 hover:bg-blue-800 text-white text-center rounded-lg font-bold text-sm transition shadow-lg"
