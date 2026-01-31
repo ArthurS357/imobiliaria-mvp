@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-    // Garante que a URL do sitemap esteja correta em produção e desenvolvimento
+    // Usa variável de ambiente pública ou fallback para o domínio final
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.matielloimoveis.com.br';
 
     return {
@@ -11,9 +11,9 @@ export default function robots(): MetadataRoute.Robots {
             disallow: [
                 '/admin/',      // Painel administrativo
                 '/api/',        // Rotas de API
-                '/private/',    // Rotas privadas
-                '/_next/',      // Arquivos internos do build do Next.js
-                '/favoritos',   // Páginas específicas do usuário não devem ser indexadas
+                '/private/',    // Rotas internas/privadas
+                '/_next/',      // Arquivos de build do Next.js (não precisam ser indexados)
+                '/favoritos',   // Páginas específicas de usuário
                 '/perfil',
             ],
         },
