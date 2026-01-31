@@ -6,7 +6,7 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { MortgageCalculator } from "@/components/MortgageCalculator";
 import { VisitScheduler } from "@/components/VisitScheduler";
 import {
-    MapPin, Bed, Bath, Car, Maximize, ArrowLeft, MessageCircle, Calendar,
+    MapPin, Bed, Bath, Car, Maximize, ArrowLeft, Calendar,
     ArrowRight, CheckCircle2, Ruler, Building, Shield, Tag, LockKeyhole,
     ChevronLeft, ChevronRight, Heart
 } from "lucide-react";
@@ -14,6 +14,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getWatermarkedImage } from "@/lib/utils";
+
+// Ícone do WhatsApp Inline Otimizado (SVG) - Consistente com Home e Contato
+const WhatsAppIcon = ({ size = 24, className = "" }: { size?: number, className?: string }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        fill="currentColor"
+        viewBox="0 0 16 16"
+        className={className}
+        role="img"
+        aria-label="WhatsApp Logo"
+    >
+        <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
+    </svg>
+);
 
 // Carregamento dinâmico do Mapa para performance
 const MapClient = dynamic(() => import("@/components/Map"), {
@@ -39,7 +55,7 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
     // ARRAY DE FOTOS
     const fotos = property.fotos ? property.fotos.split(";") : [];
 
-    // ESTADO: Controla o índice da foto (0, 1, 2...) em vez da string url
+    // ESTADO: Controla o índice da foto (0, 1, 2...)
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     // FUNÇÕES DE NAVEGAÇÃO
@@ -57,7 +73,7 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
     const rawImage = fotos[currentImageIndex] || "";
     const displayImage = getWatermarkedImage(rawImage) || rawImage;
 
-    // --- LÓGICA DE FAVORITOS (NOVO) ---
+    // --- LÓGICA DE FAVORITOS ---
     const [isFavorite, setIsFavorite] = useState(false);
 
     useEffect(() => {
@@ -424,8 +440,9 @@ export function PropertyDetailsClient({ property, relatedProperties }: PropertyC
 
                             {/* Botão de Contato */}
                             <div className="space-y-4">
+                                {/* Substituição: MessageCircle -> WhatsAppIcon */}
                                 <a href={`https://wa.me/5511946009103?text=${mensagemZap}`} target="_blank" className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                                    <MessageCircle size={22} /> Conversar no WhatsApp
+                                    <WhatsAppIcon size={24} /> Conversar no WhatsApp
                                 </a>
 
                                 <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mt-6">

@@ -13,7 +13,6 @@ export function Header() {
 
     const isActive = (path: string) => pathname === path;
 
-    // ESTILO FIXO: Sempre Escuro (Dark Mode style)
     const navLinkClass = (path: string) => `
     text-sm font-medium transition-colors flex items-center gap-2
     ${isActive(path)
@@ -28,59 +27,48 @@ export function Header() {
             : 'text-gray-300 hover:bg-gray-800'}
   `;
 
-    const logoSrc = '/logo.png';
+    // LOGOS DISTINTAS
+    const logoDesktopSrc = '/logo.png';
+    const logoMobileSrc = '/logo2.png'; // Certifique-se de salvar este arquivo em /public
 
     return (
         <>
-            {/* HEADER CONTAINER: Fundo sempre escuro */}
+            {/* HEADER CONTAINER */}
             <header className="sticky top-0 z-50 w-full bg-gray-900/95 backdrop-blur-md border-b border-gray-800 shadow-sm transition-colors duration-300">
-                {/* w-full para tocar as bordas da tela */}
                 <div className="w-full px-4 sm:px-8 lg:px-12">
-
-                    {/* Container Flex com posição relativa para a Nav absoluta */}
                     <div className="flex justify-between items-center h-24 relative">
 
                         {/* --- LADO ESQUERDO: LOGO --- */}
-                        {/* Adicionado 'flex-1' para garantir que ele ocupe espaço mas respeite os vizinhos */}
                         <div className="flex-shrink-0 z-50 flex items-center">
                             <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
 
-                                {/* --- LOGO DESKTOP (Telas Médias e Grandes) --- */}
+                                {/* --- LOGO DESKTOP (Usa a logo original larga) --- */}
                                 <div className="hidden md:block">
                                     <Image
-                                        src={logoSrc}
-                                        alt="Logo Imobiliária"
+                                        src={logoDesktopSrc}
+                                        alt="Matiello Imóveis"
                                         width={210}
                                         height={60}
                                         className="object-contain"
                                         priority
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                            const parent = e.currentTarget.parentElement;
-                                            if (parent) {
-                                                parent.innerHTML = '<span class="text-2xl font-extrabold text-white tracking-tight flex items-center gap-1"><svg class="text-[#eaca42]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> MATIELLO<span class="text-[#eaca42]">IMÓVEIS</span></span>';
-                                            }
-                                        }}
                                     />
                                 </div>
 
-                                {/* --- LOGO MOBILE (Telas Pequenas - AJUSTADA) --- */}
-                                {/* - h-28 w-80: Tamanho grande solicitado.
-                                    - ml-6: Afastado mais da borda esquerda.
-                                    - max-w-[70%]: Impede que a logo cresça tanto a ponto de empurrar o menu para fora da tela.
-                                */}
-                                <div className="md:hidden relative h-28 w-80 max-w-[70%] ml-6 flex items-center">
+                                {/* --- LOGO MOBILE (Usa a nova logo2.png) --- */}
+                                {/* Container limpo, sem escalas ou margens negativas. 
+                                    Ajuste 'w-48' se precisar de mais largura, mas h-16 mantém a altura segura no header. */}
+                                <div className="md:hidden relative h-16 w-48 flex items-center">
                                     <Image
-                                        src={logoSrc}
-                                        alt="Logo"
+                                        src={logoMobileSrc}
+                                        alt="Matiello Imóveis"
                                         fill
-                                        className="object-contain object-left scale-150 origin-left" // Escala grande alinhada à esquerda
+                                        className="object-contain object-left"
                                         priority
                                         onError={(e) => {
+                                            // Fallback caso a logo2.png ainda não exista
                                             e.currentTarget.style.display = 'none';
                                             const parent = e.currentTarget.parentElement;
                                             if (parent) {
-                                                parent.className = "flex items-center pl-6";
                                                 parent.innerHTML = '<span class="text-xl font-bold text-white">MATIELLO<span class="text-[#eaca42]">IMÓVEIS</span></span>';
                                             }
                                         }}
@@ -128,13 +116,13 @@ export function Header() {
                             </Link>
                         </div>
 
-                        {/* --- BOTÃO MENU MOBILE (Hambúrguer) --- */}
-                        {/* ml-auto garante que ele vá para a direita, z-50 garante que fique sobrepondo se necessário */}
-                        <div className="md:hidden flex items-center gap-4 z-50 ml-auto pl-2">
+                        {/* --- BOTÃO MENU MOBILE --- */}
+                        <div className="md:hidden flex items-center gap-3 z-50 ml-auto pl-2">
                             <ThemeToggle />
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 className="p-2 text-gray-200 hover:bg-gray-800 rounded-lg focus:outline-none transition-colors"
+                                aria-label="Menu"
                             >
                                 {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
                             </button>
@@ -144,7 +132,7 @@ export function Header() {
                 </div>
             </header>
 
-            {/* MENU MOBILE */}
+            {/* MENU MOBILE EXPANDIDO */}
             {isMobileMenuOpen && (
                 <div className="fixed inset-0 top-20 z-40 bg-gray-900 md:hidden overflow-y-auto animate-fade-in pb-20 border-t border-gray-800">
                     <div className="p-4 space-y-2">

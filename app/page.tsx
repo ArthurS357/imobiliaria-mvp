@@ -4,10 +4,26 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
-import { Search, Filter, MessageCircle, ArrowRight, ChevronDown, ChevronUp, Bed, Car, DollarSign, Key, Handshake, ShieldCheck, Mail, MapPin, Users, Award, TrendingUp, Home as HomeIcon } from "lucide-react";
+import { Search, Filter, ArrowRight, ChevronDown, ChevronUp, Bed, Car, DollarSign, Key, Handshake, ShieldCheck, Mail, MapPin, Users, Award, TrendingUp, Home as HomeIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FINALIDADES, PROPERTY_TYPES_CATEGORIZED } from "@/lib/constants";
+
+// Ícone do WhatsApp Inline Otimizado (SVG)
+const WhatsAppIcon = ({ size = 24, className = "" }: { size?: number, className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    fill="currentColor"
+    viewBox="0 0 16 16"
+    className={className}
+    role="img"
+    aria-label="WhatsApp Logo"
+  >
+    <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" />
+  </svg>
+);
 
 interface Property {
   id: string;
@@ -111,7 +127,6 @@ export default function Home() {
     }
 
     if (filterFinalidade !== "Todos") {
-      // "Venda" encontra "Venda" e "Venda e Locação"
       result = result.filter(p =>
         p.finalidade.toLowerCase().includes(filterFinalidade.toLowerCase())
       );
@@ -148,7 +163,8 @@ export default function Home() {
       <Header />
 
       {/* --- HERO SECTION --- */}
-      <div className="relative bg-blue-900 py-32 md:py-48 px-4 sm:px-6 lg:px-8 flex items-center justify-center transition-colors">
+      {/* AJUSTE MOBILE: pt-20 pb-10 (reduz espaço) vs md:py-48 */}
+      <div className="relative bg-blue-900 pt-20 pb-10 md:py-48 px-4 sm:px-6 lg:px-8 flex items-center justify-center transition-colors">
         <div className="absolute inset-0 z-0 overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop"
@@ -159,10 +175,11 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 max-w-5xl w-full mx-auto text-center animate-enter">
-          <span className="inline-block py-1 px-3 rounded-full bg-blue-800/50 border border-blue-400/30 text-blue-200 text-sm font-semibold mb-6 backdrop-blur-sm">
+          <span className="inline-block py-1 px-3 rounded-full bg-blue-800/50 border border-blue-400/30 text-blue-200 text-sm font-semibold mb-4 md:mb-6 backdrop-blur-sm">
             Excelência em Mercado Imobiliário
           </span>
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-8 tracking-tight leading-tight drop-shadow-lg">
+          {/* AJUSTE MOBILE: mb-4 para aproximar a busca */}
+          <h1 className="text-3xl md:text-6xl font-extrabold text-white mb-4 md:mb-8 tracking-tight leading-tight drop-shadow-lg">
             Encontre o lugar onde <br className="hidden md:block" />
             sua vida acontece.
           </h1>
@@ -212,7 +229,6 @@ export default function Home() {
                   onChange={(e) => setFilterType(e.target.value)}
                 >
                   <option value="Todos">Todos os Tipos</option>
-                  {/* Mapeamento dos tipos categorizados */}
                   {PROPERTY_TYPES_CATEGORIZED.map((group) => (
                     <optgroup key={group.label} label={group.label} className="dark:bg-gray-800 font-bold text-gray-900 dark:text-gray-200">
                       {group.types.map((type) => (
@@ -240,7 +256,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* CAIXA DE FILTROS AVANÇADOS (Controlada por showAdvanced) */}
             {showAdvanced && (
               <div className="bg-gray-50 dark:bg-gray-900 mt-2 p-4 rounded-lg grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 animate-enter border border-gray-200 dark:border-gray-700">
                 <div>
@@ -468,6 +483,8 @@ export default function Home() {
               href="https://wa.me/5511946009103"
               target="_blank"
               className="inline-flex items-center gap-2 bg-white text-blue-900 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 transition shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+              title="Anunciar via WhatsApp"
+              aria-label="Anunciar imóvel via WhatsApp"
             >
               <HomeIcon size={20} />
               Anunciar meu Imóvel
@@ -476,7 +493,31 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- SEÇÃO 5: FALE CONOSCO --- */}
+      {/* --- SEÇÃO 5: DEPOIMENTOS (Placeholder) --- */}
+      <section className="bg-white dark:bg-gray-900 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">O que dizem nossos clientes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-gray-50 dark:bg-gray-800 p-6 rounded-2xl relative">
+                <div className="text-blue-200 absolute top-4 left-4 text-6xl font-serif opacity-20">“</div>
+                <p className="text-gray-600 dark:text-gray-300 italic mb-4 relative z-10">
+                  "Excelente atendimento desde o primeiro contato. Encontrei o imóvel que queria com agilidade e todo suporte jurídico necessário."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">C{i}</div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">Cliente Satisfeito</p>
+                    <p className="text-xs text-gray-500">Comprador</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- SEÇÃO 6: FALE CONOSCO (Completo) --- */}
       <section className="bg-gray-100 dark:bg-gray-800/80 py-16 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Fale Conosco</h2>
@@ -485,45 +526,49 @@ export default function Home() {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* CARD 1: WHATSAPP - ÍCONE OFICIAL */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <MessageCircle className="text-green-600 dark:text-green-400" size={32} />
+                <WhatsAppIcon className="text-green-600 dark:text-green-400" size={32} />
               </div>
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">WhatsApp</h3>
               <p className="text-gray-500 mb-4">(11) 94600-9103</p>
-              <a href="https://wa.me/5511946009103" target="_blank" className="text-blue-600 font-bold hover:underline">Iniciar Conversa</a>
+              <a href="https://wa.me/5511946009103" target="_blank" className="text-blue-600 font-bold hover:underline" aria-label="Iniciar conversa no WhatsApp">Iniciar Conversa</a>
             </div>
 
+            {/* CARD 2: E-MAIL */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
               <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <Mail className="text-blue-600 dark:text-blue-400" size={32} />
               </div>
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">E-mail</h3>
               <p className="text-gray-500 mb-4">contato@matielloimoveis.com.br</p>
-              <a href="mailto:contato@matielloimoveis.com.br" className="text-blue-600 font-bold hover:underline">Enviar E-mail</a>
+              <a href="mailto:contato@matielloimoveis.com.br" className="text-blue-600 font-bold hover:underline" aria-label="Enviar e-mail">Enviar E-mail</a>
             </div>
 
+            {/* CARD 3: VISITE-NOS */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition group">
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <MapPin className="text-red-600 dark:text-red-400" size={32} />
               </div>
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Visite-nos</h3>
               <p className="text-gray-500 mb-4">São Paulo, SP</p>
-              <Link href="/contato" className="text-blue-600 font-bold hover:underline">Ver no Mapa</Link>
+              <Link href="/contato" className="text-blue-600 font-bold hover:underline" aria-label="Ver localização no mapa">Ver no Mapa</Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Botão Flutuante */}
+      {/* Botão Flutuante - ÍCONE OFICIAL */}
       <a
         href="https://wa.me/5511946009103"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-all hover:scale-110 z-50 flex items-center justify-center hover:shadow-green-500/30"
         title="Falar com Corretor"
+        aria-label="Falar com Corretor no WhatsApp"
       >
-        <MessageCircle size={28} />
+        <WhatsAppIcon size={28} />
       </a>
 
       <Footer />
