@@ -217,15 +217,15 @@ export default function Home() {
               <div className="hidden md:block w-px bg-gray-200 dark:bg-gray-700 my-2"></div>
 
               <div className="w-full md:w-40 relative group">
-                <div className="absolute left-3 top-3.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">
-                  MODO
+                <div className="absolute left-3 top-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider pointer-events-none">
+                  PRETENSÃO
                 </div>
                 <select
                   className="w-full pl-3 pr-8 pt-6 pb-1 rounded-md bg-transparent focus:outline-none text-gray-800 dark:text-gray-100 appearance-none cursor-pointer dark:bg-gray-800 font-medium text-sm h-full"
                   value={filterFinalidade}
                   onChange={(e) => setFilterFinalidade(e.target.value)}
                 >
-                  <option value="Todos">Pretensão</option>
+                  <option value="Todos">Tipo</option>
                   {FINALIDADES.map(f => (
                     <option key={f} value={f}>{f}</option>
                   ))}
