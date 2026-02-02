@@ -225,7 +225,7 @@ export default function Home() {
                   value={filterFinalidade}
                   onChange={(e) => setFilterFinalidade(e.target.value)}
                 >
-                  <option value="Todos">Tipo</option>
+                  <option value="Todos">Todos</option>
                   {FINALIDADES.map(f => (
                     <option key={f} value={f}>{f}</option>
                   ))}

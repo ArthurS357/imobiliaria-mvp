@@ -30,29 +30,41 @@ interface PropertyCardProps {
 export function PropertyCard({ property }: PropertyCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Verifica se já é favorito ao carregar (Lógica simples com localStorage)
+  // Constante para garantir que usamos a mesma chave em todo o app
+  const FAVORITES_KEY = 'mvp_favorites';
+
+  // Verifica se já é favorito ao carregar
   useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    if (favorites.includes(property.id)) {
-      setIsFavorite(true);
-    }
-  }, [property.id]);
+    // Lê a lista de objetos
+    const favorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+
+    // Verifica se algum item na lista tem o ID igual ao deste imóvel
+    const isSaved = favorites.some((fav: any) => fav.id === property.id);
+
+    setIsFavorite(isSaved);
+  }, [property.id, FAVORITES_KEY]);
 
   const toggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault(); // Evita navegar ao clicar no coração
     e.stopPropagation();
 
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const favorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
     let newFavorites;
 
-    if (isFavorite) {
-      newFavorites = favorites.filter((id: string) => id !== property.id);
+    // Verifica se já existe na lista
+    const exists = favorites.some((fav: any) => fav.id === property.id);
+
+    if (exists) {
+      // REMOVER: Filtra mantendo apenas os que têm ID diferente
+      newFavorites = favorites.filter((fav: any) => fav.id !== property.id);
+      setIsFavorite(false);
     } else {
-      newFavorites = [...favorites, property.id];
+      // ADICIONAR: Salva o objeto property COMPLETO
+      newFavorites = [...favorites, property];
+      setIsFavorite(true);
     }
 
-    localStorage.setItem('favorites', JSON.stringify(newFavorites));
-    setIsFavorite(!isFavorite);
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
   };
 
   const capaOriginal = property.fotos ? property.fotos.split(";")[0] : null;
