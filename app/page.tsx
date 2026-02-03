@@ -230,7 +230,7 @@ export default function Home() {
                     <option key={f} value={f}>{f}</option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-4 text-gray-400 pointer-events-none" size={16} />
+                <ChevronDown className="absolute right-1.5 top-4 text-gray-400 pointer-events-none" size={16} />
               </div>
 
               <div className="hidden md:block w-px bg-gray-200 dark:bg-gray-700 my-2"></div>
