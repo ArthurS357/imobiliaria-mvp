@@ -2,36 +2,33 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, MapPin, Edit, Eye, ArrowLeft, Printer, X, Bed, Car, Ruler } from "lucide-react";
+import { Plus, Search, MapPin, Edit, Eye, ArrowLeft, Printer, X, Bed, Car, Ruler, Star } from "lucide-react";
 import { DeletePropertyButton } from "@/components/admin/DeletePropertyButton";
 import { CopySalesTextButton } from "@/components/admin/CopySalesTextButton";
+import { toast, Toaster } from "react-hot-toast"; // Importação do Toast
 
-// INTERFACE ATUALIZADA: Suporte aos novos campos
+// INTERFACE ATUALIZADA
 interface Property {
   id: string;
   titulo: string;
   preco: number;
-  precoLocacao?: number; // NOVO: Campo para valor de locação
-  tipoValor?: string;    // NOVO
+  precoLocacao?: number;
+  tipoValor?: string;
   cidade: string;
   bairro: string;
   status: string;
+  destaque: boolean; // NOVO: Campo destaque
   fotos: string | null;
-  // Campos físicos
   quarto: number;
   suites: number;
   banheiro: number;
   garagem: number;
   area: number;
   finalidade: string;
-
-  // Objeto do corretor
   corretor: {
     name: string;
     creci: string | null;
   };
-
-  // Campos opcionais úteis para o copy
   vagasCobertas?: number;
   vagasDescobertas?: number;
   condicaoImovel?: string;
@@ -55,9 +52,13 @@ export default function AdminPropertiesPage() {
       if (res.ok) {
         const data = await res.json();
         setProperties(data);
+        // toast.success("Imóveis carregados com sucesso!"); // Opcional: Toast de sucesso no carregamento
+      } else {
+        toast.error("Erro ao carregar a lista de imóveis.");
       }
     } catch (error) {
       console.error("Erro ao buscar imóveis:", error);
+      toast.error("Erro de conexão ao buscar imóveis.");
     } finally {
       setLoading(false);
     }
@@ -70,6 +71,11 @@ export default function AdminPropertiesPage() {
       property.cidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.bairro.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.corretor.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Filtro especial para destaque
+    if (statusFilter === "DESTAQUE") {
+      return matchesSearch && property.destaque;
+    }
 
     const matchesStatus = statusFilter === "TODOS" || property.status === statusFilter;
 
@@ -90,6 +96,9 @@ export default function AdminPropertiesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
+      {/* Componente Toaster para exibir as notificações */}
+      <Toaster position="top-right" reverseOrder={false} />
+
       <div className="max-w-7xl mx-auto">
 
         {/* Cabeçalho */}
@@ -135,16 +144,17 @@ export default function AdminPropertiesPage() {
 
           {/* Filtros de Status */}
           <div className="flex gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-            {["TODOS", "DISPONIVEL", "VENDIDO", "PENDENTE"].map((status) => (
+            {["TODOS", "DISPONIVEL", "VENDIDO", "PENDENTE", "DESTAQUE"].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap border ${statusFilter === status
-                  ? "bg-blue-900 text-white border-blue-900 dark:bg-blue-600 dark:border-blue-600"
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap border flex items-center gap-1 ${statusFilter === status
+                  ? "bg-blue-900 text-white border-blue-900 dark:bg-blue-600 dark:border-blue-600 shadow-md"
                   : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
               >
-                {status === "TODOS" ? "Todos" : status}
+                {status === "DESTAQUE" && <Star size={12} className="fill-current" />}
+                {status === "TODOS" ? "Todos" : status.charAt(0) + status.slice(1).toLowerCase()}
               </button>
             ))}
           </div>
@@ -180,13 +190,11 @@ export default function AdminPropertiesPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                     {filteredProperties.map((property) => {
-                      // Lógica local para saber se é Venda + Locação
-                      // Considera se a string finalidade tem ambos ou se ambos os preços existem
                       const isDual = (property.finalidade?.includes("Venda") && property.finalidade?.includes("Locação")) ||
                         ((property.precoLocacao || 0) > 0 && property.preco > 0);
 
                       return (
-                        <tr key={property.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition group">
+                        <tr key={property.id} className={`hover:bg-gray-50 dark:hover:bg-gray-750 transition group ${property.destaque ? 'bg-yellow-50/30 dark:bg-yellow-900/10' : ''}`}>
 
                           {/* Coluna 1: Foto, Título e Detalhes */}
                           <td className="p-4">
@@ -199,7 +207,12 @@ export default function AdminPropertiesPage() {
                                 )}
                               </div>
                               <div>
-                                <p className="font-bold text-gray-800 dark:text-gray-200 line-clamp-1 text-base">{property.titulo}</p>
+                                <div className="flex items-center gap-2">
+                                  {property.destaque && (
+                                    <Star size={14} className="fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                                  )}
+                                  <p className="font-bold text-gray-800 dark:text-gray-200 line-clamp-1 text-base">{property.titulo}</p>
+                                </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5 mb-2">
                                   <MapPin size={12} /> {property.bairro}, {property.cidade}
                                 </p>
@@ -220,37 +233,23 @@ export default function AdminPropertiesPage() {
                             </div>
                           </td>
 
-                          {/* Coluna 2: Preço e Finalidade (AJUSTADO PARA CONTRASTE) */}
+                          {/* Coluna 2: Preço e Finalidade */}
                           <td className="p-4 whitespace-nowrap align-top pt-5">
                             {isDual ? (
                               <div className="flex flex-col gap-1">
-                                {/* Venda */}
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px] font-bold text-blue-700 bg-blue-100 dark:bg-blue-900/40 px-1.5 rounded">VEN</span>
-                                  <span className="text-sm font-bold text-gray-900 dark:text-white transition-colors group-hover:text-blue-900 dark:group-hover:text-blue-300">
-                                    {formatMoney(property.preco)}
-                                  </span>
+                                  <span className="text-sm font-bold text-gray-900 dark:text-white">{formatMoney(property.preco)}</span>
                                 </div>
-                                {/* Locação */}
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px] font-bold text-orange-700 bg-orange-100 dark:bg-orange-900/40 px-1.5 rounded">LOC</span>
-                                  <span className="text-sm font-bold text-gray-900 dark:text-white transition-colors group-hover:text-orange-900 dark:group-hover:text-orange-300">
-                                    {formatMoney(property.precoLocacao || 0)}
-                                  </span>
+                                  <span className="text-sm font-bold text-gray-900 dark:text-white">{formatMoney(property.precoLocacao || 0)}</span>
                                 </div>
                               </div>
                             ) : (
                               <div className="flex flex-col">
-                                {/* Valor Único */}
-                                <span className="text-sm font-bold text-gray-900 dark:text-white transition-colors group-hover:text-blue-900 dark:group-hover:text-blue-300">
-                                  {formatMoney(property.preco)}
-                                </span>
-                                {/* Finalidade Badge */}
-                                <span className={`text-[10px] font-bold uppercase w-fit px-2 py-0.5 rounded mt-1 border transition-all
-        ${property.finalidade?.includes('Locação')
-                                    ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800'
-                                    : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
-                                  }`}>
+                                <span className="text-sm font-bold text-gray-900 dark:text-white">{formatMoney(property.preco)}</span>
+                                <span className={`text-[10px] font-bold uppercase w-fit px-2 py-0.5 rounded mt-1 border transition-all ${property.finalidade?.includes('Locação') ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800' : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'}`}>
                                   {property.finalidade}
                                 </span>
                               </div>
@@ -260,11 +259,11 @@ export default function AdminPropertiesPage() {
                           {/* Coluna 3: Status */}
                           <td className="p-4">
                             <span className={`text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wide border
-                              ${property.status === 'DISPONIVEL' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' : ''}
-                              ${property.status === 'PENDENTE' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800' : ''}
-                              ${property.status === 'VENDIDO' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' : ''}
-                              ${property.status === 'RESERVADO' ? 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' : ''}
-                              `}>
+                                                            ${property.status === 'DISPONIVEL' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' : ''}
+                                                            ${property.status === 'PENDENTE' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800' : ''}
+                                                            ${property.status === 'VENDIDO' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' : ''}
+                                                            ${property.status === 'RESERVADO' ? 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' : ''}
+                                                        `}>
                               {property.status}
                             </span>
                           </td>
@@ -273,11 +272,11 @@ export default function AdminPropertiesPage() {
                           <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center text-xs font-bold border border-blue-200 dark:border-blue-800">
-                                {property.corretor.name.charAt(0)}
+                                {property.corretor?.name?.charAt(0) || "?"}
                               </div>
                               <div>
-                                <span className="block font-medium line-clamp-1">{property.corretor.name}</span>
-                                {property.corretor.creci && (
+                                <span className="block font-medium line-clamp-1">{property.corretor?.name || "Desconhecido"}</span>
+                                {property.corretor?.creci && (
                                   <span className="text-[10px] text-gray-400 dark:text-gray-500 block">
                                     CRECI: {property.corretor.creci}
                                   </span>
@@ -290,13 +289,7 @@ export default function AdminPropertiesPage() {
                           <td className="p-4 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <CopySalesTextButton property={property} />
-
-                              <Link
-                                href={`/imoveis/${property.id}/print`}
-                                target="_blank"
-                                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
-                                title="Imprimir Ficha (PDF)"
-                              >
+                              <Link href={`/imoveis/${property.id}/print`} target="_blank" className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition" title="Imprimir Ficha (PDF)">
                                 <Printer size={18} />
                               </Link>
                               {property.status === 'DISPONIVEL' && (
@@ -310,7 +303,6 @@ export default function AdminPropertiesPage() {
                               <DeletePropertyButton id={property.id} />
                             </div>
                           </td>
-
                         </tr>
                       );
                     })}
