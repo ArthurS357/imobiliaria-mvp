@@ -16,8 +16,13 @@ import {
     UserCircle,
     Mail,
     Lock,
-    FileText
+    FileText,
+    Eye,
+    EyeOff,
+    Copy,
+    Filter
 } from "lucide-react";
+import { toast, Toaster } from "react-hot-toast"; // 1. Importação do Toast
 
 interface User {
     id: string;
@@ -31,21 +36,21 @@ export default function UserManagementPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Estado da Busca
+    // Estado da Busca e Filtros
     const [searchTerm, setSearchTerm] = useState("");
+    const [roleFilter, setRoleFilter] = useState("TODOS"); // 2. Novo filtro de cargo
 
     // Estados para criação e edição
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showPassword, setShowPassword] = useState(false); // 3. Toggle senha
 
     // Estados do formulário de criação
     const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "FUNCIONARIO", creci: "" });
 
-    // Estados de Loading (Feedback visual)
     const [creating, setCreating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Busca usuários
     useEffect(() => {
         fetchUsers();
     }, []);
@@ -55,21 +60,34 @@ export default function UserManagementPage() {
             const res = await fetch("/api/admin/users");
             if (res.ok) {
                 const data = await res.json();
-                setUsers(data);
+                // 5. Ordenação alfabética simples
+                setUsers(data.sort((a: User, b: User) => a.name.localeCompare(b.name)));
             }
         } catch (error) {
             console.error(error);
+            toast.error("Erro ao carregar usuários.");
         } finally {
             setLoading(false);
         }
     };
 
-    // Lógica de Filtro
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.creci && user.creci.includes(searchTerm))
-    );
+    // Lógica de Filtro Aprimorada
+    const filteredUsers = users.filter(user => {
+        const matchesSearch =
+            user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (user.creci && user.creci.includes(searchTerm));
+
+        const matchesRole = roleFilter === "TODOS" || user.role === roleFilter;
+
+        return matchesSearch && matchesRole;
+    });
+
+    // 4. Função Helper para Copiar
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success("Copiado para área de transferência!");
+    };
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -86,33 +104,39 @@ export default function UserManagementPage() {
 
             if (res.ok) {
                 if (data.emailSent) {
-                    alert(`Usuário ${data.user.name} criado e credenciais enviadas por e-mail!`);
+                    toast.success(`Usuário ${data.user.name} criado! Email enviado.`);
                 } else {
-                    alert(`Usuário criado, mas houve um erro ao enviar o e-mail. Por favor, envie a senha manualmente.`);
+                    toast.success(`Usuário criado! (Email não enviado, verifique logs)`);
                 }
 
                 setShowCreateModal(false);
                 setNewUser({ name: "", email: "", password: "", role: "FUNCIONARIO", creci: "" });
                 fetchUsers();
             } else {
-                alert(data.error || "Erro ao criar usuário.");
+                toast.error(data.error || "Erro ao criar usuário.");
             }
         } catch (error) {
-            alert("Erro de conexão com o servidor.");
+            toast.error("Erro de conexão com o servidor.");
         } finally {
             setCreating(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Tem certeza que deseja excluir este usuário? Essa ação não pode ser desfeita.")) return;
+        if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
 
-        const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
-        if (res.ok) {
-            fetchUsers();
-        } else {
-            const err = await res.json();
-            alert(err.error || "Erro ao excluir");
+        const toastId = toast.loading("Excluindo...");
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+            if (res.ok) {
+                toast.success("Usuário excluído com sucesso!", { id: toastId });
+                fetchUsers();
+            } else {
+                const err = await res.json();
+                toast.error(err.error || "Erro ao excluir", { id: toastId });
+            }
+        } catch (error) {
+            toast.error("Erro de conexão", { id: toastId });
         }
     };
 
@@ -121,6 +145,7 @@ export default function UserManagementPage() {
         if (!editingUser) return;
 
         setIsSaving(true);
+        const toastId = toast.loading("Salvando alterações...");
 
         try {
             const res = await fetch(`/api/admin/users/${editingUser.id}`, {
@@ -130,14 +155,15 @@ export default function UserManagementPage() {
             });
 
             if (res.ok) {
+                toast.success("Usuário atualizado!", { id: toastId });
                 setEditingUser(null);
                 fetchUsers();
             } else {
                 const err = await res.json();
-                alert(err.error || "Erro ao atualizar");
+                toast.error(err.error || "Erro ao atualizar", { id: toastId });
             }
         } catch (error) {
-            alert("Erro de conexão");
+            toast.error("Erro de conexão", { id: toastId });
         } finally {
             setIsSaving(false);
         }
@@ -151,6 +177,7 @@ export default function UserManagementPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
+            <Toaster position="top-right" />
             <div className="max-w-6xl mx-auto">
 
                 {/* CABEÇALHO */}
@@ -172,9 +199,11 @@ export default function UserManagementPage() {
                     </div>
                 </div>
 
-                {/* BARRA DE FERRAMENTAS (BUSCA) */}
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors">
-                    <div className="relative w-full sm:max-w-md">
+                {/* BARRA DE FERRAMENTAS */}
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center transition-colors">
+
+                    {/* Busca */}
+                    <div className="relative w-full md:max-w-md">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Search className="h-5 w-5 text-gray-400" />
                         </div>
@@ -186,8 +215,24 @@ export default function UserManagementPage() {
                             className="pl-10 w-full p-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                         />
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                        Total: {users.length} usuário(s)
+
+                    {/* Filtros e Contador */}
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-1 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <Filter size={16} className="ml-2 text-gray-500" />
+                            <select
+                                value={roleFilter}
+                                onChange={(e) => setRoleFilter(e.target.value)}
+                                className="bg-transparent border-none text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-0 cursor-pointer py-1.5"
+                            >
+                                <option value="TODOS">Todos os Cargos</option>
+                                <option value="ADMIN">Administradores</option>
+                                <option value="FUNCIONARIO">Corretores</option>
+                            </select>
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">
+                            Total: {filteredUsers.length}
+                        </div>
                     </div>
                 </div>
 
@@ -199,18 +244,18 @@ export default function UserManagementPage() {
                                 <Search size={32} className="text-gray-400" />
                             </div>
                             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Nenhum usuário encontrado</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Tente buscar por outro termo.</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Tente ajustar os filtros.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-600">
                                     <tr>
-                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap text-sm uppercase tracking-wider">Nome</th>
-                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap text-sm uppercase tracking-wider">Email</th>
-                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap text-sm uppercase tracking-wider">CRECI</th>
-                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap text-sm uppercase tracking-wider">Cargo</th>
-                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-right whitespace-nowrap text-sm uppercase tracking-wider">Ações</th>
+                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm uppercase">Nome</th>
+                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm uppercase">Email</th>
+                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm uppercase">CRECI</th>
+                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm uppercase">Cargo</th>
+                                        <th className="p-4 font-semibold text-gray-600 dark:text-gray-300 text-sm uppercase text-right">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -218,13 +263,22 @@ export default function UserManagementPage() {
                                         <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition group">
                                             <td className="p-4 font-medium text-gray-800 dark:text-white">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-200 font-bold text-sm shadow-sm border border-gray-200 dark:border-gray-600">
+                                                    <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm border border-blue-200 dark:border-blue-800">
                                                         {user.name.charAt(0).toUpperCase()}
                                                     </div>
                                                     {user.name}
                                                 </div>
                                             </td>
-                                            <td className="p-4 text-gray-600 dark:text-gray-300 text-sm">{user.email}</td>
+                                            <td className="p-4 text-gray-600 dark:text-gray-300 text-sm">
+                                                <button
+                                                    onClick={() => copyToClipboard(user.email)}
+                                                    className="flex items-center gap-2 hover:text-blue-600 transition group/copy"
+                                                    title="Copiar Email"
+                                                >
+                                                    {user.email}
+                                                    <Copy size={12} className="opacity-0 group-hover/copy:opacity-100 transition-opacity" />
+                                                </button>
+                                            </td>
                                             <td className="p-4 text-gray-600 dark:text-gray-300 font-mono text-xs">
                                                 {user.creci ? (
                                                     <span className="bg-gray-100 dark:bg-gray-700/50 px-2 py-1 rounded border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium">
@@ -245,21 +299,15 @@ export default function UserManagementPage() {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="p-4 text-right flex justify-end gap-2">
-                                                <button
-                                                    onClick={() => setEditingUser(user)}
-                                                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition"
-                                                    title="Editar"
-                                                >
-                                                    <Edit size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(user.id)}
-                                                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
-                                                    title="Excluir"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
+                                            <td className="p-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => setEditingUser(user)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition" title="Editar">
+                                                        <Edit size={18} />
+                                                    </button>
+                                                    <button onClick={() => handleDelete(user.id)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition" title="Excluir">
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -299,7 +347,21 @@ export default function UserManagementPage() {
                                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Senha Inicial</label>
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
-                                        <input required type="text" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full pl-10 p-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-gray-900 dark:text-white" placeholder="Senha123" />
+                                        <input
+                                            required
+                                            type={showPassword ? "text" : "password"}
+                                            value={newUser.password}
+                                            onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                            className="w-full pl-10 pr-10 p-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-gray-900 dark:text-white"
+                                            placeholder="Senha123"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                        >
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
                                     </div>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1"><MailCheck size={12} /> Enviada por e-mail.</p>
                                 </div>
