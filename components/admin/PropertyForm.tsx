@@ -101,12 +101,10 @@ export function PropertyForm({ initialData, onSubmit, loading, submitLabel = "Pu
 
     // --- 1. LÓGICA DE AUTO-SAVE (RASCUNHO) ---
     useEffect(() => {
-        // Só ativa o auto-save se for uma criação nova (sem initialData)
         if (!initialData) {
             const savedDraft = localStorage.getItem("property-draft");
             if (savedDraft) {
                 const parsedDraft = JSON.parse(savedDraft);
-                // Verifica se o rascunho tem pelo menos um título ou tipo definido
                 if (parsedDraft.titulo || parsedDraft.descricao) {
                     const confirmRestore = window.confirm("Encontramos um rascunho não salvo. Deseja continuar de onde parou?");
                     if (confirmRestore) {
@@ -121,14 +119,12 @@ export function PropertyForm({ initialData, onSubmit, loading, submitLabel = "Pu
         }
     }, [initialData]);
 
-    // Salva no localStorage a cada alteração (debounce implícito pelo render do React)
     useEffect(() => {
         if (!initialData) {
             localStorage.setItem("property-draft", JSON.stringify(formData));
         }
     }, [formData, initialData]);
 
-    // Limpa o rascunho após submissão com sucesso
     const clearDraft = () => {
         localStorage.removeItem("property-draft");
     };
@@ -151,7 +147,6 @@ export function PropertyForm({ initialData, onSubmit, loading, submitLabel = "Pu
         setFormData(prev => ({ ...prev, [name]: formatted }));
     };
 
-    // Handler para inserir texto rico (simples) na descrição
     const insertTag = (tag: string) => {
         const textarea = document.querySelector('textarea[name="descricao"]') as HTMLTextAreaElement;
         if (!textarea) return;
@@ -164,7 +159,6 @@ export function PropertyForm({ initialData, onSubmit, loading, submitLabel = "Pu
         const selection = text.substring(start, end);
 
         let newText = "";
-
         if (tag === "bold") newText = `${before}**${selection || "texto em negrito"}**${after}`;
         if (tag === "list") newText = `${before}\n- ${selection || "item da lista"}${after}`;
         if (tag === "title") newText = `${before}### ${selection || "Título"}${after}`;
@@ -212,7 +206,6 @@ export function PropertyForm({ initialData, onSubmit, loading, submitLabel = "Pu
                     if (geoData && geoData.length > 0) {
                         setFormData(prev => ({ ...prev, latitude: Number(geoData[0].lat), longitude: Number(geoData[0].lon) }));
                     } else {
-                        // Fallback
                         const cityQuery = `${endData.bairro}, ${endData.localidade}, ${endData.uf}, Brazil`;
                         const resCity = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityQuery)}&limit=1`);
                         const cityData = await resCity.json();
@@ -235,7 +228,6 @@ export function PropertyForm({ initialData, onSubmit, loading, submitLabel = "Pu
     const handleSubmitInternal = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validações
         if (formData.fotos.length === 0) {
             toast.error("Adicione pelo menos uma foto para o anúncio.");
             return;
@@ -264,10 +256,7 @@ export function PropertyForm({ initialData, onSubmit, loading, submitLabel = "Pu
             longitude: formData.locationMode === 'none' ? null : formData.longitude,
         };
 
-        // Chama o onSubmit pai e aguarda
         await onSubmit(payload);
-
-        // Se não houve erro (o componente pai geralmente lida com redirecionamento, mas se chegar aqui...)
         if (!initialData) clearDraft();
     };
 
@@ -476,18 +465,27 @@ export function PropertyForm({ initialData, onSubmit, loading, submitLabel = "Pu
                             </div>
 
                             <div className="relative">
-                                <textarea required name="descricao" value={formData.descricao} rows={8} onChange={handleChange} className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono text-sm" placeholder="Descreva os detalhes do imóvel..." />
+                                {/* CORREÇÃO DE ESTILO AQUI: w-full p-3 border rounded-lg... (mesmo padrão do título) */}
+                                <textarea required name="descricao" value={formData.descricao} rows={8} onChange={handleChange} className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white text-base" placeholder="Descreva os detalhes do imóvel..." />
                                 <span className="absolute right-3 bottom-3 text-xs text-gray-400">{formData.descricao.length} caracteres</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* 5. LOCALIZAÇÃO */}
+                {/* 5. CARACTERÍSTICAS & COMODIDADES (MOVIDO) */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div className="p-6">
+                        <h2 className="font-bold mb-4 text-gray-800 dark:text-white">5. Características & Comodidades</h2>
+                        <FeatureSelector selectedFeatures={formData.features} onChange={(newFeatures) => setFormData({ ...formData, features: newFeatures })} />
+                    </div>
+                </div>
+
+                {/* 6. LOCALIZAÇÃO (MOVIDO) */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div className="bg-blue-50/50 dark:bg-gray-700/30 px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
                         <MapPin className="text-blue-600 dark:text-blue-400" size={20} />
-                        <h2 className="font-bold text-gray-800 dark:text-white">5. Localização</h2>
+                        <h2 className="font-bold text-gray-800 dark:text-white">6. Localização</h2>
                     </div>
                     <div className="p-6">
                         <div className="mb-6 flex flex-wrap gap-2">
@@ -534,18 +532,10 @@ export function PropertyForm({ initialData, onSubmit, loading, submitLabel = "Pu
                     </div>
                 </div>
 
-                {/* 6. CHECKLIST DE CARACTERÍSTICAS */}
+                {/* 7. FOTOS */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div className="p-6">
-                        <h2 className="font-bold mb-4 text-gray-800 dark:text-white">6. Características & Comodidades</h2>
-                        <FeatureSelector selectedFeatures={formData.features} onChange={(newFeatures) => setFormData({ ...formData, features: newFeatures })} />
-                    </div>
-                </div>
-
-                {/* FOTOS */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                    <div className="p-6">
-                        <h2 className="font-bold mb-4 flex items-center gap-2 text-gray-800 dark:text-white"><ImageIcon size={20} /> Fotos *</h2>
+                        <h2 className="font-bold mb-4 flex items-center gap-2 text-gray-800 dark:text-white"><ImageIcon size={20} /> 7. Fotos *</h2>
                         <ImageUpload value={formData.fotos} onChange={(urls) => setFormData({ ...formData, fotos: urls })} onRemove={(url) => setFormData({ ...formData, fotos: formData.fotos.filter((current: string) => current !== url) })} />
                     </div>
                 </div>

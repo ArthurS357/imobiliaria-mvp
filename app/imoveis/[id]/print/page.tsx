@@ -34,17 +34,15 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
     if (!property) return notFound();
 
     const fotos = property.fotos ? property.fotos.split(";") : [];
-    // Não precisamos mais da lista de features aqui, pois foi removida do layout
-    const mainPhoto = fotos[0] || null;
-    const secondaryPhotos = fotos.slice(1, 4);
+    // Gera um array fixo de 6 imagens (preenchendo com as existentes ou mantendo vazio)
+    const gridPhotos = Array.from({ length: 6 }).map((_, i) => fotos[i] || null);
 
     const finalidadeLower = property.finalidade?.toLowerCase() || "";
     const isDual = (finalidadeLower.includes("venda") && finalidadeLower.includes("locação")) ||
         (property.preco > 0 && (property.precoLocacao ?? 0) > 0);
 
     return (
-        // Alterado print:p-0 para print:p-10 para evitar cortes na impressora
-        <div className="bg-white min-h-screen text-black p-8 print:p-10 max-w-4xl mx-auto print:max-w-none font-sans">
+        <div className="bg-white min-h-screen text-black p-8 print:p-6 max-w-4xl mx-auto print:max-w-none font-sans print:h-screen print:overflow-hidden">
 
             {/* --- CONTROLES (PrintTrigger) --- */}
             <div className="mb-8 print:hidden flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-200">
@@ -53,7 +51,7 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
             </div>
 
             {/* --- CABEÇALHO COMPACTO --- */}
-            <header className="border-b-2 border-blue-900 pb-2 mb-4 flex justify-between items-end break-inside-avoid">
+            <header className="border-b-2 border-blue-900 pb-2 mb-3 flex justify-between items-end break-inside-avoid print:mb-2">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
                         <div className="text-2xl font-black tracking-tighter text-blue-900">
@@ -72,7 +70,7 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
             </header>
 
             {/* --- TÍTULO E VALOR (LINHA ÚNICA) --- */}
-            <div className="mb-4 flex justify-between items-start break-inside-avoid">
+            <div className="mb-3 flex justify-between items-start break-inside-avoid print:mb-2">
                 <div className="flex-1 pr-4">
                     <div className="flex gap-2 mb-1">
                         <span className="inline-block px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-bold uppercase rounded border border-blue-200 print:border-gray-300 print:text-black">
@@ -106,34 +104,35 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
                 </div>
             </div>
 
-            {/* --- FOTOS (COMPACTAS) --- */}
-            {/* Alturas reduzidas para caber em uma página */}
-            <div className="grid grid-cols-2 gap-2 mb-4 h-64 print:block print:h-auto break-inside-avoid">
-                <div className="relative h-full rounded-lg overflow-hidden border border-gray-200 bg-gray-100 print:h-[220px] print:w-full print:mb-2 print:border-black/20">
-                    {mainPhoto ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={mainPhoto} alt="Principal" className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="flex items-center justify-center h-full text-gray-400">Sem Foto</div>
-                    )}
-                </div>
-                <div className="grid grid-rows-2 gap-2 h-full print:grid-rows-1 print:grid-cols-3 print:h-[100px] print:w-full">
-                    {secondaryPhotos.length > 0 ? (
-                        secondaryPhotos.map((foto, idx) => (
-                            <div key={idx} className="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-100 print:border-black/20">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={foto} alt={`Secundária ${idx}`} className="w-full h-full object-cover" />
+            {/* --- GRID DE 6 FOTOS (PADRONIZADO PARA 1 PÁGINA) --- */}
+            <div className="grid grid-cols-3 gap-2 mb-3 print:mb-2 break-inside-avoid">
+                {gridPhotos.map((foto, idx) => (
+                    <div
+                        key={idx}
+                        className="
+                            relative w-full aspect-[4/3] 
+                            rounded-lg overflow-hidden border border-gray-200 bg-gray-100 
+                            print:border-black/20 print:aspect-[4/3] print:h-[140px]
+                        "
+                    >
+                        {foto ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                                src={foto}
+                                alt={`Foto ${idx + 1}`}
+                                className="w-full h-full object-cover print:object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gray-50 text-[10px] text-gray-400">
+                                Sem Foto
                             </div>
-                        ))
-                    ) : (
-                        <div className="bg-gray-50 rounded-lg flex items-center justify-center text-xs text-gray-400 border border-gray-200">Mais fotos no site</div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                ))}
             </div>
 
             {/* --- ÍCONES (HORIZONTAL) --- */}
-            {/* Layout horizontal economiza muito espaço vertical */}
-            <div className="flex justify-between items-center mb-4 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 print:border-gray-300 break-inside-avoid">
+            <div className="flex justify-between items-center mb-3 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 print:border-gray-300 break-inside-avoid print:mb-2 print:py-1">
                 <div className="text-center">
                     <span className="block font-bold text-sm">{property.quarto}</span>
                     <span className="text-[9px] uppercase text-gray-500 flex items-center gap-1 justify-center"><Bed size={10} /> Quartos</span>
@@ -156,20 +155,20 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
             </div>
 
             {/* --- LAYOUT DE DUAS COLUNAS PARA O CONTEÚDO (Economiza altura) --- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:grid print:grid-cols-3 print:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:grid print:grid-cols-3 print:gap-4 break-inside-avoid">
 
                 {/* DESCRIÇÃO (2/3 da largura) */}
                 <div className="md:col-span-2 print:col-span-2 text-xs text-justify text-gray-800 leading-snug">
-                    <h3 className="font-bold text-gray-900 border-b border-gray-300 mb-2 pb-1 text-sm">Descrição do Imóvel</h3>
-                    <p className="whitespace-pre-line">{property.descricao}</p>
+                    <h3 className="font-bold text-gray-900 border-b border-gray-300 mb-1 pb-1 text-xs">Descrição do Imóvel</h3>
+                    <p className="whitespace-pre-line print:text-[10px] print:leading-tight">{property.descricao}</p>
                 </div>
 
                 {/* FICHA TÉCNICA E CORRETOR (1/3 da largura) */}
-                <div className="space-y-4 print:col-span-1 print:space-y-3">
+                <div className="space-y-4 print:col-span-1 print:space-y-2">
 
                     {/* Ficha Técnica */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 print:bg-transparent print:border-gray-300">
-                        <h3 className="font-bold text-gray-900 mb-2 text-xs border-b border-gray-200 pb-1">Ficha Técnica</h3>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 print:bg-transparent print:border-gray-300 print:p-2">
+                        <h3 className="font-bold text-gray-900 mb-1 text-xs border-b border-gray-200 pb-1">Ficha Técnica</h3>
                         <ul className="space-y-1 text-[10px]">
                             {property.anoConstrucao && <li className="flex justify-between"><span>Ano:</span> <span className="font-bold">{property.anoConstrucao}</span></li>}
                             {property.areaTerreno && <li className="flex justify-between"><span>Terreno:</span> <span className="font-bold">{property.areaTerreno} m²</span></li>}
@@ -180,17 +179,17 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
 
                     {/* Custos Adicionais (Condomínio/IPTU) */}
                     {((property.valorCondominio ?? 0) > 0 || (property.depositoSeguranca ?? 0) > 0) && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 print:bg-transparent print:border-gray-300">
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 print:bg-transparent print:border-gray-300 print:p-2">
                             <h3 className="font-bold text-gray-900 mb-1 text-xs">Custos</h3>
-                            <div className="space-y-1">
+                            <div className="space-y-1 text-[10px]">
                                 {(property.valorCondominio ?? 0) > 0 && (
-                                    <div className="flex justify-between text-[10px]">
+                                    <div className="flex justify-between">
                                         <span className="flex items-center gap-1"><Building2 size={10} /> Condomínio:</span>
                                         <span className="font-bold">{formatCurrency(property.valorCondominio ?? 0)}</span>
                                     </div>
                                 )}
                                 {(property.depositoSeguranca ?? 0) > 0 && (
-                                    <div className="flex justify-between text-[10px]">
+                                    <div className="flex justify-between">
                                         <span className="flex items-center gap-1"><Shield size={10} /> Depósito:</span>
                                         <span className="font-bold">{formatCurrency(property.depositoSeguranca ?? 0)}</span>
                                     </div>
@@ -200,7 +199,7 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
                     )}
 
                     {/* Corretor */}
-                    <div className="border border-blue-900/20 rounded-lg p-3 text-center print:border-gray-300">
+                    <div className="border border-blue-900/20 rounded-lg p-3 text-center print:border-gray-300 print:p-2">
                         <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Corretor Responsável</p>
                         <p className="font-bold text-sm text-blue-900 print:text-black">{property.corretor.name}</p>
                         {property.corretor.creci && <p className="text-[10px] text-gray-600 mb-1">CRECI: {property.corretor.creci}</p>}
@@ -213,7 +212,7 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
             </div>
 
             {/* Rodapé Compacto */}
-            <footer className="mt-auto pt-4 border-t border-gray-200 text-center text-[9px] text-gray-400 break-inside-avoid">
+            <footer className="mt-auto pt-2 border-t border-gray-200 text-center text-[9px] text-gray-400 break-inside-avoid print:pt-1">
                 <p>Gerado em {new Date().toLocaleDateString('pt-BR')}. As informações estão sujeitas a alterações sem aviso prévio.</p>
             </footer>
         </div>
