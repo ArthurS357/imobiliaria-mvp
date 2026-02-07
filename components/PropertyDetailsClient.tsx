@@ -226,6 +226,9 @@ const PropertyGallery = memo(({ fotos, titulo, propertyId }: GalleryProps) => {
     }, [fotos.length]);
 
     // Handlers de Swipe
+    const [showSwipeHint, setShowSwipeHint] = useState(true);
+
+
     const onTouchStart = (e: React.TouchEvent) => {
         setTouchEnd(null);
         setTouchStart(e.targetTouches[0].clientX);
@@ -237,6 +240,7 @@ const PropertyGallery = memo(({ fotos, titulo, propertyId }: GalleryProps) => {
 
     const onTouchEnd = () => {
         if (!touchStart || !touchEnd) return;
+        setShowSwipeHint(false);
         const distance = touchStart - touchEnd;
         const isLeftSwipe = distance > 50;
         const isRightSwipe = distance < -50;
@@ -292,6 +296,20 @@ const PropertyGallery = memo(({ fotos, titulo, propertyId }: GalleryProps) => {
         >
             {/* ÁREA DA FOTO PRINCIPAL */}
             <div className="w-full aspect-[4/3] bg-gray-200 dark:bg-gray-700 relative group">
+                {/* DICA DE SWIPE - SOMENTE MOBILE */}
+                {showSwipeHint && (
+                    <div className="
+                        absolute top-3 left-1/2 -translate-x-1/2
+                        bg-black/70 text-white text-xs
+                        px-4 py-2 rounded-full z-30 md:hidden
+                        animate-pulse text-center
+                        whitespace-nowrap
+                        max-w-[90%]
+                        flex items-center justify-center
+                        ">
+                        ← Arraste para o lado para trocar →
+                    </div>
+                )}
 
                 {/* Botão Favorito */}
                 <button
