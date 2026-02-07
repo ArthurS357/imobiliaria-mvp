@@ -1,0 +1,42 @@
+export type LocationMode = 'map' | 'address' | 'none';
+
+export interface PropertyFormData {
+  titulo: string;
+  sobreTitulo: string;
+  descricao: string;
+  tipo: string;
+  finalidade: string;
+  preco: string;
+  precoLocacao: string;
+  tipoValor: string;
+  valorCondominio: string;
+  periodicidadeCondominio: string;
+  depositoSeguranca: string;
+  periodoPagamento: string;
+  tipoContrato: string;
+  quarto: string;
+  suites: string;
+  banheiro: string;
+  garagem: string;
+  vagasCobertas: string;
+  vagasDescobertas: string;
+  vagasSubsolo: boolean;
+  area: string;
+  areaTerreno: string;
+  anoConstrucao: string;
+  statusMercado: string;
+  condicaoImovel: string;
+  fotos: string[];
+  features: string[];
+  cep: string;
+  cidade: string;
+  bairro: string;
+  endereco: string;
+  latitude: number | null;
+  longitude: number | null;
+  locationMode: LocationMode;
+  displayAddress: boolean;
+  displayDetails: boolean;
+  status: string;
+  destaque: boolean;
+}
