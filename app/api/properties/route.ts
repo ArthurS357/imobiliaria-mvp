@@ -2,159 +2,311 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Property, Prisma } from "@prisma/client";
 
-// GET: Listar imóveis com Filtros Avançados e Segurança de Role
+// Tipos para melhor type safety
+interface PropertyFilters {
+    status?: string;
+    tipo?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    quartos?: string;
+    garagem?: string;
+    finalidade?: string;
+}
+
+interface PropertyCreateData {
+    titulo: string;
+    sobreTitulo?: string;
+    descricao: string;
+    tipo: string;
+    finalidade?: string;
+    preco: string;
+    precoLocacao?: string;
+    tipoValor: string;
+    periodoPagamento: string;
+    depositoSeguranca?: string;
+    valorCondominio?: string;
+    periodicidadeCondominio?: string;
+    cidade: string;
+    bairro: string;
+    endereco: string;
+    latitude?: string;
+    longitude?: string;
+    quarto: string;
+    suites?: string;
+    banheiro: string;
+    garagem: string;
+    vagasCobertas?: string;
+    vagasDescobertas?: string;
+    vagasSubsolo?: boolean;
+    area: string;
+    areaTerreno?: string;
+    statusMercado?: string;
+    condicaoImovel?: string;
+    anoConstrucao?: string;
+    tipoContrato?: string;
+    fotos?: string[];
+    features?: string[];
+    displayAddress?: boolean;
+    displayDetails?: boolean;
+}
+
+// Utilitário para conversão segura de valores
+const safeParseFloat = (value: string | undefined): number => {
+    if (!value) return 0;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+};
+
+const safeParseInt = (value: string | undefined): number => {
+    if (!value) return 0;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? 0 : parsed;
+};
+
+// GET: Listar imóveis (Público + Filtros de Segurança)
 export async function GET(request: Request) {
     try {
         const session = await getServerSession(authOptions);
-
-        // 🔒 SECURITY CHECK: Apenas usuários autenticados
-        if (!session?.user) {
-            return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-        }
-
-        const isAdmin = session.user.role === "ADMIN";
-        const userId = session.user.id;
+        const isAdmin = session?.user?.role === "ADMIN";
+        const userId = session?.user?.id;
 
         const { searchParams } = new URL(request.url);
-        const status = searchParams.get("status");
-        const tipo = searchParams.get("tipo");
-        const minPrice = searchParams.get("minPrice");
-        const maxPrice = searchParams.get("maxPrice");
-        const quartos = searchParams.get("quartos");
-        const garagem = searchParams.get("garagem");
-        const finalidade = searchParams.get("finalidade");
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = {};
+        // Validação e tipagem dos parâmetros
+        const filters: PropertyFilters = {
+            status: searchParams.get("status") || undefined,
+            tipo: searchParams.get("tipo") || undefined,
+            minPrice: searchParams.get("minPrice") || undefined,
+            maxPrice: searchParams.get("maxPrice") || undefined,
+            quartos: searchParams.get("quartos") || undefined,
+            garagem: searchParams.get("garagem") || undefined,
+            finalidade: searchParams.get("finalidade") || undefined,
+        };
 
-        // 🔒 ROLE FILTER: Se não for admin, força o filtro por corretorId
-        // Isso garante que corretores/funcionários vejam APENAS seus próprios imóveis
-        if (!isAdmin) {
+        // Construção do objeto where com type safety
+        const where: Prisma.PropertyWhereInput = {};
+
+        // 🔒 LÓGICA DE FILTRO DE SEGURANÇA:
+        // 1. Visitantes: Veem apenas imóveis DISPONIVEIS
+        // 2. Admin: Vê tudo
+        // 3. Corretores: Veem seus próprios imóveis
+
+        if (!session) {
+            // Visitantes só veem imóveis disponíveis
+            where.status = "DISPONIVEL";
+        } else if (!isAdmin) {
+            // Corretores veem apenas seus imóveis
             where.corretorId = userId;
         }
+        // Admins não têm restrições de filtro
 
-        if (status && status !== "TODOS") {
-            where.status = status;
+        // Aplicação dos filtros
+        if (filters.status && filters.status !== "TODOS") {
+            where.status = filters.status;
         }
 
-        if (tipo && tipo !== "Todos") {
-            where.tipo = tipo;
+        if (filters.tipo && filters.tipo !== "Todos") {
+            where.tipo = filters.tipo;
         }
 
-        if (finalidade) {
-            where.finalidade = finalidade;
+        if (filters.finalidade && filters.finalidade !== "Todos") {
+            where.finalidade = filters.finalidade;
         }
 
-        if (minPrice || maxPrice) {
+        // Filtros de preço com validação
+        if (filters.minPrice || filters.maxPrice) {
             where.preco = {};
-            if (minPrice) where.preco.gte = Number(minPrice);
-            if (maxPrice) where.preco.lte = Number(maxPrice);
+            if (filters.minPrice) {
+                const minVal = safeParseFloat(filters.minPrice);
+                if (minVal > 0) where.preco.gte = minVal;
+            }
+            if (filters.maxPrice) {
+                const maxVal = safeParseFloat(filters.maxPrice);
+                if (maxVal > 0) where.preco.lte = maxVal;
+            }
         }
 
-        if (quartos && Number(quartos) > 0) {
-            where.quarto = { gte: Number(quartos) };
+        // Filtros numéricos com validação
+        if (filters.quartos && safeParseInt(filters.quartos) > 0) {
+            where.quarto = { gte: safeParseInt(filters.quartos) };
         }
 
-        if (garagem && Number(garagem) > 0) {
-            where.garagem = { gte: Number(garagem) };
+        if (filters.garagem && safeParseInt(filters.garagem) > 0) {
+            where.garagem = { gte: safeParseInt(filters.garagem) };
         }
 
+        // Busca com paginação implícita (limitando resultados)
         const properties = await prisma.property.findMany({
             where,
             orderBy: { createdAt: "desc" },
+            take: 100, // Limita resultados para performance
             include: {
                 corretor: {
-                    select: { name: true, email: true },
+                    select: {
+                        name: true,
+                        email: true,
+                        id: true
+                    },
                 },
             },
         });
 
         return NextResponse.json(properties);
     } catch (error) {
-        console.error("Erro na API GET properties:", error);
-        return NextResponse.json({ error: "Erro ao buscar imóveis" }, { status: 500 });
+        console.error("❌ Erro na API GET properties:", error);
+        return NextResponse.json(
+            { error: "Erro ao buscar imóveis" },
+            { status: 500 }
+        );
     }
 }
 
-// POST: Cadastrar novo imóvel
+// POST: Cadastrar novo imóvel (Mantido Protegido 🔒)
 export async function POST(request: Request) {
     try {
         const session = await getServerSession(authOptions);
 
         if (!session || !session.user) {
-            return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+            return NextResponse.json(
+                { error: "Não autorizado - Faça login para cadastrar imóveis" },
+                { status: 401 }
+            );
         }
 
-        const data = await request.json();
+        const data: PropertyCreateData = await request.json();
 
-        // Regra de Negócio: Admin publica direto, Corretores vão para revisão (PENDENTE)
+        // Validação de dados obrigatórios
+        if (!data.titulo || !data.descricao || !data.tipo || !data.preco) {
+            return NextResponse.json(
+                { error: "Dados obrigatórios faltando" },
+                { status: 400 }
+            );
+        }
+
+        // Regra de Negócio: Admin publica direto, Corretores vão para revisão
         const initialStatus = session.user.role === "ADMIN" ? "DISPONIVEL" : "PENDENTE";
 
-        // Tratamento de Arrays para String (banco SQLite/Simples)
-        const fotosString = Array.isArray(data.fotos) ? data.fotos.join(";") : "";
-        const featuresString = Array.isArray(data.features) ? data.features.join(",") : "";
+        // Processamento seguro de arrays
+        const fotosString = Array.isArray(data.fotos)
+            ? data.fotos.filter(url => typeof url === 'string' && url.length > 0).join(";")
+            : "";
+
+        const featuresString = Array.isArray(data.features)
+            ? data.features.filter(feature => typeof feature === 'string' && feature.length > 0).join(",")
+            : "";
+
+        // Validação e sanitização de dados
+        const propertyData = {
+            // DADOS BÁSICOS
+            titulo: data.titulo.trim(),
+            sobreTitulo: data.sobreTitulo?.trim() || "",
+            descricao: data.descricao.trim(),
+            tipo: data.tipo.trim(),
+            finalidade: (data.finalidade || "Venda").trim(),
+
+            // VALORES - Com validação segura
+            preco: safeParseFloat(data.preco),
+            precoLocacao: safeParseFloat(data.precoLocacao),
+            tipoValor: data.tipoValor?.trim() || "",
+            periodoPagamento: data.periodoPagamento?.trim() || "",
+            depositoSeguranca: safeParseFloat(data.depositoSeguranca),
+            valorCondominio: safeParseFloat(data.valorCondominio),
+            periodicidadeCondominio: data.periodicidadeCondominio?.trim() || "",
+
+            // ENDEREÇO
+            cidade: data.cidade?.trim() || "",
+            bairro: data.bairro?.trim() || "",
+            endereco: data.endereco?.trim() || "",
+            latitude: data.latitude ? safeParseFloat(data.latitude) : null,
+            longitude: data.longitude ? safeParseFloat(data.longitude) : null,
+
+            // DETALHES FÍSICOS
+            quarto: safeParseInt(data.quarto),
+            suites: safeParseInt(data.suites),
+            banheiro: safeParseInt(data.banheiro),
+            garagem: safeParseInt(data.garagem),
+            vagasCobertas: safeParseInt(data.vagasCobertas),
+            vagasDescobertas: safeParseInt(data.vagasDescobertas),
+            vagasSubsolo: Boolean(data.vagasSubsolo),
+
+            // ÁREAS
+            area: safeParseFloat(data.area),
+            areaTerreno: safeParseFloat(data.areaTerreno),
+
+            // DETALHES DE MERCADO
+            statusMercado: data.statusMercado?.trim() || "",
+            condicaoImovel: data.condicaoImovel?.trim() || "",
+            anoConstrucao: data.anoConstrucao ? safeParseInt(data.anoConstrucao) : null,
+            tipoContrato: data.tipoContrato?.trim() || "",
+
+            // MÍDIA E SISTEMA
+            fotos: fotosString,
+            features: featuresString,
+            status: initialStatus,
+            destaque: false,
+            displayAddress: data.displayAddress ?? true,
+            displayDetails: data.displayDetails ?? true,
+
+            // VINCULAÇÃO AO USUÁRIO LOGADO
+            corretorId: session.user.id,
+        };
+
+        // Validação final antes de salvar
+        if (propertyData.preco <= 0) {
+            return NextResponse.json(
+                { error: "Preço deve ser maior que zero" },
+                { status: 400 }
+            );
+        }
+
+        if (propertyData.area <= 0) {
+            return NextResponse.json(
+                { error: "Área deve ser maior que zero" },
+                { status: 400 }
+            );
+        }
 
         const property = await prisma.property.create({
-            data: {
-                // DADOS BÁSICOS
-                titulo: data.titulo,
-                sobreTitulo: data.sobreTitulo || "",
-                descricao: data.descricao,
-                tipo: data.tipo,
-                finalidade: data.finalidade || "Venda",
-
-                // VALORES
-                preco: parseFloat(data.preco),
-                precoLocacao: data.precoLocacao ? parseFloat(data.precoLocacao) : 0,
-                tipoValor: data.tipoValor,
-                periodoPagamento: data.periodoPagamento,
-                depositoSeguranca: data.depositoSeguranca ? parseFloat(data.depositoSeguranca) : 0,
-                valorCondominio: data.valorCondominio ? parseFloat(data.valorCondominio) : 0,
-                periodicidadeCondominio: data.periodicidadeCondominio,
-
-                // ENDEREÇO
-                cidade: data.cidade,
-                bairro: data.bairro,
-                endereco: data.endereco,
-                latitude: data.latitude ? parseFloat(data.latitude) : null,
-                longitude: data.longitude ? parseFloat(data.longitude) : null,
-
-                // DETALHES FÍSICOS
-                quarto: parseInt(data.quarto),
-                suites: data.suites ? parseInt(data.suites) : 0,
-                banheiro: parseInt(data.banheiro),
-                garagem: parseInt(data.garagem),
-                vagasCobertas: data.vagasCobertas ? parseInt(data.vagasCobertas) : 0,
-                vagasDescobertas: data.vagasDescobertas ? parseInt(data.vagasDescobertas) : 0,
-                vagasSubsolo: data.vagasSubsolo ?? false,
-
-                // ÁREAS
-                area: parseFloat(data.area),
-                areaTerreno: data.areaTerreno ? parseFloat(data.areaTerreno) : 0,
-
-                // DETALHES DE MERCADO
-                statusMercado: data.statusMercado,
-                condicaoImovel: data.condicaoImovel,
-                anoConstrucao: data.anoConstrucao ? parseInt(data.anoConstrucao) : null,
-                tipoContrato: data.tipoContrato,
-
-                // MÍDIA E SISTEMA
-                fotos: fotosString,
-                features: featuresString,
-                status: initialStatus,
-                destaque: false,
-                displayAddress: data.displayAddress ?? true,
-                displayDetails: data.displayDetails ?? true,
-
-                // VINCULAÇÃO AO USUÁRIO LOGADO
-                corretorId: session.user.id,
-            },
+            data: propertyData,
+            include: {
+                corretor: {
+                    select: {
+                        name: true,
+                        email: true
+                    }
+                }
+            }
         });
 
-        return NextResponse.json(property);
+        console.log(`✅ Imóvel criado por ${session.user.email}: ${property.id}`);
+
+        return NextResponse.json(property, { status: 201 });
     } catch (error) {
-        console.error("Erro ao cadastrar imóvel:", error);
-        return NextResponse.json({ error: "Erro ao criar imóvel" }, { status: 500 });
+        console.error("❌ Erro ao cadastrar imóvel:", error);
+
+        // Tratamento específico para erros do Prisma
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+            return NextResponse.json(
+                { error: "Imóvel já cadastrado com esses dados" },
+                { status: 409 }
+            );
+        }
+
+        return NextResponse.json(
+            { error: "Erro ao criar imóvel - Tente novamente" },
+            { status: 500 }
+        );
     }
+}
+
+// Middleware para logging (opcional)
+export async function OPTIONS() {
+    return NextResponse.json({}, {
+        headers: {
+            'Allow': 'GET, POST, OPTIONS',
+            'Content-Type': 'application/json'
+        }
+    });
 }

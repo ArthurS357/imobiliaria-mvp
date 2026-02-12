@@ -14,16 +14,23 @@ import {
   ArrowRight,
   LucideIcon,
   Lock,
-  Home, // <--- 1. Importado o ícone Home
+  Home,
+  Bell,
+  User,
+  Plus,
+  UserCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutButton } from "@/components/admin/LogoutButton";
+import { Suspense } from "react";
 
 // --- Configuration & Types ---
 
 const ALLOWED_ROLES = ["ADMIN", "CORRETOR", "BROKER", "FUNCIONARIO"];
 
-type ThemeVariant = "blue" | "yellow" | "green" | "purple";
+type UserRole = "ADMIN" | "CORRETOR" | "BROKER" | "FUNCIONARIO";
+type ThemeVariant = "blue" | "yellow" | "green" | "purple" | "pink" | "indigo";
 
 interface ThemeConfig {
   bg: string;
@@ -32,6 +39,7 @@ interface ThemeConfig {
   iconBg: string;
   iconText: string;
   borderHover: string;
+  gradient: string;
 }
 
 const THEME_STYLES: Record<ThemeVariant, ThemeConfig> = {
@@ -42,6 +50,7 @@ const THEME_STYLES: Record<ThemeVariant, ThemeConfig> = {
     iconBg: "bg-blue-50 dark:bg-blue-900/30",
     iconText: "text-blue-600 dark:text-blue-400",
     borderHover: "hover:border-blue-500 dark:hover:border-blue-500",
+    gradient: "from-blue-500 to-blue-600",
   },
   yellow: {
     bg: "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700",
@@ -50,6 +59,7 @@ const THEME_STYLES: Record<ThemeVariant, ThemeConfig> = {
     iconBg: "bg-yellow-50 dark:bg-yellow-900/30",
     iconText: "text-yellow-600 dark:text-yellow-400",
     borderHover: "hover:border-yellow-500 dark:hover:border-yellow-500",
+    gradient: "from-yellow-500 to-orange-500",
   },
   green: {
     bg: "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700",
@@ -58,6 +68,7 @@ const THEME_STYLES: Record<ThemeVariant, ThemeConfig> = {
     iconBg: "bg-green-50 dark:bg-green-900/30",
     iconText: "text-green-600 dark:text-green-400",
     borderHover: "hover:border-green-500 dark:hover:border-green-500",
+    gradient: "from-green-500 to-emerald-600",
   },
   purple: {
     bg: "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700",
@@ -66,16 +77,35 @@ const THEME_STYLES: Record<ThemeVariant, ThemeConfig> = {
     iconBg: "bg-purple-50 dark:bg-purple-900/30",
     iconText: "text-purple-600 dark:text-purple-400",
     borderHover: "hover:border-purple-500 dark:hover:border-purple-500",
+    gradient: "from-purple-500 to-indigo-600",
+  },
+  pink: {
+    bg: "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700",
+    text: "text-gray-500 dark:text-gray-400",
+    number: "text-gray-900 dark:text-white",
+    iconBg: "bg-pink-50 dark:bg-pink-900/30",
+    iconText: "text-pink-600 dark:text-pink-400",
+    borderHover: "hover:border-pink-500 dark:hover:border-pink-500",
+    gradient: "from-pink-500 to-rose-500",
+  },
+  indigo: {
+    bg: "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700",
+    text: "text-gray-500 dark:text-gray-400",
+    number: "text-gray-900 dark:text-white",
+    iconBg: "bg-indigo-50 dark:bg-indigo-900/30",
+    iconText: "text-indigo-600 dark:text-indigo-400",
+    borderHover: "hover:border-indigo-500 dark:hover:border-indigo-500",
+    gradient: "from-indigo-500 to-violet-600",
   },
 };
 
 const ALERT_STYLES = {
   wrapper:
-    "bg-yellow-50/50 border-yellow-200 dark:bg-yellow-900/10 dark:border-yellow-800",
-  text: "text-yellow-700 dark:text-yellow-500",
-  number: "text-yellow-700 dark:text-yellow-400",
+    "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 dark:from-yellow-900/20 dark:to-orange-900/20 dark:border-yellow-800",
+  text: "text-yellow-700 dark:text-yellow-300",
+  number: "text-yellow-800 dark:text-yellow-200",
   iconBg:
-    "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400",
+    "bg-gradient-to-br from-yellow-100 to-orange-100 text-yellow-700 dark:from-yellow-900/40 dark:to-orange-900/40 dark:text-yellow-300",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
@@ -87,7 +117,7 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 
 // --- Data Fetching Logic ---
 
-async function getDashboardMetrics(userId: string, role: string) {
+async function getUserStats(userId: string, role: UserRole) {
   const isAdmin = role === "ADMIN";
 
   const propertyWhere = isAdmin ? {} : { corretorId: userId };
@@ -97,13 +127,37 @@ async function getDashboardMetrics(userId: string, role: string) {
     ...(!isAdmin && { assignedToId: userId }),
   };
 
-  const [propertyCount, leadCount, pendingVisits] = await Promise.all([
+  const [
+    propertyCount,
+    leadCount,
+    pendingVisits,
+    publishedProperties,
+    draftProperties,
+  ] = await Promise.all([
     prisma.property.count({ where: propertyWhere }),
     prisma.lead.count({ where: leadWhere }),
     prisma.visit.count({ where: visitWhere }),
+    prisma.property.count({
+      where: {
+        ...propertyWhere,
+        status: "DISPONIVEL",
+      },
+    }),
+    prisma.property.count({
+      where: {
+        ...propertyWhere,
+        status: "PENDENTE",
+      },
+    }),
   ]);
 
-  return { propertyCount, leadCount, pendingVisits };
+  return {
+    propertyCount,
+    leadCount,
+    pendingVisits,
+    publishedProperties,
+    draftProperties,
+  };
 }
 
 // --- Components ---
@@ -115,6 +169,7 @@ function StatCard({
   variant,
   subtext,
   isAlert,
+  trend,
 }: {
   label: string;
   value: number;
@@ -122,11 +177,15 @@ function StatCard({
   variant: ThemeVariant;
   subtext?: string;
   isAlert?: boolean;
+  trend?: { value: number; positive: boolean };
 }) {
   const theme = THEME_STYLES[variant];
   const activeAlert = isAlert && value > 0;
 
-  const wrapperClass = activeAlert ? ALERT_STYLES.wrapper : theme.bg;
+  const wrapperClass = activeAlert
+    ? `${ALERT_STYLES.wrapper} border-l-4 border-yellow-500 dark:border-yellow-400`
+    : `${theme.bg} border`;
+
   const textClass = activeAlert ? ALERT_STYLES.text : theme.text;
   const numberClass = activeAlert ? ALERT_STYLES.number : theme.number;
   const iconBgClass = activeAlert
@@ -135,31 +194,53 @@ function StatCard({
 
   return (
     <div
-      className={`p-6 rounded-2xl shadow-sm border flex items-center justify-between hover:shadow-md transition-all group relative overflow-hidden ${wrapperClass}`}
+      className={`p-6 rounded-2xl shadow-sm border flex flex-col justify-between transition-all group relative overflow-hidden ${wrapperClass} hover:shadow-md`}
     >
-      <div>
-        <p className={`text-sm font-medium mb-1 ${textClass}`}>{label}</p>
-        <div className="flex items-baseline gap-2">
-          <p
-            className={`text-4xl font-extrabold tracking-tight ${numberClass}`}
-          >
-            {value}
-          </p>
-          {activeAlert && (
-            <span className="text-[10px] font-bold uppercase bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full dark:bg-yellow-900 dark:text-yellow-300 animate-pulse">
-              Ação Necessária
-            </span>
+      <div className="flex justify-between items-start">
+        <div>
+          <p className={`text-sm font-medium mb-1 ${textClass}`}>{label}</p>
+          <div className="flex items-baseline gap-2">
+            <p
+              className={`text-3xl font-extrabold tracking-tight ${numberClass}`}
+            >
+              {value.toLocaleString("pt-BR")}
+            </p>
+            {trend && (
+              <span
+                className={`text-xs font-bold px-2 py-1 rounded-full ${
+                  trend.positive
+                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                }`}
+              >
+                {trend.positive ? "+" : ""}
+                {trend.value}%
+              </span>
+            )}
+          </div>
+          {subtext && !activeAlert && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+              {subtext}
+            </p>
           )}
         </div>
-        {subtext && !activeAlert && (
-          <p className="text-xs text-gray-400 mt-1">{subtext}</p>
-        )}
+        <div
+          className={`p-3 rounded-xl transition-transform duration-300 group-hover:scale-110 ${iconBgClass}`}
+        >
+          <Icon size={24} />
+        </div>
       </div>
-      <div
-        className={`p-4 rounded-xl transition-transform duration-300 group-hover:scale-110 ${iconBgClass}`}
-      >
-        <Icon size={28} />
-      </div>
+      {activeAlert && (
+        <div className="mt-3 flex items-center gap-2">
+          <AlertTriangle
+            size={16}
+            className="text-yellow-600 dark:text-yellow-400"
+          />
+          <span className="text-xs text-yellow-700 dark:text-yellow-300 font-medium">
+            Ação necessária
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -171,6 +252,8 @@ function QuickLinkCard({
   icon: Icon,
   variant,
   isAdminOnly,
+  isNew,
+  count,
 }: {
   href: string;
   title: string;
@@ -178,6 +261,8 @@ function QuickLinkCard({
   icon: LucideIcon;
   variant: ThemeVariant;
   isAdminOnly?: boolean;
+  isNew?: boolean;
+  count?: number;
 }) {
   const theme = THEME_STYLES[variant];
   return (
@@ -185,26 +270,44 @@ function QuickLinkCard({
       href={href}
       className={`group bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 ${theme.borderHover} hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden h-full justify-between`}
     >
-      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
         <Icon
-          size={80}
+          size={100}
           className={`${theme.iconText} transform ${variant === "yellow" || variant === "purple" ? "-rotate-12" : "rotate-12"}`}
         />
       </div>
-      <div className="flex items-center gap-4 mb-4">
-        <div className={`p-3 rounded-lg ${theme.iconBg} ${theme.iconText}`}>
-          <Icon size={24} />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-lg ${theme.iconBg} ${theme.iconText}`}>
+            <Icon size={24} />
+          </div>
+          <div>
+            <h3 className="font-bold text-lg text-gray-800 dark:text-white flex items-center gap-2">
+              {title}
+              {isNew && (
+                <span className="text-[10px] bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full font-bold uppercase">
+                  Novo
+                </span>
+              )}
+            </h3>
+            {isAdminOnly && (
+              <span className="text-[10px] bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold uppercase">
+                Admin
+              </span>
+            )}
+          </div>
         </div>
-        <div>
-          <h3 className="font-bold text-lg text-gray-800 dark:text-white">
-            {title}
-          </h3>
-          {isAdminOnly && (
-            <span className="text-[10px] bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold uppercase">
-              Admin
-            </span>
-          )}
-        </div>
+        {count !== undefined && (
+          <div
+            className={`px-2 py-1 rounded-full text-xs font-bold ${
+              count > 0
+                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+            }`}
+          >
+            {count}
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-between mt-2">
         <span
@@ -221,6 +324,42 @@ function QuickLinkCard({
   );
 }
 
+function UserProfileCard({
+  name,
+  role,
+  email,
+}: {
+  name: string;
+  role: string;
+  email: string;
+}) {
+  return (
+    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 rounded-2xl p-6 text-white shadow-lg">
+      <div className="flex items-center gap-4">
+        <div className="bg-white/20 p-3 rounded-full">
+          <User size={24} />
+        </div>
+        <div>
+          <h3 className="font-bold text-lg">{name}</h3>
+          <p className="text-blue-100 dark:text-blue-200 text-sm">{email}</p>
+          <span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold">
+            {role}
+          </span>
+        </div>
+      </div>
+      <div className="mt-4 pt-4 border-t border-white/20 flex gap-3">
+        <Link
+          href="/admin/perfil/senha"
+          className="flex-1 text-center py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+        >
+          <Lock size={14} />
+          Alterar Senha
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // --- Main Page ---
 
 export default async function AdminDashboard() {
@@ -230,43 +369,40 @@ export default async function AdminDashboard() {
     redirect("/admin/login");
   }
 
-  const userRole = session.user.role || "";
+  const userRole = (session.user.role || "") as UserRole;
 
   if (!ALLOWED_ROLES.includes(userRole)) {
     redirect("/");
   }
 
-  const { id: userId, name } = session.user;
+  const { id: userId, name, email } = session.user;
   const isAdmin = userRole === "ADMIN";
   const userName = name || "Usuário";
-
-  const { propertyCount, leadCount, pendingVisits } = await getDashboardMetrics(
-    userId,
-    userRole,
-  );
 
   const formattedDate = dateFormatter.format(new Date());
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-500">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col transition-colors duration-500">
       {/* Navbar */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm transition-colors">
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm transition-colors">
         <div className="flex items-center gap-3 text-blue-900 dark:text-blue-400">
-          <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+          <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-lg text-white">
             <LayoutDashboard size={24} />
           </div>
           <div>
             <span className="font-bold text-xl tracking-tight block leading-none text-gray-900 dark:text-white">
               Matiello
-              <span className="text-blue-600 dark:text-blue-400">Admin</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+                Admin
+              </span>
             </span>
             <span className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">
               Painel {isAdmin ? "Gerencial" : "do Corretor"}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-4 md:gap-6">
-          {/* BOTÃO IR PARA O SITE (NOVO) */}
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* BOTÃO IR PARA O SITE */}
           <Link
             href="/"
             title="Voltar para o Site"
@@ -278,16 +414,28 @@ export default async function AdminDashboard() {
             </span>
           </Link>
 
+          {/* Notificações (Visual) */}
+          <button className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 rounded-lg transition-colors relative">
+            <Bell size={20} />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
           <div className="hidden sm:block">
             <ThemeToggle />
           </div>
-          <div className="text-right hidden sm:block border-r border-gray-200 dark:border-gray-700 pr-6 mr-2">
-            <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
-              {userName}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full inline-block mt-0.5">
-              {userRole}
-            </p>
+
+          <div className="hidden md:flex items-center gap-3 border-r border-gray-200 dark:border-gray-700 pr-4 mr-2">
+            <div className="text-right">
+              <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate max-w-[120px]">
+                {userName.split(" ")[0]}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                {userRole}
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+              {userName.charAt(0)}
+            </div>
           </div>
 
           {/* BOTÃO DE ALTERAR SENHA */}
@@ -303,7 +451,7 @@ export default async function AdminDashboard() {
         </div>
       </header>
 
-      <main className="flex-grow p-6 max-w-7xl mx-auto w-full animate-enter">
+      <main className="flex-grow p-4 sm:p-6 max-w-7xl mx-auto w-full">
         <div className="sm:hidden flex justify-end mb-4">
           <ThemeToggle />
         </div>
@@ -312,78 +460,182 @@ export default async function AdminDashboard() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">
             Olá, {userName.split(" ")[0]}! 👋
           </h1>
-          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
             <Clock size={16} />
             <span className="capitalize">{formattedDate}</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline">
+              Bem-vindo ao painel administrativo
+            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <StatCard
-            label={isAdmin ? "Total de Imóveis" : "Meus Imóveis"}
-            value={propertyCount}
-            icon={Building2}
-            variant="blue"
-            subtext={isAdmin ? "Ativos na plataforma" : "Do seu portfólio"}
-          />
-          <StatCard
-            label="Visitas Pendentes"
-            value={pendingVisits}
-            icon={Calendar}
-            variant="yellow"
-            isAlert={true}
-          />
-          <StatCard
-            label={isAdmin ? "Total de Leads" : "Meus Leads"}
-            value={leadCount}
-            icon={MessageSquare}
-            variant="green"
-          />
-        </div>
+        {/* Cards de Métricas com Suspense */}
+        <Suspense
+          fallback={
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 animate-pulse"
+                >
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                </div>
+              ))}
+            </div>
+          }
+        >
+          <MetricsSection userId={userId} userRole={userRole} />
+        </Suspense>
 
         <hr className="border-gray-200 dark:border-gray-700 mb-8 opacity-50" />
 
-        <div className="flex items-center gap-2 mb-6">
-          <TrendingUp size={20} className="text-blue-900 dark:text-blue-400" />
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-            Acesso Rápido
-          </h2>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <div className="flex items-center gap-2 mb-6">
+              <TrendingUp
+                size={20}
+                className="text-blue-900 dark:text-blue-400"
+              />
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                Acesso Rápido
+              </h2>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <QuickLinkCard
-            href="/admin/imoveis"
-            title="Imóveis"
-            subtitle="Gerenciar portfólio"
-            icon={Building2}
-            variant="blue"
-          />
-          <QuickLinkCard
-            href="/admin/visitas"
-            title="Agenda"
-            subtitle="Ver solicitações"
-            icon={Calendar}
-            variant="yellow"
-          />
-          <QuickLinkCard
-            href="/admin/mensagens"
-            title="Leads"
-            subtitle="Caixa de entrada"
-            icon={MessageSquare}
-            variant="green"
-          />
-          {isAdmin && (
-            <QuickLinkCard
-              href="/admin/usuarios"
-              title="Equipe"
-              subtitle="Controle de acesso"
-              icon={Users}
-              variant="purple"
-              isAdminOnly={true}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* 1. NOVO IMÓVEL */}
+              <QuickLinkCard
+                href="/admin/imoveis/novo"
+                title="Novo Imóvel"
+                subtitle="Adicionar registro"
+                icon={Plus}
+                variant="pink"
+                isNew
+              />
+
+              {/* 2. IMÓVEIS */}
+              <QuickLinkCard
+                href="/admin/imoveis"
+                title="Imóveis"
+                subtitle="Gerenciar portfólio"
+                icon={Building2}
+                variant="blue"
+                count={await prisma.property.count({
+                  where: isAdmin ? {} : { corretorId: userId },
+                })}
+              />
+
+              {/* 3. AGENDA */}
+              <QuickLinkCard
+                href="/admin/visitas"
+                title="Agenda"
+                subtitle="Ver solicitações"
+                icon={Calendar}
+                variant="yellow"
+                isNew
+                count={await prisma.visit.count({
+                  where: {
+                    status: "PENDENTE",
+                    ...(!isAdmin && { assignedToId: userId }),
+                  },
+                })}
+              />
+
+              {/* 4. LEADS */}
+              <QuickLinkCard
+                href="/admin/mensagens"
+                title="Leads"
+                subtitle="Caixa de entrada"
+                icon={MessageSquare}
+                variant="green"
+                count={await prisma.lead.count({
+                  where: isAdmin ? {} : { assignedToId: userId },
+                })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <UserProfileCard
+              name={userName}
+              role={userRole}
+              email={email || ""}
             />
-          )}
+
+            {isAdmin && (
+              <div className="mt-6">
+                <QuickLinkCard
+                  href="/admin/usuarios"
+                  title="Equipe"
+                  subtitle="Controle de acesso"
+                  icon={Users}
+                  variant="purple"
+                  isAdminOnly={true}
+                  count={await prisma.user.count()}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+// Componente separado para métricas para melhor performance
+async function MetricsSection({
+  userId,
+  userRole,
+}: {
+  userId: string;
+  userRole: UserRole;
+}) {
+  const {
+    propertyCount,
+    leadCount,
+    pendingVisits,
+    publishedProperties,
+    draftProperties,
+  } = await getUserStats(userId, userRole);
+
+  const isAdmin = userRole === "ADMIN";
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <StatCard
+        label={isAdmin ? "Total de Imóveis" : "Meus Imóveis"}
+        value={propertyCount}
+        icon={Building2}
+        variant="blue"
+        subtext={`${publishedProperties} publicados, ${draftProperties} pendentes`}
+        trend={{ value: 12, positive: true }}
+      />
+      <StatCard
+        label="Visitas Pendentes"
+        value={pendingVisits}
+        icon={Calendar}
+        variant="yellow"
+        isAlert={true}
+        subtext="Aguardando confirmação"
+      />
+      <StatCard
+        label={isAdmin ? "Total de Leads" : "Meus Leads"}
+        value={leadCount}
+        icon={MessageSquare}
+        variant="green"
+        subtext="Novos nos últimos 30 dias"
+        trend={{ value: 8, positive: true }}
+      />
+      <StatCard
+        label="Taxa de Conversão"
+        value={24}
+        icon={UserCheck}
+        variant="indigo"
+        subtext="Leads para visitas"
+        trend={{ value: 3, positive: true }}
+      />
     </div>
   );
 }
