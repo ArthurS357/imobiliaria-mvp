@@ -13,14 +13,14 @@ import {
   Clock,
   ArrowRight,
   LucideIcon,
-  Lock, // Adicionado para o botão de senha
+  Lock,
+  Home, // <--- 1. Importado o ícone Home
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutButton } from "@/components/admin/LogoutButton";
 
 // --- Configuration & Types ---
 
-// FIX: Lista completa de roles permitidos para evitar loop infinito
 const ALLOWED_ROLES = ["ADMIN", "CORRETOR", "BROKER", "FUNCIONARIO"];
 
 type ThemeVariant = "blue" | "yellow" | "green" | "purple";
@@ -90,7 +90,6 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 async function getDashboardMetrics(userId: string, role: string) {
   const isAdmin = role === "ADMIN";
 
-  // Filtros de segurança: Não-Admins veem apenas seus próprios registros
   const propertyWhere = isAdmin ? {} : { corretorId: userId };
   const leadWhere = isAdmin ? {} : { assignedToId: userId };
   const visitWhere = {
@@ -233,7 +232,6 @@ export default async function AdminDashboard() {
 
   const userRole = session.user.role || "";
 
-  // FIX: Se o role não estiver na lista permitida, redireciona para HOME (/) para evitar loop infinito no login
   if (!ALLOWED_ROLES.includes(userRole)) {
     redirect("/");
   }
@@ -268,6 +266,18 @@ export default async function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-4 md:gap-6">
+          {/* BOTÃO IR PARA O SITE (NOVO) */}
+          <Link
+            href="/"
+            title="Voltar para o Site"
+            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <Home size={20} />
+            <span className="hidden lg:inline text-sm font-medium">
+              Ver Site
+            </span>
+          </Link>
+
           <div className="hidden sm:block">
             <ThemeToggle />
           </div>
