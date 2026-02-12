@@ -15,7 +15,6 @@ import {
   LucideIcon,
   Lock,
   Home,
-  Bell,
   User,
   Plus,
   UserCheck,
@@ -192,22 +191,27 @@ function StatCard({
     ? ALERT_STYLES.iconBg
     : `${theme.iconBg} ${theme.iconText}`;
 
+  // Ajuste Mobile: padding reduzido (p-3 sm:p-6), fonte ajustada
   return (
     <div
-      className={`p-6 rounded-2xl shadow-sm border flex flex-col justify-between transition-all group relative overflow-hidden ${wrapperClass} hover:shadow-md`}
+      className={`p-3 sm:p-6 rounded-2xl shadow-sm border flex flex-col justify-between transition-all group relative overflow-hidden ${wrapperClass} hover:shadow-md`}
     >
       <div className="flex justify-between items-start">
-        <div>
-          <p className={`text-sm font-medium mb-1 ${textClass}`}>{label}</p>
-          <div className="flex items-baseline gap-2">
+        <div className="flex-1 min-w-0">
+          <p
+            className={`text-xs sm:text-sm font-medium mb-1 truncate ${textClass}`}
+          >
+            {label}
+          </p>
+          <div className="flex flex-wrap items-baseline gap-2">
             <p
-              className={`text-3xl font-extrabold tracking-tight ${numberClass}`}
+              className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${numberClass}`}
             >
               {value.toLocaleString("pt-BR")}
             </p>
             {trend && (
               <span
-                className={`text-xs font-bold px-2 py-1 rounded-full ${
+                className={`text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full ${
                   trend.positive
                     ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                     : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
@@ -219,24 +223,21 @@ function StatCard({
             )}
           </div>
           {subtext && !activeAlert && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+            <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1 sm:mt-2 truncate">
               {subtext}
             </p>
           )}
         </div>
         <div
-          className={`p-3 rounded-xl transition-transform duration-300 group-hover:scale-110 ${iconBgClass}`}
+          className={`p-2 sm:p-3 rounded-xl transition-transform duration-300 group-hover:scale-110 ${iconBgClass}`}
         >
-          <Icon size={24} />
+          <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
       </div>
       {activeAlert && (
-        <div className="mt-3 flex items-center gap-2">
-          <AlertTriangle
-            size={16}
-            className="text-yellow-600 dark:text-yellow-400"
-          />
-          <span className="text-xs text-yellow-700 dark:text-yellow-300 font-medium">
+        <div className="mt-2 sm:mt-3 flex items-center gap-2">
+          <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 dark:text-yellow-400" />
+          <span className="text-[10px] sm:text-xs text-yellow-700 dark:text-yellow-300 font-medium">
             Ação necessária
           </span>
         </div>
@@ -265,33 +266,36 @@ function QuickLinkCard({
   count?: number;
 }) {
   const theme = THEME_STYLES[variant];
+  // Ajuste Mobile: padding reduzido (p-4 sm:p-6), altura controlada
   return (
     <Link
       href={href}
-      className={`group bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 ${theme.borderHover} hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden h-full justify-between`}
+      className={`group bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 ${theme.borderHover} hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden h-full justify-between`}
     >
-      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
         <Icon
           size={100}
           className={`${theme.iconText} transform ${variant === "yellow" || variant === "purple" ? "-rotate-12" : "rotate-12"}`}
         />
       </div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-lg ${theme.iconBg} ${theme.iconText}`}>
-            <Icon size={24} />
+      <div className="flex items-center justify-between mb-2 sm:mb-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div
+            className={`p-2 sm:p-3 rounded-lg ${theme.iconBg} ${theme.iconText}`}
+          >
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div>
-            <h3 className="font-bold text-lg text-gray-800 dark:text-white flex items-center gap-2">
-              {title}
+          <div className="min-w-0">
+            <h3 className="font-bold text-sm sm:text-lg text-gray-800 dark:text-white flex items-center gap-1 sm:gap-2 flex-wrap">
+              <span className="truncate">{title}</span>
               {isNew && (
-                <span className="text-[10px] bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full font-bold uppercase">
+                <span className="text-[9px] sm:text-[10px] bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 sm:px-2 rounded-full font-bold uppercase whitespace-nowrap">
                   Novo
                 </span>
               )}
             </h3>
             {isAdminOnly && (
-              <span className="text-[10px] bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold uppercase">
+              <span className="text-[9px] sm:text-[10px] bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 sm:px-2 rounded-full font-bold uppercase inline-block">
                 Admin
               </span>
             )}
@@ -299,7 +303,7 @@ function QuickLinkCard({
         </div>
         {count !== undefined && (
           <div
-            className={`px-2 py-1 rounded-full text-xs font-bold ${
+            className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${
               count > 0
                 ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
                 : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
@@ -309,15 +313,14 @@ function QuickLinkCard({
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between mt-2">
+      <div className="flex items-center justify-between mt-1 sm:mt-2">
         <span
-          className={`text-sm text-gray-500 dark:text-gray-400 transition-colors group-hover:${theme.iconText.split(" ")[0]}`}
+          className={`text-xs sm:text-sm text-gray-500 dark:text-gray-400 transition-colors group-hover:${theme.iconText.split(" ")[0]} truncate pr-2`}
         >
           {subtitle}
         </span>
         <ArrowRight
-          size={18}
-          className={`text-gray-300 transition-all group-hover:translate-x-1 group-hover:${theme.iconText.split(" ")[0]}`}
+          className={`w-4 h-4 sm:w-[18px] sm:h-[18px] text-gray-300 transition-all group-hover:translate-x-1 group-hover:${theme.iconText.split(" ")[0]}`}
         />
       </div>
     </Link>
@@ -334,25 +337,27 @@ function UserProfileCard({
   email: string;
 }) {
   return (
-    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 rounded-2xl p-6 text-white shadow-lg">
-      <div className="flex items-center gap-4">
-        <div className="bg-white/20 p-3 rounded-full">
-          <User size={24} />
+    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 rounded-2xl p-4 sm:p-6 text-white shadow-lg">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className="bg-white/20 p-2 sm:p-3 rounded-full">
+          <User className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
-        <div>
-          <h3 className="font-bold text-lg">{name}</h3>
-          <p className="text-blue-100 dark:text-blue-200 text-sm">{email}</p>
-          <span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold">
+        <div className="min-w-0">
+          <h3 className="font-bold text-base sm:text-lg truncate">{name}</h3>
+          <p className="text-blue-100 dark:text-blue-200 text-xs sm:text-sm truncate">
+            {email}
+          </p>
+          <span className="inline-block mt-1 sm:mt-2 px-2 py-0.5 sm:px-3 sm:py-1 bg-white/20 rounded-full text-[10px] sm:text-xs font-bold">
             {role}
           </span>
         </div>
       </div>
-      <div className="mt-4 pt-4 border-t border-white/20 flex gap-3">
+      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/20 flex gap-3">
         <Link
           href="/admin/perfil/senha"
-          className="flex-1 text-center py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          className="flex-1 text-center py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2"
         >
-          <Lock size={14} />
+          <Lock className="w-3 h-3 sm:w-[14px] sm:h-[14px]" />
           Alterar Senha
         </Link>
       </div>
@@ -381,44 +386,40 @@ export default async function AdminDashboard() {
 
   const formattedDate = dateFormatter.format(new Date());
 
+  // Correção "Sambando": overflow-x-hidden e w-full no container principal
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col transition-colors duration-500">
-      {/* Navbar */}
-      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm transition-colors">
-        <div className="flex items-center gap-3 text-blue-900 dark:text-blue-400">
-          <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-lg text-white">
-            <LayoutDashboard size={24} />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col transition-colors duration-500 w-full overflow-x-hidden">
+      {/* Navbar com melhor responsividade */}
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm transition-colors w-full">
+        <div className="flex items-center gap-2 sm:gap-3 text-blue-900 dark:text-blue-400">
+          <div className="p-1.5 sm:p-2 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-lg text-white">
+            <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <span className="font-bold text-xl tracking-tight block leading-none text-gray-900 dark:text-white">
+            <span className="font-bold text-lg sm:text-xl tracking-tight block leading-none text-gray-900 dark:text-white">
               Matiello
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
                 Admin
               </span>
             </span>
-            <span className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold">
-              Painel {isAdmin ? "Gerencial" : "do Corretor"}
+            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold hidden xs:block">
+              {isAdmin ? "Gerencial" : "Corretor"}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* BOTÃO IR PARA O SITE */}
+
+        {/* Agrupamento de ícones otimizado - Sem Sino e Sem Cadeado duplicado */}
+        <div className="flex items-center gap-1 sm:gap-4">
           <Link
             href="/"
             title="Voltar para o Site"
-            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            className="p-1.5 sm:p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
           >
-            <Home size={20} />
+            <Home className="w-5 h-5 sm:w-5 sm:h-5" />
             <span className="hidden lg:inline text-sm font-medium">
               Ver Site
             </span>
           </Link>
-
-          {/* Notificações (Visual) */}
-          <button className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 rounded-lg transition-colors relative">
-            <Bell size={20} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
 
           <div className="hidden sm:block">
             <ThemeToggle />
@@ -429,59 +430,43 @@ export default async function AdminDashboard() {
               <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate max-w-[120px]">
                 {userName.split(" ")[0]}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full inline-block mt-0.5">
-                {userRole}
-              </p>
             </div>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
               {userName.charAt(0)}
             </div>
           </div>
-
-          {/* BOTÃO DE ALTERAR SENHA */}
-          <Link
-            href="/admin/perfil/senha"
-            title="Alterar Minha Senha"
-            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <Lock size={20} />
-          </Link>
 
           <LogoutButton />
         </div>
       </header>
 
-      <main className="flex-grow p-4 sm:p-6 max-w-7xl mx-auto w-full">
-        <div className="sm:hidden flex justify-end mb-4">
+      <main className="flex-grow p-3 sm:p-6 max-w-7xl mx-auto w-full overflow-hidden">
+        <div className="sm:hidden flex justify-end mb-4 gap-2">
           <ThemeToggle />
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-1 sm:mb-2 truncate">
             Olá, {userName.split(" ")[0]}! 👋
           </h1>
-          <div className="flex flex-wrap items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
-            <Clock size={16} />
+          <div className="flex flex-wrap items-center gap-2 text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
+            <Clock size={14} className="sm:w-4 sm:h-4" />
             <span className="capitalize">{formattedDate}</span>
-            <span className="hidden sm:inline">•</span>
-            <span className="hidden sm:inline">
-              Bem-vindo ao painel administrativo
-            </span>
           </div>
         </div>
 
-        {/* Cards de Métricas com Suspense */}
+        {/* Suspense Wrapper */}
         <Suspense
           fallback={
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-10">
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 animate-pulse"
+                  className="p-3 sm:p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 animate-pulse"
                 >
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                  <div className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2 sm:mb-4"></div>
+                  <div className="h-6 sm:h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+                  <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
                 </div>
               ))}
             </div>
@@ -490,36 +475,32 @@ export default async function AdminDashboard() {
           <MetricsSection userId={userId} userRole={userRole} />
         </Suspense>
 
-        <hr className="border-gray-200 dark:border-gray-700 mb-8 opacity-50" />
+        <hr className="border-gray-200 dark:border-gray-700 mb-6 sm:mb-8 opacity-50" />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-6">
-              <TrendingUp
-                size={20}
-                className="text-blue-900 dark:text-blue-400"
-              />
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+            <div className="flex items-center gap-2 mb-4 sm:mb-6">
+              <TrendingUp className="w-5 h-5 sm:w-5 sm:h-5 text-blue-900 dark:text-blue-400" />
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">
                 Acesso Rápido
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* 1. NOVO IMÓVEL */}
+            {/* Grid ajustado: 2 colunas no mobile para aproveitar espaço */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-6">
               <QuickLinkCard
                 href="/admin/imoveis/novo"
                 title="Novo Imóvel"
-                subtitle="Adicionar registro"
+                subtitle="Adicionar"
                 icon={Plus}
                 variant="pink"
                 isNew
               />
 
-              {/* 2. IMÓVEIS */}
               <QuickLinkCard
                 href="/admin/imoveis"
                 title="Imóveis"
-                subtitle="Gerenciar portfólio"
+                subtitle="Gerenciar"
                 icon={Building2}
                 variant="blue"
                 count={await prisma.property.count({
@@ -527,11 +508,10 @@ export default async function AdminDashboard() {
                 })}
               />
 
-              {/* 3. AGENDA */}
               <QuickLinkCard
                 href="/admin/visitas"
                 title="Agenda"
-                subtitle="Ver solicitações"
+                subtitle="Solicitações"
                 icon={Calendar}
                 variant="yellow"
                 isNew
@@ -543,11 +523,10 @@ export default async function AdminDashboard() {
                 })}
               />
 
-              {/* 4. LEADS */}
               <QuickLinkCard
                 href="/admin/mensagens"
                 title="Leads"
-                subtitle="Caixa de entrada"
+                subtitle="Mensagens"
                 icon={MessageSquare}
                 variant="green"
                 count={await prisma.lead.count({
@@ -558,18 +537,20 @@ export default async function AdminDashboard() {
           </div>
 
           <div>
-            <UserProfileCard
-              name={userName}
-              role={userRole}
-              email={email || ""}
-            />
+            <div className="mt-4 lg:mt-0">
+              <UserProfileCard
+                name={userName}
+                role={userRole}
+                email={email || ""}
+              />
+            </div>
 
             {isAdmin && (
-              <div className="mt-6">
+              <div className="mt-4 sm:mt-6">
                 <QuickLinkCard
                   href="/admin/usuarios"
                   title="Equipe"
-                  subtitle="Controle de acesso"
+                  subtitle="Controle"
                   icon={Users}
                   variant="purple"
                   isAdminOnly={true}
@@ -584,7 +565,6 @@ export default async function AdminDashboard() {
   );
 }
 
-// Componente separado para métricas para melhor performance
 async function MetricsSection({
   userId,
   userRole,
@@ -602,38 +582,39 @@ async function MetricsSection({
 
   const isAdmin = userRole === "ADMIN";
 
+  // Grid Mobile: 2 colunas (grid-cols-2) em vez de 1 para evitar rolagem excessiva
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-10">
       <StatCard
-        label={isAdmin ? "Total de Imóveis" : "Meus Imóveis"}
+        label={isAdmin ? "Total Imóveis" : "Meus Imóveis"}
         value={propertyCount}
         icon={Building2}
         variant="blue"
-        subtext={`${publishedProperties} publicados, ${draftProperties} pendentes`}
+        subtext={`${publishedProperties} pub`}
         trend={{ value: 12, positive: true }}
       />
       <StatCard
-        label="Visitas Pendentes"
+        label="Pendentes"
         value={pendingVisits}
         icon={Calendar}
         variant="yellow"
         isAlert={true}
-        subtext="Aguardando confirmação"
+        subtext="Visitas"
       />
       <StatCard
-        label={isAdmin ? "Total de Leads" : "Meus Leads"}
+        label={isAdmin ? "Total Leads" : "Meus Leads"}
         value={leadCount}
         icon={MessageSquare}
         variant="green"
-        subtext="Novos nos últimos 30 dias"
+        subtext="Novos (30d)"
         trend={{ value: 8, positive: true }}
       />
       <StatCard
-        label="Taxa de Conversão"
+        label="Conversão"
         value={24}
         icon={UserCheck}
         variant="indigo"
-        subtext="Leads para visitas"
+        subtext="Taxa %"
         trend={{ value: 3, positive: true }}
       />
     </div>
