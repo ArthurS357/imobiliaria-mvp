@@ -159,7 +159,7 @@ const PropertyRow = React.memo(({ property }: { property: Property }) => {
       {/* Coluna 5: Ações */}
       <td className="p-6 align-top pt-6 text-right">
         <div className="flex items-center justify-end gap-2">
-          {/* NOVO: Botão de Visualizar */}
+          {/* Botão de Visualizar */}
           <Link
             href={`/imoveis/${property.id}`}
             target="_blank"
@@ -229,7 +229,10 @@ export default function AdminPropertiesPage() {
 
   const fetchProperties = async () => {
     try {
-      const res = await fetch("/api/properties?admin=true");
+      // ✅ ATUALIZAÇÃO: Removido parâmetro ?admin=true
+      // A API agora filtra automaticamente com base na sessão do usuário
+      const res = await fetch("/api/properties");
+
       if (res.ok) {
         const data = await res.json();
         setProperties(data);
