@@ -4,25 +4,32 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 
-// Imports dos componentes refatorados
 import { User, CreateUserData } from "./types";
 import { UserToolbar } from "./components/UserToolbar";
 import { UserTable } from "./components/UserTable";
-import { CreateUserModal, EditUserModal } from "./components/UserModals";
+
+import {
+  CreateUserModal,
+  EditUserModal,
+  DeleteUserModal,
+} from "./components/UserModals";
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("TODOS");
 
-  // Controle de Modais
+  // Estados dos Modais
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  // NOVO: Estado para o usuário que será excluído
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // ... (useEffect e fetchUsers permanecem iguais) ...
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -42,20 +49,17 @@ export default function UserManagementPage() {
     }
   };
 
-  // Lógica de Filtro
+  // ... (filteredUsers permanece igual) ...
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.creci && user.creci.includes(searchTerm));
-
     const matchesRole = roleFilter === "TODOS" || user.role === roleFilter;
-
     return matchesSearch && matchesRole;
   });
 
-  // --- ACTIONS ---
-
+  // ... (handleCreate e handleUpdate permanecem iguais) ...
   const handleCreate = async (newUser: CreateUserData) => {
     setIsSaving(true);
     try {
@@ -64,16 +68,12 @@ export default function UserManagementPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser),
       });
-
       const data = await res.json();
-
       if (res.ok) {
         if (data.emailSent) {
-          toast.success(
-            `Usuário ${data.user.name} criado! Email com credenciais enviado.`,
-          );
+          toast.success(`Usuário ${data.user.name} criado! Email enviado.`);
         } else {
-          toast.success(`Usuário criado! (Email não enviado, verifique logs)`);
+          toast.success(`Usuário criado!`);
         }
         setShowCreateModal(false);
         fetchUsers();
@@ -81,7 +81,7 @@ export default function UserManagementPage() {
         toast.error(data.error || "Erro ao criar usuário.");
       }
     } catch (error) {
-      toast.error("Erro de conexão com o servidor.");
+      toast.error("Erro de conexão.");
     } finally {
       setIsSaving(false);
     }
@@ -89,38 +89,49 @@ export default function UserManagementPage() {
 
   const handleUpdate = async (updatedUser: User) => {
     setIsSaving(true);
-    const toastId = toast.loading("Salvando alterações...");
-
     try {
       const res = await fetch(`/api/admin/users/${updatedUser.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedUser),
       });
-
       if (res.ok) {
-        toast.success("Usuário atualizado!", { id: toastId });
+        toast.success("Usuário atualizado!");
         setEditingUser(null);
         fetchUsers();
       } else {
         const err = await res.json();
-        toast.error(err.error || "Erro ao atualizar", { id: toastId });
+        toast.error(err.error || "Erro ao atualizar");
       }
     } catch (error) {
-      toast.error("Erro de conexão", { id: toastId });
+      toast.error("Erro de conexão");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
+  // --- DELETE ATUALIZADO ---
 
+  // 1. Apenas abre o modal, não deleta ainda
+  const confirmDelete = (userId: string) => {
+    const user = users.find((u) => u.id === userId);
+    if (user) setDeletingUser(user);
+  };
+
+  // 2. Executa a deleção de fato
+  const handleDelete = async () => {
+    if (!deletingUser) return;
+
+    setIsSaving(true); // Reutilizando isSaving para loading do delete
     const toastId = toast.loading("Excluindo...");
+
     try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/users/${deletingUser.id}`, {
+        method: "DELETE",
+      });
       if (res.ok) {
-        toast.success("Usuário excluído com sucesso!", { id: toastId });
+        toast.success("Usuário excluído!", { id: toastId });
+        setDeletingUser(null); // Fecha o modal
         fetchUsers();
       } else {
         const err = await res.json();
@@ -128,6 +139,8 @@ export default function UserManagementPage() {
       }
     } catch (error) {
       toast.error("Erro de conexão", { id: toastId });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -157,7 +170,7 @@ export default function UserManagementPage() {
         <UserTable
           users={filteredUsers}
           onEdit={setEditingUser}
-          onDelete={handleDelete}
+          onDelete={confirmDelete} // Passa a função que abre o modal
         />
 
         <CreateUserModal
@@ -172,6 +185,14 @@ export default function UserManagementPage() {
           onClose={() => setEditingUser(null)}
           onSubmit={handleUpdate}
           isSaving={isSaving}
+        />
+
+        {/* Novo Modal de Delete */}
+        <DeleteUserModal
+          user={deletingUser}
+          onClose={() => setDeletingUser(null)}
+          onConfirm={handleDelete}
+          isDeleting={isSaving}
         />
       </div>
     </div>

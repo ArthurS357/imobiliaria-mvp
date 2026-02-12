@@ -10,10 +10,11 @@ import {
   FileText,
   Loader2,
   ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
 import { User, CreateUserData } from "../types";
 
-// Componente de Input Reutilizável para consistência
+// Componente de Input Reutilizável para consistência visual
 const InputGroup = ({
   label,
   icon: Icon,
@@ -184,7 +185,7 @@ export function CreateUserModal({
   );
 }
 
-// --- EDIT MODAL (Mesmo estilo visual) ---
+// --- EDIT MODAL ---
 
 interface EditUserModalProps {
   user: User | null;
@@ -311,6 +312,77 @@ export function EditUserModal({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// --- DELETE MODAL ---
+
+interface DeleteUserModalProps {
+  user: User | null;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+  isDeleting: boolean;
+}
+
+export function DeleteUserModal({
+  user,
+  onClose,
+  onConfirm,
+  isDeleting,
+}: DeleteUserModalProps) {
+  if (!user) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Modal Content */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-700">
+        <div className="p-6 text-center">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={32} />
+          </div>
+
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            Excluir Usuário?
+          </h2>
+
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+            Você está prestes a remover <strong>{user.name}</strong> do sistema.{" "}
+            <br />
+            Essa ação não pode ser desfeita e o usuário perderá o acesso
+            imediatamente.
+          </p>
+
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={onClose}
+              disabled={isDeleting}
+              className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isDeleting}
+              className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-red-500/20 transition-all flex items-center gap-2 disabled:opacity-70"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} /> Excluindo...
+                </>
+              ) : (
+                "Sim, Excluir"
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
