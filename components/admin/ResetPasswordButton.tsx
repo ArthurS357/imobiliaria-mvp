@@ -38,7 +38,7 @@ export function ResetPasswordButton({ userId, userName }: ResetButtonProps) {
       onClick={handleReset}
       disabled={loading}
       title="Resetar Senha para Padrão"
-      className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+      className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors group-hover:text-gray-500"
     >
       {loading ? (
         <Loader2 className="w-4 h-4 animate-spin" />
