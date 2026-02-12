@@ -231,7 +231,7 @@ export default function AdminPropertiesPage() {
     try {
       // ✅ ATUALIZAÇÃO: Removido parâmetro ?admin=true
       // A API agora filtra automaticamente com base na sessão do usuário
-      const res = await fetch("/api/properties");
+      const res = await fetch("/api/properties?dashboard=true");
 
       if (res.ok) {
         const data = await res.json();
