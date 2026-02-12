@@ -6,8 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { changePasswordSchema } from "@/lib/validations";
 import { hash, compare } from "bcryptjs";
 import { revalidatePath } from "next/cache";
-
-const DEFAULT_PASSWORD = "Mat026!";
+import { DEFAULT_USER_PASSWORD } from "@/lib/constants";
 
 export async function changeOwnPassword(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -16,7 +15,7 @@ export async function changeOwnPassword(formData: FormData) {
   const rawData = Object.fromEntries(formData.entries());
   const validated = changePasswordSchema.safeParse(rawData);
 
-  // CORREÇÃO AQUI: Troquei .errors por .issues
+  // Retorna o primeiro erro de validação do Zod, se houver
   if (!validated.success) {
     return { error: validated.error.issues[0].message };
   }
@@ -32,7 +31,8 @@ export async function changeOwnPassword(formData: FormData) {
     if (!isCurrentValid) return { error: "A senha atual está incorreta" };
 
     // IMPEDE QUE O USUÁRIO DEFINA A SENHA PADRÃO NOVAMENTE
-    if (newPassword === DEFAULT_PASSWORD) {
+    // Verifica se DEFAULT_USER_PASSWORD existe para evitar erro de comparação
+    if (DEFAULT_USER_PASSWORD && newPassword === DEFAULT_USER_PASSWORD) {
       return {
         error:
           "Você não pode definir a senha padrão como sua senha permanente.",
@@ -50,17 +50,28 @@ export async function changeOwnPassword(formData: FormData) {
     revalidatePath("/admin");
     return { success: true };
   } catch (error) {
+    console.error("Erro ao alterar senha:", error);
     return { error: "Erro interno ao atualizar senha" };
   }
 }
 
 export async function adminResetPassword(targetUserId: string) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN")
+
+  // Apenas ADMIN pode resetar senhas de outros
+  if (!session || session.user.role !== "ADMIN") {
     return { error: "Permissão negada" };
+  }
+
+  // Segurança: Se a senha padrão não estiver carregada (erro de .env), aborta
+  if (!DEFAULT_USER_PASSWORD) {
+    return {
+      error: "Erro de configuração: Senha padrão não definida no sistema.",
+    };
+  }
 
   try {
-    const hashedPassword = await hash(DEFAULT_PASSWORD, 12);
+    const hashedPassword = await hash(DEFAULT_USER_PASSWORD, 12);
 
     await prisma.user.update({
       where: { id: targetUserId },
@@ -68,11 +79,13 @@ export async function adminResetPassword(targetUserId: string) {
     });
 
     revalidatePath(`/admin/usuarios`);
+
     return {
       success: true,
-      message: `Senha resetada para ${DEFAULT_PASSWORD}`,
+      message: `Senha resetada para: ${DEFAULT_USER_PASSWORD}`,
     };
   } catch (error) {
+    console.error("Erro ao resetar senha:", error);
     return { error: "Erro ao resetar senha" };
   }
 }
