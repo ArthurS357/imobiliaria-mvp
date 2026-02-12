@@ -4,72 +4,72 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations";
 
+const DEFAULT_PASSWORD_CHECK = "Mat026!"; // A mesma senha usada no reset
+
 export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
             name: "Credentials",
             credentials: {
                 email: { label: "Email", type: "email" },
-                password: { label: "Senha", type: "password" }
+                password: { label: "Senha", type: "password" },
             },
             async authorize(credentials) {
-                // 1. Validação de Segurança com Zod
-                // Verifica se o formato do email e tamanho da senha estão corretos antes de ir ao banco
                 const result = loginSchema.safeParse(credentials);
-
-                if (!result.success) {
-                    throw new Error("Dados inválidos. Verifique email e senha.");
-                }
+                if (!result.success) throw new Error("Dados inválidos.");
 
                 const { email, password } = result.data;
 
-                // 2. Busca no Banco de Dados
                 const user = await prisma.user.findUnique({
-                    where: { email }
+                    where: { email },
                 });
 
-                if (!user || !user.password) {
-                    throw new Error("Usuário não encontrado.");
-                }
+                if (!user || !user.password) throw new Error("Credenciais inválidas.");
 
-                // 3. Verifica a Senha (Hash)
-                const isPasswordValid = await bcrypt.compare(
-                    password,
-                    user.password
+                const isPasswordValid = await bcrypt.compare(password, user.password);
+                if (!isPasswordValid) throw new Error("Credenciais inválidas.");
+
+                // LÓGICA SEM BANCO DE DADOS:
+                // Verifica se a senha atual é igual à senha padrão
+                const isDefaultPassword = await bcrypt.compare(
+                    DEFAULT_PASSWORD_CHECK,
+                    user.password,
                 );
 
-                if (!isPasswordValid) {
-                    throw new Error("Senha incorreta.");
-                }
-
-                // 4. Retorna o usuário para a sessão
                 return {
                     id: user.id,
                     name: user.name,
                     email: user.email,
                     role: user.role,
+                    isDefaultPassword: isDefaultPassword, // Passamos isso para frente
                 };
-            }
-        })
+            },
+        }),
     ],
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
+                token.isDefaultPassword = user.isDefaultPassword;
+            }
+            // Atualização via client-side
+            if (trigger === "update" && session) {
+                token.isDefaultPassword = session.isDefaultPassword;
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                session.user.id = token.id as string;
-                session.user.role = token.role as string;
+                session.user.id = token.id;
+                session.user.role = token.role;
+                session.user.isDefaultPassword = token.isDefaultPassword;
             }
             return session;
-        }
+        },
     },
     pages: {
-        signIn: "/admin/login", // Página customizada de login
+        signIn: "/admin/login",
     },
     session: {
         strategy: "jwt",
