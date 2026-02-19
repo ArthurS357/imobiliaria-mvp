@@ -166,7 +166,7 @@ const PropertyInfoCard = memo(({ property, isInternal, isDualPurpose, mensagemZa
 
             {/* Botão de Contato */}
             <div className="space-y-4">
-                <a href={`https://wa.me/5511946009103?text=${mensagemZap}`} target="_blank" className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                <a href={`https://wa.me/5511997009311?text=${mensagemZap}`} target="_blank" className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                     <WhatsAppIcon size={24} /> Conversar no WhatsApp
                 </a>
 

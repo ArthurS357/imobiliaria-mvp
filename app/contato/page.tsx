@@ -86,7 +86,7 @@ export default function ContactPage() {
 
                                 {/* WhatsApp (Ícone Atualizado) */}
                                 <a
-                                    href="https://wa.me/5511946009103"
+                                    href="https://wa.me/5511997009311"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-start gap-4 group cursor-pointer"
@@ -100,7 +100,7 @@ export default function ContactPage() {
                                             WhatsApp <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-green-600" />
                                         </h3>
                                         <p className="text-gray-600 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                                            (11) 94600-9103
+                                            (11) 99700-9311
                                         </p>
                                     </div>
                                 </a>
@@ -112,7 +112,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-gray-900 dark:text-white">Telefone</h3>
-                                        <p className="text-gray-600 dark:text-gray-300">(11) 94600-9103</p>
+                                        <p className="text-gray-600 dark:text-gray-300">(11) 99700-9311</p>
                                     </div>
                                 </div>
 

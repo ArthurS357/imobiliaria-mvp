@@ -204,7 +204,7 @@ export default async function PrintPropertyPage({ params }: { params: Promise<{ 
                         <p className="font-bold text-sm text-blue-900 print:text-black">{property.corretor.name}</p>
                         {property.corretor.creci && <p className="text-[10px] text-gray-600 mb-1">CRECI: {property.corretor.creci}</p>}
                         <div className="flex justify-center gap-1 text-[10px] text-gray-600 mt-1">
-                            <Phone size={10} /> <span>(11) 94600-9103</span>
+                            <Phone size={10} /> <span>(11) 99700-9311</span>
                         </div>
                     </div>
 

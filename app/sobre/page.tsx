@@ -189,7 +189,7 @@ export default function AboutPage() {
                     </div>
 
                     <div className="flex flex-col gap-4 w-full md:w-auto">
-                        <a href="https://wa.me/5511946009103" className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-lg text-center transition shadow-lg transform hover:-translate-y-1">
+                        <a href="https://wa.me/5511997009311" className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-lg text-center transition shadow-lg transform hover:-translate-y-1">
                             Falar no WhatsApp
                         </a>
                         <Link href="/contato" className="bg-transparent border-2 border-white hover:bg-white hover:text-blue-900 dark:hover:text-blue-950 text-white font-bold py-4 px-8 rounded-lg text-center transition">

@@ -494,7 +494,7 @@ export default function Home() {
           </p>
           <div className="pt-4">
             <a
-              href="https://wa.me/5511946009103"
+              href="https://wa.me/5511997009311"
               target="_blank"
               className="inline-flex items-center gap-2 bg-white text-blue-900 px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-50 transition shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
               title="Anunciar via WhatsApp"
@@ -522,8 +522,8 @@ export default function Home() {
                 <WhatsAppIcon className="text-green-600 dark:text-green-400" size={32} />
               </div>
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">WhatsApp</h3>
-              <p className="text-gray-500 mb-4">(11) 94600-9103</p>
-              <a href="https://wa.me/5511946009103" target="_blank" className="text-blue-600 font-bold hover:underline" aria-label="Iniciar conversa no WhatsApp">Iniciar Conversa</a>
+              <p className="text-gray-500 mb-4">(11) 99700-9311</p>
+              <a href="https://wa.me/5511997009311" target="_blank" className="text-blue-600 font-bold hover:underline" aria-label="Iniciar conversa no WhatsApp">Iniciar Conversa</a>
             </div>
 
             {/* CARD 2: E-MAIL */}
@@ -551,7 +551,7 @@ export default function Home() {
 
       {/* Botão Flutuante - ÍCONE OFICIAL */}
       <a
-        href="https://wa.me/5511946009103"
+        href="https://wa.me/5511997009311"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-all hover:scale-110 z-50 flex items-center justify-center hover:shadow-green-500/30"
